@@ -1,4 +1,6 @@
 function CBH = cbhandle(varargin)
+%%% tETTSTS
+
 %CBHANDLE   Gets the handle of current colorbar or its peer axes.
 %
 %   SYNTAX:
