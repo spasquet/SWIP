@@ -1,4 +1,6 @@
 function CBLH = cblabel(varargin)
+%%%TSTTS
+
 %CBLABEL   Adds a label to the colorbar.
 %
 %   SYNTAX:
