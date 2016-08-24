@@ -1,7 +1,7 @@
 function [ZI,XI,YI]=bln2xyz(datafile,blnfile,xsca)
 %%% S. Pasquet - V16.3.14
 % Blank X,Y,Z file
-% test3
+% jhjhjh
 if nargin<3
     xsca=100;
 end
