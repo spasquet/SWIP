@@ -1,0 +1,3 @@
+v16.8.5
+
+- Modification fonction plot_colorbar pour meilleure prise en charge des échelles de couleur // Module C
