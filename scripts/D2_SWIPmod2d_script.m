@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.8.23
+%%% S. Pasquet - V16.8.31
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs and Poisson's ratio pseudo-sections
 
@@ -606,7 +606,7 @@ for ix=Xmidselec
                     if isempty(hsdtmp)==1 % Case all VsSTD > stdMAX
                         hsdtmp=moddepth(find(vsstd<=median(vsstd),1,'first'));
                     elseif hsdtmp==0 % Case all VsSTD < stdMAX
-                        hsdtmp=flipmoddepth(find(flipvsstd<flipvsstd(1),1,'first'));
+                        hsdtmp=flipmoddepth(find(flipvsstd~=flipvsstd(1),1,'first'));
                         if isempty(hsdtmp)==1
                             hsdtmp=flipmoddepth(1);
                         end
