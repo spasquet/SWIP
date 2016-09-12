@@ -1,4 +1,4 @@
-%%% S. Pasquet - V16.8.23
+%%% S. Pasquet - V16.9.12
 
 %% A_SWIPdisp settings
 % Main settings
@@ -120,7 +120,7 @@ if exist('mappicklog','var')==0 || isempty(mappicklog)==1
 end
 % Min. phase velocity sampling (m/s)
 if exist('dvmin','var')==0 || isempty(dvmin)==1
-    dvmin=5;
+    dvmin=2;
 end
 % First picked propagation mode (0 = fundamental)
 if exist('modeinit','var')==0 || isempty(modeinit)==1

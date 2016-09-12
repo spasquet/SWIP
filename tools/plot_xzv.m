@@ -1,5 +1,5 @@
 function [Xi,Zi,Vi]=plot_xzv(filevel,mask,logscale,ztitle,isoline,blocky,vertex,imgform,imgres,vslim)
-%%% S. Pasquet - V16.4.15
+%%% S. Pasquet - V16.9.12
 % Quick plot of 2D sections
 
 if exist('mask','var')==0 || isempty(mask)==1
@@ -18,7 +18,7 @@ if exist('vslim','var')==1 && isempty(vslim)==0
     vsMIN=vslim(1); vsMAX=vslim(2);
 end
 if exist('filevel','var')==0 || isempty(filevel)==1
-    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vp model');
+    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select velocity model');
 else
     pathvel=[];
 end

@@ -41,10 +41,10 @@ UMR 7619 METIS\\
 
 \newpage
 \section{Installation instructions}
-SWIP is a MATLAB-based software originally developped to work under a GNU/Linux distribution. It executes binaries from the open software packages \textbf{Seismic Unix} (available at \url{http://www.cwp.mines.edu/cwpcodes}) and \textbf{Geopsy} (available at \url{http://www.geopsy.org}). It (optionally) requires the open software packages \textbf{ImageMagick} (available at \url{http://www.imagemagick.org}), \textbf{PDFjam} (available at \url{http://www2.warwick.ac.uk/fac/sci/statistics/staff/academic-research/firth/software/pdfjam}), and \textbf{pdfcrop} (available at \url{http://www.ctan.org/pkg/pdfcrop}).
+SWIP is a MATLAB-based software originally developped to work under a GNU/Linux distribution. It executes binaries from the open software packages \textbf{Seismic Unix} and \textbf{Geopsy}. It (optionally) requires the open software packages \textbf{ImageMagick}, \textbf{PDFjam}, and \textbf{pdfcrop}.
 
 \bigskip\noindent
-To work under Windows, it also requires to install the Linux-like environment \textbf{Cygwin} (available at \url{http://www.cygwin.com}) in order to run \textbf{Seismic Unix} binaries.
+To work under Windows, you need to install the Linux-like environment \textbf{Cygwin} in order to run \textbf{Seismic Unix} binaries.
 
 \bigskip\noindent
 Whatever OS you are using, you will need the administrator/root rights to install SWIP.
@@ -53,20 +53,18 @@ Whatever OS you are using, you will need the administrator/root rights to instal
 \begin{itemize}
 \setlength\itemsep{2ex}
 \setlength{\parindent}{5ex}
-\item Download the gzipped tarfile \verb|SWIP_xx.tar.gz| containing the source codes for SWIP (the "xx" is the current Release number)
+\item Get the latest version of the code available at \url{https://github.com/SWIPdev/SWIP/releases}. Download the zipped file \verb|SWIP-x.x.zip| or the gzipped tarfile \verb|SWIP-x.x.tar.gz| containing the source codes for SWIP (the "x.x" is the current Release number).
 
-\url{https://www.dropbox.com/s/eafwqf3ctghdtj7/SWIP_16.6.23.tar.gz?dl=0}.
-
-\item If not already, install MATLAB on your computer (no extra toolbox is required). A change of graphics engine in MATLAB 2014b and higher causes problem with figures output (slow figure display, huge output file size). To avoid those problems, I recommend to use an older version of MATLAB (the problem seems to have been in the 2016a version).\\[1ex]
+\item If not already installed, install MATLAB on your computer (no extra toolbox is required). A change of graphics engine in MATLAB 2014b and higher causes problem with figures output (slow figure display, huge output file size). To avoid those problems, I recommend to use an older version of MATLAB.\\[1ex]
 To download an older version, you need to create a Mathworks account (\url{http://www.mathworks.com}) and download the selected release (\url{http://fr.mathworks.com/downloads/select_release?mode=gwylf}). If you are using a network license, just create an account using your institution email. For a standalone license, you will need to associate it with your Mathworks account in the License Center (\textit{Associate License} on the top right of the screen). When installing MATLAB, you will just need to login to your Mathworks account and provide the path of the license file to activate it.
 
-\item Once MATLAB is installed, you will need to extract the content of the gzipped tarfile \verb|SWIP_xx.tar.gz| in your MATLAB path (refered later as \verb|/your/MATLAB/path|) and give MATLAB access to the contents of this folder. To decompress the file, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux, or use a software like 7zip if you are under Windows. In MATLAB, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.\\[1ex]
+\item Once MATLAB is installed, you will need to extract the content of the SWIP archive file in your MATLAB path (refered later as \verb|/your/MATLAB/path|) and give MATLAB access to the contents of this folder. To decompress the file, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux, or use a software like 7zip if you are under Windows. In MATLAB, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.\\[1ex]
 Examples of \verb|/your/MATLAB/path| directory:
 
 \verb|/home/yourusername/Documents/MATLAB| under GNU/Linux distributions
 
 \verb|C:\Users\yourusername\Documents\MATLAB| under Windows distributions\\[1ex]
-Type \verb|swip_version| at the MATLAB prompt to check if the scripts are correctly installed.
+Type \verb|swip_version| in the MATLAB prompt to check if the scripts are correctly installed.
 \end{itemize}
 
 \subsection{Install on GNU/Linux}
@@ -81,11 +79,12 @@ Before installing Seismic Unix and/or Geopsy, you need to make sure that these l
 \item \verb|libqt4-dev|
 \item \verb|liblapack-dev|
 \item \verb|libfftw3-dev|
+\item \verb|zlib1g-dev|
 
 \end{itemize}
 \subsubsection{Seismic Unix}
 \textit{The installation of Seismic Unix is only necessary to handle seismic data in order to compute, stack and pick dispersion images. If you have your own software for picking dispersion curves and just want to use SWIP to invert them, you can skip the installation of SU.}\\[2ex]
-The following instructions are mainly copied from the Seismic Unix (SU) \verb|Installation_Instructions| file (\url{http://www.cwp.mines.edu/cwpcodes/Installation_Instructions}).
+The following instructions are mainly copied from the Seismic Unix (SU) \verb|Installation_Instructions| file (\url{http://www.cwp.mines.edu/cwpcodes/Installation_Instructions}). Refer to it for more detailed instructions.
 
 \begin{itemize}
 \setlength\itemsep{2ex}
@@ -134,7 +133,7 @@ If you have to recompile along the way, type:
 \end{itemize}
 
 \subsubsection{SU extra binaries}
-Two extra codes, non-available in the default SU release, are required to run SWIP. The first one, \verb|supomegal|, computes the $p-\omega$ transform on a seismogram in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the SU files required to use SWIP (for more details, see Section 2: Converting field data in SU format).\\[1ex]
+Two extra codes, non-available in the default SU release, are required to run SWIP. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a seismogram in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|\footnote{\textbf{seg2segy} is available as a third party in SU, but does not work correctly on 64 bits systems. The version provided here has been modified to work under 64 bits environments.}, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the SU files required to use SWIP (for more details, see section \ref{sec:seg2su}).\\[1ex]
 To install these codes, follow these steps in the terminal:
 \begin{itemize}
 \setlength\itemsep{2ex}
@@ -192,7 +191,7 @@ To configure the installation in a custom \verb|/your/Geopsy/path| directory, ty
 \end{itemize}
 
 \subsubsection{Additionnal packages}
-Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise SWIP produces separated figures that would need to be concatenated manually). ImageMagick is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. PDFcrop cuts the extra edges around PDF created by MATLAB, while PDFjam is used to concatenate PDF images.
+Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise SWIP produces separate figures). ImageMagick is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. PDFcrop cuts the extra edges around PDF created by MATLAB, while PDFjam is used to concatenate PDF images.
 \begin{itemize}
 \setlength\itemsep{2ex}
 \item Install ImageMagick by typing in the terminal: \verb|sudo apt-get install imagemagick|
@@ -208,7 +207,7 @@ Some additionnal packages can be installed to concatenate figure results and pro
 
 \url{http://fr.mathworks.com/matlabcentral/answers/99815-why-do-i-receive-xsetup-errors-regarding-libxp-so-6-when-installing-or-launching-matlab-on-fedora-co}
 
-\item When running the inversion (module C), MATLAB can give you the error message \textit{dinver: symbol lookup error: /opt/Geopsy.org/lib/libQGpGuiTools.so.1: undefined symbol: \_ZN12QApplication10commitDataER15QSessionManager}.\\[1ex]
+\item When running the inversion (module C, with verbose=1), MATLAB can give you the error message \textit{dinver: symbol lookup error: /opt/Geopsy.org/lib/libQGpGuiTools.so.1: undefined symbol: \_ZN12QApplication10commitDataER15QSessionManager}.\\[1ex]
 It means there is a conflict between Ubuntu QT libraries and MATLAB QT libaries. A workaround is to delete the redundant libraries of MATLAB. These libraries are usually found in:
 
 \verb|/your/MATLAB/path/bin/glnxa64/libQtGui.so.4|
@@ -219,7 +218,7 @@ It means there is a conflict between Ubuntu QT libraries and MATLAB QT libaries.
 \end{itemize}
 
 \subsection{Install on Windows}
-SWIP has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar for Windows XP, Vista or 8. As mentionned earlier, the Linux-like environment Cygwin is currently required to run Seismic Unix on Windows. However, Microsoft has just announced that Windows 10 will soon be able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (WSL). Hopefully we will soon be able to run Seismic Unix without any third party software like Cygwin.
+SWIP has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar on other Windows versions. As mentionned earlier, the Linux-like environment Cygwin is currently required to run Seismic Unix on Windows. However, Microsoft has just announced that Windows 10 will soon be able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (\url{https://msdn.microsoft.com/en-us/commandline/wsl/about}). Hopefully we will soon be able to run Seismic Unix without any third party software like Cygwin.
 
 \subsubsection{Cygwin}
 \textit{The installation of Cygwin is only necessary to run Seismic Unix (see \ref{subsec:WinSU}). and ImageMagick (see \ref{subsec:WinExtra}). If you don't need SU or ImageMagick, you can skip the installation of Cygwin.}
@@ -417,10 +416,14 @@ You also need to install TeX Live which contains PDFjam and pdfcrop, two package
 
 \end{itemize}
 
+%%%%%%
+
+\clearpage
 \section{How to use SWIP}
 \subsection{Before starting}
-\subsubsection{Creating your SU file}
-Unless you have your own software for picking dispersion curves, you will need a SU file containing all shot gathers in order to compute, stack and pick surface-wave dispersion. The required headers are \verb|fldr|, \verb|tracf|, \verb|gx|, \verb|sx|, \verb|ns| and \verb|dt|. You can also add \verb|gelev|, \verb|selev| for non flat topography.\\[2ex]
+\subsubsection{Converting field data in SU format}
+\label{sec:seg2su}
+Unless you have your own software for picking dispersion curves, you will need a SU file containing all shot gathers in order to compute, stack and pick surface-wave dispersion. The required headers are \verb|fldr|, \verb|tracf|, \verb|gx|, \verb|sx|, \verb|ns| and \verb|dt|. You can also add \verb|gelev|, \verb|selev| to consider the topography.\\[2ex]
 For users non familiar with the use of Seismic Unix, the tool seg2su.m is provided for easy creation of SU files in \verb|/your/MATLAB/path/SWIP/tools|:
 
 \begin{itemize}
@@ -428,9 +431,9 @@ For users non familiar with the use of Seismic Unix, the tool seg2su.m is provid
 \setlength{\parindent}{5ex}
 \item Execute the command seg2su in the MATLAB command window.
 \item Select folder containing SEG2 files (they should be named with increasing numbers; e.g. 1001.dat, 1002.dat,...).
-\item To import topography, click \textit{Yes} when asked, then select an ASCII file containing 2 columns (X,Z). You can add an altitude shift (in meters), and set up the scaling factor. The scaling factore is used to convert your X and Z coordinates in full integers since SU can not read decimals. The factor has to be set according to your coordinates precision (e.g. use a scaling factor of 100 if you have a precision of 0.01~m to convert in centimeters).
+\item To import topography, click \textit{Yes} when asked, then select an ASCII file containing 2 columns (X,Z). You can add an altitude shift (in meters), and set up the scaling factor. The scaling factor is used to convert your X and Z coordinates in full integers since SU can not read decimals. The factor has to be set according to your coordinates precision (e.g. use a scaling factor of 100 if you have a precision of 0.01~m, this will convert everything in centimeters).
 \item The topography profile and the acquisition setup should be displayed. Check if the source and geophone positions are correct.
-\item When importing SEG2 files with non-integer coordinates, only the integer part is read (e.g. 2.5~m becomes 2~m), so you might have to setup manually the geophones and shot X coordinates. If that is the case, click \textit{No, reset all headers} to correctly define the coordinates in the headers. First enter the number of roll-alongs in the acquisition, then for each roll a vector [x1 x2 ... xn] of coordinates for the sources and the geophones. If you did not import topography (i.e. flat profile), you need to enter a scaling factor (see previous item).
+\item When importing SEG2 files with non-integer coordinates, only the integer part is read (e.g. 2.5~m becomes 2~m), so you might have to setup manually the geophones and shot coordinates. If that is the case, click \textit{No, reset all headers} to correctly define the coordinates in the headers. First enter the number of roll-alongs in the acquisition, then for each roll a vector [x1 x2 ... xn] of coordinates for the sources and the geophones. If you did not import topography (i.e. flat profile), you need to enter a scaling factor (see previous item).
 \end{itemize}
 
 \subsubsection{Creating your project directory}
@@ -464,8 +467,14 @@ The first module A\_SWIPdisp takes advantage of multi-shot acquisition set-ups t
 
 \item Finally, the parameter \verb|side| defines if the dispersion is extracted and stacked from shots located on the left ('L'), on the right ('R') or on both sides ('B') of the window.\\[2ex]
 %
-If these parameters are used for the first time, SWIP will create a folder named W\verb|nWmin|\_\verb|nWmax|.dW\verb|dW|.dS\verb|dSmin|\_\verb|dSmax|.\verb|side| (hereafter refered as subproject directory or subprojdir). The data are then stored in the file.dat folder, created in the subproject directory. If the subproject directory already exists, SWIP will overwrite the existing data for the selected Xmids. If \verb|clearmem = 1|, the file.dat folder will contain 3 different SU files for each Xmid position (windowed seismogram Xmid.sum.su, spectrogram of the windowed seismogram Xmid.sum.spec and stacked dispersion image Xmid.sum.dsp). If \verb|clearmem = 0|, the file.dat folder will also have one subfolder for each Xmid, containing all windowed seismograms, spectrograms and individual dispersion images in SU format. Finally, the file.dat folder will also contains a project.param.mat file with the main projects parameters.
+If these parameters are used for the first time, SWIP will create a folder named W\verb|nWmin|\_\verb|nWmax|.dW\verb|dW|.dS\verb|dSmin|\_\verb|dSmax|.\verb|side| (hereafter refered as subproject directory or subprojdir). The data are then stored in the file.dat folder, created in the subproject directory. If the subproject directory already exists, SWIP will overwrite the existing data for the selected Xmids. If \verb|clearmem = 1|, the file.dat folder will contain 3 different SU files for each Xmid position (windowed seismogram Xmid.sum.su, spectrogram of the windowed seismogram Xmid.sum.spec and stacked dispersion image Xmid.sum.dsp). If \verb|clearmem = 0|, the file.dat folder will also have one subfolder for each Xmid, containing all windowed seismograms, spectrograms and individual dispersion images in SU format. Finally, the file.dat folder will also contains a project.param.mat file with the main projects parameters (do not delete that file).
 \end{itemize}
+
+\begin{figure}
+\centerline{\includegraphics[width=0.75\linewidth]{figures/stack_wind.png}}
+\caption{Stacking and windowing workflow.}
+\label{fig:stack_wind}
+\end{figure}
 
 \paragraph{P-omega transform settings (used if calc=1)}
 \begin{itemize}
@@ -488,7 +497,7 @@ If these parameters are used for the first time, SWIP will create a folder named
 
 \item Define the frequency limits of the filter \verb|fcutlow| and \verb|fcuthigh|, along with the apodisation parameter \verb|taper|.
 
-\item Set \verb|mute = 1| to apply a mute\footnote{The mute consists in zeroing samples before or after a specific time.} to the seismic data before the $p-\omega$ stack, or \verb|mute = 0| otherwise.
+\item Set \verb|mute = 1| to apply a mute\footnote{The mute consists in zeroing samples before and/or after a specific time.} to the seismic data before the $p-\omega$ stack, or \verb|mute = 0| otherwise.
 
 \item Define the first and last trace upper mute limits with \verb|tmin1| and \verb|tmin2|, and the first and last trace lower mute limits with \verb|tmax1| and \verb|tmax2|.
 \end{itemize}
@@ -498,23 +507,23 @@ If these parameters are used for the first time, SWIP will create a folder named
 \setlength\itemsep{2ex}
 \setlength{\parindent}{5ex}
 
-\item Set \verb|pick = 1| to manually pick dispersion curves. I recommend to first start the script with \verb|calc = 1| and \verb|pick = 0|, then once it's done restart it with \verb|calc = 0| and \verb|pick = 1| (picking while calculating can take a really long time). To use the automatic picking option (\verb|pick = 2|), you first need to pick one dispersion curve with \verb|pick = 1|. It will then look for dispersion maxima in the range of the original picked dispersion curve.
+\item Set \verb|pick = 1| to manually pick dispersion curves. I recommend to first start the script with \verb|calc = 1| and \verb|pick = 0|, then once it's done restart it with \verb|calc = 0| and \verb|pick = 1| (picking while calculating can take a really long time). To use the automatic picking option (\verb|pick = 2|), you first need to pick one dispersion curve with \verb|pick = 1|. It will then look for dispersion maxima in the range of the first picked dispersion curve.
 
-\item \verb|mappick| defines the colormap used for the picking. While picking, you will be able to change the colormap for a specific Xmid, but it will always start again with \verb|pickstyle| for a new Xmid.
+\item \verb|mappick| defines the colormap used for the picking. While picking, you will be able to change the colormap for a specific Xmid, but it will always start with \verb|mappick| for each new Xmid.
 
-\item Set \verb|mappicklog = 1| to use a logarithmic colorscale, or \verb|mappicklog = 0| for a linear colorscale.
+\item Set \verb|mappicklog = 1| to use a "logarithmic" colorscale, or \verb|mappicklog = 0| for a linear colorscale.
 
 \item \verb|dvmin| is the minimum phase velocity sample (in m/s) used to display and pick the dispersion. This option is used to accelerate display when picking, but will reduce the resolution of the picked phase velocity dispersion curves, which can be critical when dealing with small velocity variations. It has no impact on the saved dispersion images.
 
-\item \verb|modeinit| is the first mode that is picked (0 corresponding to the fundamental mode, 1 to the first higher mode, 2 to the second higher mode,...). While picking, you will be able to change the picked mode for a specific Xmid, but it will always start again with \verb|modeinit| for a new Xmid.
+\item \verb|modeinit| is the first mode that is picked (0 corresponding to the fundamental mode, 1 to the first higher mode, 2 to the second higher mode,...). While picking, you will be able to change the picked mode for a specific Xmid, but it will always start with \verb|modeinit| for each new Xmid.
 
-\item Set \verb|pickstyle = 1| to use assisted picking (look for the closest maxima around the pick), or \verb|pickstyle = 0| to use full manual picking. While picking, you will be able to change the picking style for a specific Xmid, but it will always start again with \verb|pickstyle| for a new Xmid.
+\item Set \verb|pickstyle = 1| to use semi-automatic picking (look for the closest maxima around the pick), or \verb|pickstyle = 0| to use full manual picking. While picking, you will be able to change the picking style for a specific Xmid, but it will always start with \verb|pickstyle| for each new Xmid.
 
-\item Set \verb|smoothpick = 1| to smooth the picks with a moving average filter, or \verb|smoothpick = 0| for no smoothing. While picking, you will be able to change the smoothing style for a specific Xmid, but it will always start again with \verb|smoothpick| for a new Xmid.\\[2ex]
+\item Set \verb|smoothpick = 1| to smooth the picks with a moving average filter, or \verb|smoothpick = 0| for no smoothing. While picking, you will be able to change the smoothing style for a specific Xmid, but it will always start with \verb|smoothpick| for each new Xmid.\\[2ex]
 %
-Picked dispersion curves are stored in subprojdir/file.pick. They are named according to the Xmid position and the corresponding mode (Xmid.Mmode.pvc), and contain three columns with the frequency, phase velocity and phase velocity errors.\\[2ex]
+Picked dispersion curves are stored in subprojdir/file.pick. They are named according to the Xmid position and the corresponding mode (Xmid.Mmode.pvc), and contain three columns with the frequency, phase velocity and phase velocity error.\\[2ex]
 %
-During picking, the user can switch between Xmids and modes, add or delete points, save or discard the current picking, and change the colormap, the picking style and the smoothing style (more details when running the script in the MATLAB Command Window). Saving new picks will results in the overwriting of previously picked dispersion curves.
+During picking, the user can switch between Xmids and modes, add or delete points, save or discard the current picking, and change colormap, picking style and smoothing style (more details when running the script in the MATLAB Command Window). Saving new picks will results in the overwriting of previously picked dispersion curves.
 
 \end{itemize}
 
@@ -533,13 +542,13 @@ During picking, the user can switch between Xmids and modes, add or delete point
 
 \item \verb|resampvec| is the vector along which dispersion curves are resampled. It has to be a wavelength vector (in m) if \verb|sampling = 1|, and a frequency vector (in Hz) if \verb|sampling = 0|.
 
-\item Set \verb|freqlim = 0| to set manually the minimum frequency of the resampled dispersion curve, or \verb|freqlim = 1| to use an automatic cutoff frequency determined from an amplitude threshold on the spectrogram.
+\item Set \verb|freqlim = 0| to set manually the minimum frequency of the resampled dispersion curve, or \verb|freqlim = 1| to use an automatic cutoff frequency determined from an amplitude threshold on the spectrogram (cf. \verb|specampmin|).
 
 \item \verb|fminpick| is the minimum frequency used to resample dispersion curves when \verb|freqlim = 0|. When \verb|freqlim = 1|, \verb|fminpick| will be the minimum automatic cutoff frequency allowed.
 
 \item \verb|specampmin| is the minimum amplitude of the spectrogram (in normalized units) used to determine the automatic cutoff frequency.\\[2ex]
 %
-Target files are stored in subprojdir/file.targ. They are named according to their Xmid position (Xmid.target). If a target file already exists for the selected Xmid when using \verb|target = 1|, it will be overwritten. Run the script with \verb|calc = 0| and \verb|pick = 0| to change the targets parameter (sampling, number of modes, error type,...).
+Target files are stored in subprojdir/file.targ and contain all modes selected for inversion. They are named according to their Xmid position (Xmid.target). If a target file already exists for the selected Xmid when using \verb|target = 1|, it will be overwritten. Run the script with \verb|calc = 0| and \verb|pick = 0| to change only the targets parameter (sampling, number of modes, error type,...).
 
 \end{itemize}
 
@@ -550,7 +559,7 @@ Target files are stored in subprojdir/file.targ. They are named according to the
 
 \item Set \verb|err = 1| to define a phase velocity empirical error depending on the frequency and the window size (Lorentz error), \verb|err = 2| to define a phase velocity percentage error, or \verb|err = 0| for no error.
 
-\item \verb|nWfac|, also called the "cheating" factor, allows to tweak the Lorentz in order to increase (\verb|nWfac < 1|) or reduce (\verb|nWfac > 1|) the size of the error bars by calculating the error as if the window size nW was actually nW*nWfac. It is used only if \verb|err = 1|.
+\item \verb|nWfac| allows to tweak the Lorentz error in order to increase (\verb|nWfac < 1|) or reduce (\verb|nWfac > 1|) the size of the error bars by calculating the error as if the mean window size nW was actually nW*nWfac. It is used only if \verb|err = 1|.
 
 \item \verb|minerrvel| is the minimum velocity error (in m/s) allowed when \verb|err = 1|. It prevents having too small error bars at high frequency in which no theoretical model could fit.
 

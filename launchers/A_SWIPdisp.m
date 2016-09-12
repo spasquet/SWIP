@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V16.7.19
+%%% S. Pasquet - V16.9.12
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
@@ -50,7 +50,7 @@ tmax2       = 1;    % Mute after tmax2 at last trace (s) (used if mute=1)
 pick        = 0;          % Pick dispersion: manual (=1), auto (=2) or not (=0)
 mappick     = parula(39); % Colormap for picked dispersion image
 mappicklog  = 1;          % Log colorscale for dispersion (=1) or linear (=0)
-dvmin       = 5;          % Min. phase velocity sampling (m/s)
+dvmin       = 2;          % Min. phase velocity sampling (m/s)
 modeinit    = 0;          % First picked propagation mode (0 = fundamental)
 pickstyle   = 1;          % Semi-automatic picking (=1) or manual (=0)
 smoothpick  = 1;          % Smooth picking (=1) or not (=0)

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.8.31
+%%% S. Pasquet - V16.9.12
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs and Poisson's ratio pseudo-sections
 
@@ -16,11 +16,10 @@ if swip==0
     return
 end
 
-if plot2dcal==0 && plot2dmod==0 && plot2dert==0 && plothisto==0
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    fprintf('\n              Select at least one plot option');
-    fprintf('\n   Set either "plot2dcal", "plothisto", "plot2dmod" or "plot2dert" to 1');
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+if plot2dcal==0 && plot2dmod==0 && plot2dert==0 && plothisto==0 && savexzv==0
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    fprintf('\n           Select at least one plot/save option');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     return
 end
 
@@ -171,7 +170,7 @@ else
 end
 
 % Select velocity and STD models
-if ((swip==1 && usevptomo==1) || swip==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1)
+if ((swip==1 && usevptomo==1) || swip==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1 || savexzv==1)
     [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vp model');
     Vpfile=fullfile(pathvel,filevel); % File with velocity (3 columns X,Z,Vp)
     if pathvel==0
@@ -338,7 +337,7 @@ end
 modexist=zeros(1,Xlength);
 fprintf('\n  Reading models\n');
 for ix=Xmidselec
-    if plot2dcal==0 && plot2dmod==0 && plothisto==0
+    if plot2dcal==0 && plot2dmod==0 && plothisto==0 && savexzv==0
         break
     end
     
@@ -576,7 +575,7 @@ for ix=Xmidselec
             delete(filedisp);
         end
         
-        if plot2dmod==1
+        if plot2dmod==1 || savexzv==1
             if (plotDOI==0 || maskDOI==0) && swip==1
                 DOI(ix)=zround(ix)-maxdepth;
                 indf(ix)=round(maxdepth/dz);
@@ -606,7 +605,7 @@ for ix=Xmidselec
                     if isempty(hsdtmp)==1 % Case all VsSTD > stdMAX
                         hsdtmp=moddepth(find(vsstd<=median(vsstd),1,'first'));
                     elseif hsdtmp==0 % Case all VsSTD < stdMAX
-                        hsdtmp=flipmoddepth(find(flipvsstd~=flipvsstd(1),1,'first'));
+                        hsdtmp=flipmoddepth(find(flipvsstd<flipvsstd(1),1,'first'));
                         if isempty(hsdtmp)==1
                             hsdtmp=flipmoddepth(1);
                         end
@@ -727,7 +726,7 @@ for ix=Xmidselec
     end
 end
 
-if sum(modexist)==0 && (plot2dcal==1 || plot2dmod==1 || plothisto==1)
+if sum(modexist)==0 && (plot2dcal==1 || plot2dmod==1 || plothisto==1 || savexzv==1)
     fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     fprintf('\n                No model existing with these settings');
     fprintf('\n   Check settings => "modeltype", "avertype", "nbest" and "outpoints"');
@@ -912,7 +911,7 @@ if sum(modexist)>0
             % Lambda max for each Xmid
             f11=subplot(2,1,1);
             f3=plot_curv(showplot,XmidT,lmaxpick,[],'.-',[0 0 0],[],axetop,0,0,fs,'X (m)',...
-                'Lmax (m)',[],[xMIN xMAX],[0 max(resampvec)+5],[],[],[],...
+                'Lmax (m)',[],[xMIN xMAX],[0 max(resampvec)+5],[],xticks,[],...
                 [],[],[],[0 0 24 12],[],[]);
             sizeax=get(gca,'Position');
             % Misfit for each Xmid

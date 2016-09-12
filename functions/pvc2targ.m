@@ -1,6 +1,6 @@
 function lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
-%%% S. Pasquet - V16.6.28
+%%% S. Pasquet - V16.9.12
 % Convert .pvc ASCII file in .target dinver file
 
 if nargin<7
@@ -57,6 +57,11 @@ for ip=1:nmode
         return
     end
     nsp=length(vresamp);
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    fprintf('\n              Warning: Number of samples > 100');
+    fprintf('\n        Dinver will ask confirmation for each inversion');
+    fprintf('\n   Run module C with verbose = 1 or decrease number of sample');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     fprintf(fid0,'%s \n','<ModalCurve>');
     fprintf(fid0,'%s \n',['<name>',pvcfile,'</name>']);
     fprintf(fid0,'%s \n',['<log>',num2str(nsp),...

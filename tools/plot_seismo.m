@@ -1,6 +1,8 @@
 function plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX)
 %%% S. Pasquet - V16.8.18
 % Quick plot of seismogram
+%
+% plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX)
 
 if exist('seismofile','var')==0 || isempty(seismofile)==1
     [seismofile,seismopath]=uigetfile('*.su','Select seismogram file');
