@@ -1,4 +1,4 @@
-%%% S. Pasquet - V16.9.12
+%%% S. Pasquet - V16.9.15
 
 %% A_SWIPdisp settings
 % Main settings
@@ -10,11 +10,11 @@ end
 % Windowing and stacking settings (used if calc=1)
 % Min. window size (nb of traces)
 if exist('nWmin','var')==0 || isempty(nWmin)==1
-    nWmin=21; 
+    nWmin=31; 
 end
 % Max. window size (nb of traces)
 if exist('nWmax','var')==0 || isempty(nWmax)==1
-    nWmax=21; 
+    nWmax=31; 
 end
 % Shift between two successive windows (nb of traces)
 if exist('dW','var')==0 || isempty(dW)==1
@@ -22,21 +22,21 @@ if exist('dW','var')==0 || isempty(dW)==1
 end
 % Offset min. between window and shot (nb of traces)
 if exist('dSmin','var')==0 || isempty(dSmin)==1
-    dSmin=1; 
+    dSmin=0; 
 end
 % Offset max. between window and shot (nb of traces)
 if exist('dSmax','var')==0 || isempty(dSmax)==1
-    dSmax=5; 
+    dSmax=20; 
 end
 % Source side (B=both, L=left, R=right)
 if exist('side','var')==0 || isempty(side)==1
-    side='L'; 
+    side='B'; 
 end
 
 % P-omega transform settings (used if calc=1 or calc=2)
 % Space scaling factor (X=X/xsca) (used if calc=1 or calc=2)
 if exist('xsca','var')==0 || isempty(xsca)==1
-    xsca=1; 
+    xsca=[]; 
 end
 % Time scaling factor (T=T/xsca)
 if exist('tsca','var')==0 || isempty(tsca)==1
@@ -60,7 +60,7 @@ if exist('vmin','var')==0 || isempty(vmin)==1
 end
 % Max. velocity for p-omega transform (m/s)
 if exist('vmax','var')==0 || isempty(vmax)==1
-    vmax=2000; 
+    vmax=1500; 
 end
 % Vel. vs Freq. (=0) or Freq. vs Vel. (=1)
 if exist('flip','var')==0 || isempty(flip)==1
@@ -108,7 +108,7 @@ end
 % Dispersion picking settings
 % Pick dispersion: manual (=1), auto (=2) or not (=0)
 if exist('pick','var')==0 || isempty(pick)==1
-    pick=1; 
+    pick=0; 
 end
 % Colormap for picked dispersion image
 if exist('mappick','var')==0 || isempty(mappick)==1
@@ -138,7 +138,7 @@ end
 % Dispersion curves sampling settings
 % Convert picks to dinver target (=1) or not (=0)
 if exist('target','var')==0 || isempty(target)==1
-    target=1; 
+    target=0; 
 end
 % Surface-wave type (R=Rayleigh or L=Love)
 if exist('wave','var')==0 || isempty(wave)==1
@@ -198,7 +198,7 @@ if exist('plotdisp','var')==0 || isempty(plotdisp)==1
 end
 % Save stacked dispersion images with picked curves (=1) or not (=0)
 if exist('plotpckdisp','var')==0 || isempty(plotpckdisp)==1
-    plotpckdisp=1; 
+    plotpckdisp=0; 
 end
 % Save spectrograms (=1) or not (=0)
 if exist('plotspec','var')==0 || isempty(plotspec)==1
@@ -222,7 +222,7 @@ if exist('plot1dobs','var')==0 || isempty(plot1dobs)==1
 end
 % Plot picked dispersion on 2D pseudo-section (=1) or not (=0)
 if exist('plot2dobs','var')==0 || isempty(plot2dobs)==1
-    plot2dobs=1; 
+    plot2dobs=0; 
 end
 % Show images before saving (=1) or not (=0)
 if exist('showplot','var')==0 || isempty(showplot)==1
@@ -394,7 +394,7 @@ if exist('thmin','var')==0 || isempty(thmin)==1
 end
 % Max. thickness per layer (m)
 if exist('thmax','var')==0 || isempty(thmax)==1
-    thmax=3; 
+    thmax=2.5; 
 end
 
 % Allow low velocity layer (=1) or not (=0) for each layer
@@ -432,11 +432,11 @@ if exist('Numax','var')==0 || isempty(Numax)==1
 end
 % Min. Rho for each layer
 if exist('Rhomin','var')==0 || isempty(Rhomin)==1
-    Rhomin=1500; 
+    Rhomin=2000; 
 end
 % Max. Rho for each layer
 if exist('Rhomax','var')==0 || isempty(Rhomax)==1
-    Rhomax=2500; 
+    Rhomax=2000; 
 end
 
 % Vp linked (=1) or not (=0) to Vs for each layer
@@ -463,7 +463,7 @@ if exist('dz','var')==0 || isempty(dz)==1
 end
 % Average Vp along window width (=1) or extract at Xmid (=0)
 if exist('vpaver','var')==0 || isempty(vpaver)==1
-    vpaver=1; 
+    vpaver=0; 
 end
 % Factor to increase velocity range (vmin-vfac*vmin<v<vmax+vfac*vmax)
 if exist('vfac','var')==0 || isempty(vfac)==1
@@ -492,7 +492,7 @@ if exist('nrun','var')==0 || isempty(nrun)==1
 end
 % Nb of iteration per run
 if exist('itmax','var')==0 || isempty(itmax)==1
-    itmax=100; 
+    itmax=150; 
 end
 % Nb of starting models
 if exist('ns0','var')==0 || isempty(ns0)==1
@@ -500,11 +500,11 @@ if exist('ns0','var')==0 || isempty(ns0)==1
 end
 % Nb of models created at each iterations
 if exist('ns','var')==0 || isempty(ns)==1
-    ns=100; 
+    ns=75; 
 end
 % Nb of previous models to build new sub-parameter space
 if exist('nr','var')==0 || isempty(nr)==1
-    nr=100; 
+    nr=50; 
 end
 % Display inversion process (=1) or not (=0)
 if exist('verbose','var')==0 || isempty(verbose)==1
@@ -570,13 +570,10 @@ end
 if exist('plot1dVS','var')==0 || isempty(plot1dVS)==1
     plot1dVS=1; 
 end
-% 1D Vs model to plot (1=best, 2=layered, 3=smooth, 4=smlay and 5=ridge)
+% 1D Vs model to plot (1=best, 2=averaged layered, 3=average smooth,
+% 4=weighted layered, 5=weighted smooth, 6=ridge)
 if exist('modeltype','var')==0 || isempty(modeltype)==1
-    modeltype=2; 
-end
-% Mean model (=0) or weighted model (=1)
-if exist('avertype','var')==0 || isempty(avertype)==1
-    avertype=0; 
+    modeltype=5; 
 end
 
 % Min. depth (m)

@@ -1,6 +1,6 @@
 function acquiparam=get_acquiparam(sufile,xsca,istomo)
 
-%%% S. Pasquet - V16.3.31
+%%% S. Pasquet - V16.9.14
 % get_acquiparam.m retrieves .SU file acquisition parameters
 %
 % acquiparam=get_acquiparam(sufile,xsca)
@@ -27,7 +27,12 @@ if exist('xsca','var')==0 || isempty(xsca)==1
     [~,xsca]=unix(['sugethw < ',sufile,' scalco output=geom | uniq']);
     xsca=abs(str2double(xsca));
     if xsca==0
-        xsca=1;
+       answer1=inputdlg({'Scaling factor'},'',1);
+    if isempty(answer1)==1
+        xsca=0;
+    else
+        xsca=str2double(answer1(1));
+    end
     end
 end
 

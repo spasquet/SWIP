@@ -2,7 +2,7 @@ function paramname=mod2param(nlay,nsublay,thmin,thmax,shape,lvz,...
     Vpmin,Vpmax,Numin,Numax,Vsmin,Vsmax,Rhomin,Rhomax,...
     Vplink,Nulink,Vslink,Rholink,paramname)
 %
-% %% S. Pasquet - V16.6.28
+% %% S. Pasquet - V16.9.13
 % Create parameterization for dinver
 % nlay = Nb of layers (including half-space)
 %
@@ -370,9 +370,11 @@ else
     end
 end
 % Conversion in param
-% tar(strcat(paramname,'.tar.gz'),'contents.xml');
-% movefile(strcat(paramname,'.tar.gz'),paramname);
-unix(['tar czf ',paramname,' contents.xml']);
+if ismac == 1
+    unix(['gtar czf ',paramname,' contents.xml']);
+else
+    unix(['tar czf ',paramname,' contents.xml']);
+end
 delete('contents.xml');
 
 

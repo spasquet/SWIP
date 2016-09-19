@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V16.8.31
+%%% S. Pasquet - V16.9.14
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -136,31 +136,35 @@ else
     dir_img_inv_1d=fullfile(dir_img_ind,'1dmodels');
 end
 if modeltype==1
-    modeltype='best';
+    modeltype='best'; avertype='Vms';
 elseif modeltype==2
-    modeltype='layered';
+    modeltype='layered'; avertype='Vms';
 elseif modeltype==3
-    modeltype='smooth';
-% elseif modeltype==4
-%     modeltype='smlay';
+    modeltype='smooth'; avertype='Vms';
 elseif modeltype==4
-    modeltype='ridge';
+    modeltype='layered'; avertype='Vws';
+elseif modeltype==5
+    modeltype='smooth'; avertype='Vws';
+    %     elseif modeltype==4
+    %         modeltype='smlay';
+elseif modeltype==6
+    modeltype='ridge'; avertype='Vms';
 else
-    modeltype='layered';
-    fprintf('\n  Layered model selected by default\n');
+    modeltype='smooth'; avertype='Vws';
+    fprintf('\n  Weighted smooth model selected by default\n');
 end
-if avertype==0
-    avertype='Vms';
-elseif avertype==1
-    if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-        avertype='Vms';
-    else
-        avertype='Vws';
-    end
-else
-    avertype='Vms';
-    fprintf('\n  Average model selected by default\n');
-end
+%     if avertype==0
+%         avertype='Vms';
+%     elseif avertype==1
+%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
+%             avertype='Vms';
+%         else
+%             avertype='Vws';
+%         end
+%     else
+%         avertype='Vms';
+%         fprintf('\n  Average model selected by default\n');
+%     end
 
 % Select velocity and STD models
 if usevptomo==1 || tomo==1

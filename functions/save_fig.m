@@ -1,6 +1,6 @@
 function save_fig(h,filename,format,res,crop,verbose,autosize)
 
-%%% S. Pasquet - V16.6.28
+%%% S. Pasquet - V16.9.12
 % Save figure in various format
 
 if exist('verbose','var')==0 || isempty(verbose)==1
@@ -17,9 +17,9 @@ if str2double(matrelease(1:4))>2014
     if autosize==1
         set(h,'paperpositionmode','auto');
     end
-    if strcmp(format,'fig')==1
+    if strcmpi(format,'fig')==1
         savefig(h,filename);
-    elseif strcmp(format,'pdf')==1
+    elseif strcmpi(format,'pdf')==1
         print(['-f' num2str(h)],['-r',num2str(res)],['-d',format],...
             '-painters',[filename,'.tmp']);
         movefile([filename,'.tmp'],filename);
@@ -34,9 +34,9 @@ else
      if autosize==1
         set(h,'paperpositionmode','auto');
     end
-    if strcmp(format,'fig')==1
+    if strcmpi(format,'fig')==1
         saveas(h,filename);
-    elseif strcmp(format,'pdf')==1
+    elseif strcmpi(format,'pdf')==1
         print(['-f' num2str(h)],['-r',num2str(res)],['-d',format],...
             '-painters',[filename,'.tmp']);
         movefile([filename,'.tmp'],filename);
@@ -49,8 +49,8 @@ else
     end
 end
 
-if crop==1 && strcmp(format,'fig')~=1
-    if strcmp(format,'pdf')==1
+if crop==1 && strcmpi(format,'fig')~=1
+    if strcmpi(format,'pdf')==1
         [test,~]=unix(['pdfcrop -margins 10 ',filename,' ',filename]);
 %         if test~=0
 %             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');

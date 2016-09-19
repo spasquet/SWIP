@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V16.4.14
+%%% S. Pasquet - V16.9.15
 %%% SWIPparam.m creates the parameterization file for surface-wave inversion
 %%% It can create either a global file for all the profile or create
 %%% automatic parameterization for specific Xmid based on a velocity model
@@ -11,9 +11,8 @@ clear all; clc; close all;
 %%%-------------------------%%%
 %%% START OF INITIALIZATION %%%
 
-Xmidselec = [];   % Select Xmids (comment or [] to select all)
-
 %%% Main settings
+Xmidselec = [];   % Select Xmids (comment or [] to select all)
 paramname = [];   % Name of parameterization file (empty for autoname)
 paramtype = 0;    % Type of parameterization
 %%% 0 => default inversion (same parameterization for all Xmids)
@@ -30,7 +29,7 @@ nlay      = 11;   % No. of layers (including half-space)
 
 nsublay   = 10;   % No. of sublayers per layer
 thmin     = 0.5;  % Min. thickness per layer (m)
-thmax     = 3;    % Max. thickness per layer (m)
+thmax     = 2.5;    % Max. thickness per layer (m)
 
 lvz       = 0;    % Allow low velocity layer (=1) or not (=0)
 shape     = 1;    % Shape of the velocity variation with depth
@@ -40,8 +39,8 @@ Vsmin     = 10;   % Min. Vs (m/s)
 Vsmax     = 2500; % Max. Vs (m/s)
 Vpmin     = 10;   % Min. Vp (m/s)
 Vpmax     = 5000; % Max. Vp (m/s)
-Rhomin    = 1500; % Min. Rho (kg/m3)
-Rhomax    = 2500; % Max. Rho (kg/m3)
+Rhomin    = 2000; % Min. Rho (kg/m3)
+Rhomax    = 2000; % Max. Rho (kg/m3)
 Numin     = 0.1;  % Min. Poisson's ratio
 Numax     = 0.5;  % Max. Poisson's ratio
 
@@ -49,10 +48,9 @@ Vplink    = 1;    % Vp linked (=1) or not (=0) to Vs
 Rholink   = 1;    % Rho linked (=1) or not (=0) to Vs
 Nulink    = 1;    % Nu linked (=1) or not (=0) to Vs
 
-%%% Automatic parameterization settings (used if paramtype=1,2,3 or 4)
+%%% Semi-automatic parameterization settings (used if paramtype=1,2,3 or 4)
 plot2dVP  = 1;    % Plot imported Vp models (=1) or not (=0)
 dz        = 0.2;  % Sampling in depth (m)
-vpaver    = 1;    % Average Vp below window (=1) or extract at Xmid (=0)
 vfac      = 0.25; % Increase Vp range (Vpmin-vfac*Vpmin<v<Vpmax+vfac*Vpmax)
 linklvz   = 0;    % Link Vs LVZ with Vp LVZ (=1) or not (=0)
 

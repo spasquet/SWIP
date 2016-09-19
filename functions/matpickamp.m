@@ -1,7 +1,7 @@
-function [Vi,deltac,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,pickstyle,modeinit,...
+function [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,pickstyle,modeinit,...
     err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
 
-%%% S. Pasquet - V16.7.18
+%%% S. Pasquet - V16.9.15
 % Pick amplitudes of dispersion image
 
 fprintf(['\n  Picking mode ',num2str(modeinit),'\n']);
@@ -10,18 +10,22 @@ h=get(gca,'children');
 button=1;
 i=0; closefig=0;
 modenext=[]; xmidprev=0;
+fsave=[];Vsave=[];deltacsave=[];
 
 if exist(filepick,'file')==2
     Vprev=load(filepick);
     Vi=interp1qr(Vprev(:,1),Vprev(:,2),f')';
     deltac=interp1qr(Vprev(:,1),Vprev(:,3),f')';
-    vmaxamp=Vi(isnan(Vi)==0);
-    fmaxamp=f(isnan(Vi)==0);
+%     vmaxamp=Vi(isnan(Vi)==0);
+%     fmaxamp=f(isnan(Vi)==0);
+    fmaxamp=Vprev(:,1);
+    vmaxamp=Vprev(:,2);
+    deltacamp=Vprev(:,3);
     i=length(Vi);
     hold on;
-    h0=plot(f,Vi,'w.');
+    h0=plot(fmaxamp,vmaxamp,'w.');
 else
-    Vi=[]; deltac=[]; 
+    Vi=[]; deltac=[];  fmaxamp=[]; vmaxamp=[]; deltacamp=[];
 end
 
 fprintf('\n  ENTER or close window : Save current picks and go to next Xmid');
@@ -37,6 +41,7 @@ fprintf('\n  X : Discard current picks and stop script (keep previous picks)');
 fprintf('\n  M : Switch between manual and semi-automatic picking');
 fprintf('\n  S : Switch between smooth and regular picking');
 fprintf('\n  D : Delete one or several points');
+fprintf('\n  R : Reset all picks');
 fprintf('\n  E : Change error style (no error, percentage or lorentz)');
 fprintf('\n  C : Open colormap editor\n');
 
@@ -46,49 +51,77 @@ while button==1
     [Fpick,Vpick,button]=ginput(1);
     catch
         closefig=1;
+        if isempty(Vi)==1
+            Vsave=0;
+            fprintf('\n  No picks - Go to next Xmid\n');
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
+        end
         fprintf(['\n  Mode ',num2str(modeinit),' saved - Go to next Xmid\n']);
         return
     end
     if isempty(button)==1 % Press ENTER to end picking, save pick file and go to next Xmid
         if isempty(Vi)==1
-            i=i-1; button=1;
-            fprintf('\n  Please pick at least 2 points to save dispersion curve\n');
-            continue
+            Vsave=0;
+            fprintf('\n  No picks - Go to next Xmid\n');
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
         end
         fprintf(['\n  Mode ',num2str(modeinit),' saved - Go to next Xmid\n']);
         break
     elseif button==8 % Press BACKSPACE to end picking, save pick file and go to previous Xmid
         if isempty(Vi)==1
-            i=i-1; button=1;
-            fprintf('\n  Please pick at least 2 points to save dispersion curve\n');
-            continue
+            Vsave=0;
+            fprintf('\n  No picks - Go to previous Xmid\n');
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
         end
         fprintf(['\n  Mode ',num2str(modeinit),' saved - Go to previous Xmid\n']);
         xmidprev=1;
         break
     elseif button==119 % Press W to end picking, save pick file and stop script
         if isempty(Vi)==1
-            i=i-1; button=1;
-            fprintf('\n  Please pick at least 2 points to save dispersion curve\n');
-            continue
+            Vsave=0;
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
         end
         fprintf(['\n  Mode ',num2str(modeinit),' saved - Stopping script\n']);
         xmidprev=-1;
         break
     elseif button==104 % Press H to end picking, save pick file and go to higher mode
         if isempty(Vi)==1
-            i=i-1; button=1;
-            fprintf('\n  Please pick at least 2 points to save dispersion curve\n');
-            continue
+            Vsave=0;
+            fprintf('\n  No picks - Go to higher mode\n');
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
         end
         modenext=modeinit+1;
         fprintf(['\n  Mode ',num2str(modeinit),' saved - Go to higher mode\n']);
         break
     elseif button==108 % Press L to end picking, save pick file and go to lower mode
         if isempty(Vi)==1
-            i=i-1; button=1;
-            fprintf('\n  Please pick at least 2 points to save dispersion curve\n');
-            continue
+            Vsave=0;
+            fprintf('\n  No picks - Go to lower mode\n');
+        end
+        if pickstyle==1
+            fsave=f; Vsave=Vi; deltacsave=deltac;
+        else
+            fsave=fmaxamp'; Vsave=vmaxamp'; deltacsave=deltacamp';
         end
         if modeinit>0
             modenext=modeinit-1;
@@ -99,20 +132,20 @@ while button==1
         break
     elseif button==97 % Press A to abort, keep existing pick file and go to next Xmid
         fprintf('\n  Abort and keep existing picks - Go to next Xmid\n');
-        Vi=0;
+        Vsave=0;
         break
     elseif button==120 % Press X to abort, keep existing pick file and stop script
         fprintf('\n  Abort and keep existing picks - Stopping script\n');
-        Vi=0; xmidprev=-1;
+        Vsave=0; xmidprev=-1;
         break
     elseif button==122 % Press Z to abort, keep existing pick file and go to previous Xmid
         fprintf('\n  Abort and keep existing picks - Go to previous Xmid\n');
-        Vi=0; xmidprev=1;
+        Vsave=0; xmidprev=1;
         break
     elseif button==110 % Press N to abort and go to higher (next) mode
         modenext=modeinit+1;
         fprintf('\n  Abort and keep existing picks - Go to next mode\n');
-        Vi=0;
+        Vsave=0;
         break
     elseif button==112 % Press P to abort and go to lower (previous) mode
         if modeinit>0
@@ -121,7 +154,7 @@ while button==1
             modenext=0;
         end
         fprintf('\n  Abort and keep existing picks - Go to previous mode\n');
-        Vi=0;
+        Vsave=0;
         break
     elseif button==99 % Press C to display colorbar editor
         fprintf('\n  Change colormap\n');
@@ -133,9 +166,21 @@ while button==1
         if pickstyle==1
             pickstyle=0;
             style='manual';
+            if exist('h0','var')==1
+                delete(h0); hold on;
+            end
+            h0=plot(fmaxamp,vmaxamp,'w.');
         else
             pickstyle=1;
             style='semi-automatic';
+            if exist('h0','var')==1
+                delete(h0); hold on;
+            end
+            if length(vmaxamp)>1
+                h0=plot(f,Vi,'w.');
+            else
+                h0=plot(fmaxamp,vmaxamp,'w.');
+            end
         end
         fprintf(['\n  Switch picking style -> ',style,' picking\n']);
         i=i-1; button=1;
@@ -184,17 +229,34 @@ while button==1
                 return
             end
             if isempty(indselec)==0
-                Vi(indselec)=NaN;
+                if pickstyle==1
+                    Vi(indselec)=NaN;
+                else
+                    vmaxamp(indselec)=NaN;
+                    fmaxamp(indselec)=NaN;
+                    deltacamp(indselec)=NaN;
+                    vmaxamp=vmaxamp(isnan(vmaxamp)~=1);
+                    fmaxamp=fmaxamp(isnan(fmaxamp)~=1);
+                    deltacamp=deltacamp(isnan(deltacamp)~=1);
+                end
             end
         end
         button=1; fprintf('\n  Back to picking\n');
-        if isempty(f(isnan(Vi)~=1))==0 && length(f(isnan(Vi)~=1))>1
-            vmaxamp=interp1(f(isnan(Vi)~=1),Vi(isnan(Vi)~=1),fmaxamp,'linear');
-        else
-            vmaxamp=fmaxamp*NaN;
+%         if isempty(f(isnan(Vi)~=1))==0 && length(f(isnan(Vi)~=1))>1
+%             vmaxamp=interp1(f(isnan(Vi)~=1),Vi(isnan(Vi)~=1),fmaxamp,'linear');
+%         else
+%             vmaxamp=fmaxamp*NaN;
+%         end
+%         vmaxamp=vmaxamp(isnan(vmaxamp)~=1);
+%         fmaxamp=fmaxamp(isnan(vmaxamp)~=1);
+        continue
+    elseif button==114 % Press R to reset picks
+        fprintf('\n  Reset all picks\n');
+        Vi=[]; deltac=[]; fmaxamp=[]; vmaxamp=[];
+        button=1; i=1;
+        if exist('h0','var')==1
+            delete(h0); clear h0;
         end
-        vmaxamp=vmaxamp(isnan(vmaxamp)~=1);
-        fmaxamp=fmaxamp(isnan(vmaxamp)~=1);
         continue
     elseif button~=1;
         button=1; i=i-1;
@@ -232,14 +294,25 @@ while button==1
             if err==1
                 deltac=lorentzerr(Vi,Vi./f,nW,dx,fac,maxerr,minvelerr);
                 deltac(deltac==0)=NaN;
+                if size(fmaxamp,1)==1 && size(fmaxamp,2)==2
+                    fmaxamp=fmaxamp'; vmaxamp=vmaxamp';
+                end
+                deltacamp=lorentzerr(vmaxamp',vmaxamp'./fmaxamp',nW,dx,fac,maxerr,minvelerr);
+                deltacamp(deltac==0)=NaN;
             elseif err==2
                 deltac=0.01*sigma*Vi;
                 deltac(deltac==0)=NaN;
+                deltacamp=0.01*sigma*vmaxamp;
+                deltacamp(deltac==0)=NaN;
             else
                 deltac=zeros(size(Vi));
+                deltacamp=zeros(size(vmaxamp));
             end
             if size(deltac,1)~=size(Vi,1)
                 deltac=deltac';
+            end
+            if size(deltacamp,1)~=size(vmaxamp,1)
+                deltacamp=deltacamp';
             end
             Vi=findpeak(dspmat,f,v,f,Vi,wl);
             if smoothpick==1
@@ -253,11 +326,13 @@ while button==1
     else
         [vmaxamp,fmaxamp]=findpeak(dspmat,f,v,Fpick,Vpick,wl);
     end
+    [fmaxamp,I]=sort(fmaxamp);
+    vmaxamp=vmaxamp(I);
     hold on
     if exist('h0','var')==1
         delete(h0);
     end
-    if length(vmaxamp)>1
+    if length(vmaxamp)>1 && pickstyle==1
         h0=plot(f,Vi,'w.');
     else
         h0=plot(fmaxamp,vmaxamp,'w.');

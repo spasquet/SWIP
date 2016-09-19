@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V16.8.22
+%%% S. Pasquet - V16.9.15
 %%% SWIPinv.m performs surface-wave inversion along the seismic profile
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 
@@ -181,31 +181,35 @@ if calcmod==1 || plotinvres==1 || plotparam==1
     dir_img_inv_1d=fullfile(dir_img_inv_mod,'1dmodels');
     
     if modeltype==1
-        modeltype='best';
+        modeltype='best'; avertype='Vms';
     elseif modeltype==2
-        modeltype='layered';
+        modeltype='layered'; avertype='Vms';
     elseif modeltype==3
-        modeltype='smooth';
+        modeltype='smooth'; avertype='Vms';
+    elseif modeltype==4
+        modeltype='layered'; avertype='Vws';
+    elseif modeltype==5
+        modeltype='smooth'; avertype='Vws';
 %     elseif modeltype==4
 %         modeltype='smlay';
-    elseif modeltype==4
-        modeltype='ridge';
+    elseif modeltype==6
+        modeltype='ridge'; avertype='Vms';
     else
-        modeltype='layered';
-        fprintf('\n  Layered model selected by default\n');
+        modeltype='smooth'; avertype='Vws';
+        fprintf('\n  Weighted smooth model selected by default\n');
     end
-    if avertype==0
-        avertype='Vms';
-    elseif avertype==1
-        if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-            avertype='Vms';
-        else
-            avertype='Vws';
-        end
-    else
-        avertype='Vms';
-        fprintf('\n  Average model selected by default\n');
-    end
+%     if avertype==0
+%         avertype='Vms';
+%     elseif avertype==1
+%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
+%             avertype='Vms';
+%         else
+%             avertype='Vws';
+%         end
+%     else
+%         avertype='Vms';
+%         fprintf('\n  Average model selected by default\n');
+%     end
 end
 
 [testimgmgck,~]=unix('which montage');
@@ -578,17 +582,17 @@ for ix=Xmidselec
                 % Count number of model per cell
                 for jj=1:nZ
                     NN(jj,:)=histc(IVsR(:,jj),velocityS);
-                    VSridge(jj)=velocityS(find(NN(jj,:)==max(NN(jj,:)),1,'first'));
+                    VSridge(jj)=mean(velocityS(NN(jj,:)==max(NN(jj,:))));
                     NNP(jj,:)=histc(IVpR(:,jj),velocityP);
-                    VPridge(jj)=velocityP(find(NNP(jj,:)==max(NNP(jj,:)),1,'first'));
+                    VPridge(jj)=mean(velocityP(NNP(jj,:)==max(NNP(jj,:))));
                     NNr(jj,:)=histc(IrhoR(:,jj),density);
-                    RHOridge(jj)=density(find(NNr(jj,:)==max(NNr(jj,:)),1,'first'));
+                    RHOridge(jj)=mean(density(NNr(jj,:)==max(NNr(jj,:))));
                 end
                 NN(NN==0)=NaN;
                 % Plot ridgesearch results
                 if nmod(ix)>1
                     [f2,~,~,~,c]=plot_img(showplot,velocityS,ZZ,NN,flipud(autumn),...
-                        axetop,1,1,fs,'Vs (m/s)','Depth (m)','Number of models',...
+                        1,1,1,fs,'Vs (m/s)','Depth (m)','Number of models',...
                         [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
                     hold on
                     dashline(VSridge,ZZ,2,2,2,2,'color','k','linewidth',1.5);
@@ -827,7 +831,7 @@ for ix=Xmidselec
             layered(indi(ix):indi(ix)+indf(ix)-1,ix)=IVSmean(1:indf(ix));
             layered(layered==0)=NaN;
             % Plot pseudo-section
-            f0=plot_img(10,XmidT,depth,layered,haxby(32),axetop,0,1,fs/2.5,...
+            f0=plot_img(10,XmidT,depth,layered,haxby(32),1,0,1,fs/2.5,...
                 'X (m)','Z (m)','Vs (m/s)',[xmin xmax],...
                 [floor(min(depth)/10)*10 ceil(max(depth)/10)*10],...
                 [min(min(layered)) max(max(layered))],[],[],[],[],[],[],[],[],1);
@@ -1149,7 +1153,7 @@ for ix=Xmidselec
                 p1=[VSout,VSin];
                 p1=p1(1:2:end,:);
                 xticks=vsticks;
-                XMIN=vsMIN; XMAX=vsMAX;
+                XMIN=[]; XMAX=[];
             elseif strcmp(param1,'Th')==1
                 axtit1='Thickness (m)';
                 p1=[Zout,Zin];
@@ -1161,13 +1165,13 @@ for ix=Xmidselec
                 p1=[VPout,VPin];
                 p1=p1(1:2:end,:);
                 xticks=vpticks;
-                XMIN=vpMIN; XMAX=vpMAX;
+                XMIN=[]; XMAX=[];
             elseif strcmp(param1,'Dens')==1
                 axtit1='Density (kg/m^3)';
                 p1=[RHOout,RHOin];
                 p1=p1(1:2:end,:);
                 xticks=rhoticks;
-                XMIN=rhoMIN; XMAX=rhoMAX;
+                XMIN=[]; XMAX=[];
             end
             % Second parameter
             if strcmp(param2,'Vs')==1
@@ -1175,7 +1179,7 @@ for ix=Xmidselec
                 p2=[VSout,VSin];
                 p2=p2(1:2:end,:);
                 yticks=vsticks;
-                YMIN=vsMIN; YMAX=vsMAX;
+                YMIN=[]; YMAX=[];
             elseif strcmp(param2,'Th')==1
                 axtit2='Thickness (m)';
                 p2=[Zout,Zin];
@@ -1187,13 +1191,13 @@ for ix=Xmidselec
                 p2=[VPout,VPin];
                 p2=p2(1:2:end,:);
                 yticks=vpticks;
-                YMIN=vpMIN; YMAX=vpMAX;
+                YMIN=[]; YMAX=[];
             elseif strcmp(param2,'Dens')==1
                 axtit2='Density (kg/m^3)';
                 p2=[RHOout,RHOin];
                 p2=p2(1:2:end,:);
                 yticks=rhoticks;
-                YMIN=rhoMIN;YMAX=rhoMAX;
+                YMIN=[];YMAX=[];
             end
             
             % Loop over all selected parameters
@@ -1228,6 +1232,11 @@ for ix=Xmidselec
                         '.param.',param1,num2str(np1(i)),param2,num2str(np2(j)),'.',imgform]);
                     save_fig(f4,filename,imgform,imgres,1,0);
                     close(f4); clear f4;
+                    
+                    filename_cbin=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                        '.cbmisin.',imgform]);
+                    filename_cbout=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                        '.cbmisout.',imgform]);
                     
                     % Save colorbars
                     if i==1 && j==1

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V16.8.22
+%%% S. Pasquet - V16.9.15
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
 %%% Required file : one SU file containing all shot gathers
@@ -102,6 +102,7 @@ if calc==1
         dir_all=dir_create(1,nWmin,nWmax,dW,dSmin,dSmax,side);
     end
     acquiparam=get_acquiparam(sufile,xsca);
+    xsca=acquiparam.xsca; % Scaling factor
     dx=acquiparam.dx; % Mean inter-geophone spacing (m)
     if dx==0
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -349,20 +350,7 @@ end
 
 % Initialization of the maximum number of modes
 if isempty(maxmodeinv)==1
-    pvcstruct=dir(fullfile(dir_pick,'*.pvc'));
-    npvc=length(pvcstruct);
-    M=[];
-    for ip=1:npvc
-        pvcfile=pvcstruct(ip).name;
-        m=str2double(pvcfile(end-4));
-        if ismember(m,M)==0
-            M=[M,m];
-        end
-    end
-    maxmodeinv=max(M);
-    if isempty(maxmodeinv)==1
-        maxmodeinv=0;
-    end
+    maxmodeinv=10;
 end
 
 % Initialization of phase velocity pseudo-section
@@ -853,7 +841,7 @@ while i<length(Xmidselec)
                     plot(Vprev(:,1),Vprev(:,2),'m.');
                 end
                 % Pick dispersion curves
-                [Vi,deltac,modenext,closefig,xmidprev]=matpickamp(dspmat2,f,v2,filepick,pickstyle,...
+                [fi,Vi,deltac,modenext,closefig,xmidprev]=matpickamp(dspmat2,f,v2,filepick,pickstyle,...
                     modenext,err,smoothpick,mean([nWmin,nWmax]),dx,nWfac,maxerrrat,minerrvel,sigma);
                 if closefig==0
                     close(fig1);
@@ -862,13 +850,13 @@ while i<length(Xmidselec)
                     fprintf('\n  No previous Xmid - Stay on first Xmid\n');
                 end
                 if isempty(Vi)==0 && length(Vi)>1 && sum(isnan(Vi))~=length(Vi)
-                    dlmwrite(filepick,[f(isnan(Vi)==0);Vi(isnan(Vi)==0);...
-                        deltac(isnan(Vi)==0)]','delimiter','\t');
+                    dlmwrite(filepick,[fi(isnan(Vi)==0);Vi(isnan(Vi)==0);...
+                        deltac(isnan(Vi)==0)]','delimiter','\t','precision','%.6f');
                     apvcfile=[filepick(1:end-4),'.apvc'];
                     if exist(apvcfile,'file')==2
                         delete(apvcfile);
                     end
-                elseif isempty(Vi)==1 || (length(Vi)>1 && sum(isnan(Vi))~=length(Vi))
+                elseif exist(filepick,'file')==2 && (isempty(Vi)==1 || (length(Vi)>1 && sum(isnan(Vi))~=length(Vi)))
                     delete(filepick);
                 end
             end
@@ -907,7 +895,7 @@ while i<length(Xmidselec)
                 nWfac,maxerrrat,minerrvel);
             filepick=fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),...
                 '.M',num2str(modeinit),'.pvc']);
-            dlmwrite(filepick,[fpickauto;vpickauto';deltacauto']','delimiter','\t');
+            dlmwrite(filepick,[fpickauto;vpickauto';deltacauto']','delimiter','\t','precision','%.6f');
             fprintf(['\n  Automatic pick for mode ',num2str(modeinit),'\n']);
         end
         
@@ -929,7 +917,7 @@ while i<length(Xmidselec)
                         movefile(fullfile(dir_pick,pvcfile),fullfile(dir_pick,[pvcname,'.pvc']));
                         pvcfile=[pvcname,'.pvc'];
                     end
-                    m=str2double(pvcfile(end-4)); % Mode number
+                    m=str2double(pvcfile(strfind(pvcfile,'.M')+2:strfind(pvcfile,'.pvc')-1)); % Mode number
                     if m>maxmodeinv
                         apvcfile=[pvcfile(1:end-4),'.apvc'];
                         movefile(fullfile(dir_pick,pvcfile),fullfile(dir_pick,apvcfile))
@@ -944,7 +932,7 @@ while i<length(Xmidselec)
                     else
                         Vprev(:,3)=0;
                     end
-                    dlmwrite(fullfile(dir_pick,pvcfile),Vprev,'delimiter','\t');
+                    dlmwrite(fullfile(dir_pick,pvcfile),Vprev,'delimiter','\t','precision','%.6f');
                 end
                 pvcstruct=dir(fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),'.*.pvc']));
                 if isempty(pvcstruct)==0

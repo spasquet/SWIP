@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.9.12
+%%% S. Pasquet - V16.9.14
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs and Poisson's ratio pseudo-sections
 
@@ -143,31 +143,35 @@ if exist(dir_xzv_inv_mod,'dir')~=7
     mkdir(dir_xzv_inv_mod);
 end
 if modeltype==1
-    modeltype='best';
+    modeltype='best'; avertype='Vms';
 elseif modeltype==2
-    modeltype='layered';
+    modeltype='layered'; avertype='Vms';
 elseif modeltype==3
-    modeltype='smooth';
-% elseif modeltype==4
-%     modeltype='smlay';
+    modeltype='smooth'; avertype='Vms';
 elseif modeltype==4
-    modeltype='ridge';
+    modeltype='layered'; avertype='Vws';
+elseif modeltype==5
+    modeltype='smooth'; avertype='Vws';
+    %     elseif modeltype==4
+    %         modeltype='smlay';
+elseif modeltype==6
+    modeltype='ridge'; avertype='Vms';
 else
-    modeltype='layered';
-    fprintf('\n  Layered model selected by default\n');
+    modeltype='smooth'; avertype='Vws';
+    fprintf('\n  Weighted smooth model selected by default\n');
 end
-if avertype==0
-    avertype='Vms';
-elseif avertype==1
-    if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-        avertype='Vms';
-    else
-        avertype='Vws';
-    end
-else
-    avertype='Vms';
-    fprintf('\n  Average model selected by default\n');
-end
+%     if avertype==0
+%         avertype='Vms';
+%     elseif avertype==1
+%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
+%             avertype='Vms';
+%         else
+%             avertype='Vws';
+%         end
+%     else
+%         avertype='Vms';
+%         fprintf('\n  Average model selected by default\n');
+%     end
 
 % Select velocity and STD models
 if ((swip==1 && usevptomo==1) || swip==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1 || savexzv==1)
@@ -1189,7 +1193,7 @@ if plot2dert==1 && exist('ResI','var')==1
         end
     end
     
-    if testplot==1
+    if testplot==1 && plot2dmod==1
         if (swip==1 && sum(modexist)>0) || (swip==2 && isempty(VsItomo)==0)
             panel5=fullfile(dir_img_inv_2d,['RES_VP_VS_Pois.',avertype,'.',modeltype,'.',imgform]);
             cat_img([fileRES,' ',filevp,' ',filevs,' ',filepois],imgform,1,[],panel5,1);

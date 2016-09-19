@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V16.8.3
+%%% S. Pasquet - V16.9.15
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 %%% Comment line to use default settings (cf defaultsettings.m)
@@ -10,20 +10,18 @@ clear all; clc; close all;
 %%%-------------------------%%%
 %%% START OF INITIALIZATION %%%
 
-Xmidselec  = [];    % Select Xmids (comment or [] to select all)
-
 %%% Main settings
+Xmidselec  = [];    % Select Xmids (comment or [] to select all)
 swip       = 1;     % Use vel. models from SWIP (=1) or not (=0)
 tomo       = 0;     % Use vel. models from P- and SH-wave tomography (=1) or not (=0)
-user       = 0;     % Use vel. models defined by user below (=1) or with gpdc file (=2)
+user       = 0;     % Use vel. models defined by user below (=1) or with file (=2)
 
 %%% SWIP model settings (used if swip=1)
-modeltype  = 2;     % Plotted 1D Vs model (1=best, 2=layered, 3=smooth, 4=ridge)
-avertype   = 0;     % Mean model (=0) or weighted model (=1)
+modeltype   = 5;    % Plotted 1D Vs model
+%%% (1=best, 2=averaged layered, 3=average smooth, 4=weighted layered, 5=weighted smooth, 6=ridge)
 nbest      = 0;     % Best models within error bars (=0) or nbest models (>0)
 outpoints  = 0;     % No. of points allowed out of the error bars
 usevptomo  = 0;     % Use Vp from tomography (=1) or from SW inversion (=0)
-vpaver     = 0;     % Average Vp below window (=1) or extract at Xmid (=0)
 dz         = 0.2;   % Sampling in depth (m)
 
 %%% User defined 1D model parameters (used if user=1)
@@ -40,13 +38,12 @@ showplot   = 0;     % Show plots before saving (=1) or not (=0)
 %%% General display settings
 imgform    = 'png'; % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
 imgres     = 500;   % Fig. resolution (dpi) when saving as raster
+fs         = 20;    % Fig. font size
 concat     = 1;     % Fig. concatenation panel (=1) or not (=0)
 
-fs         = 20;    % Fig. font size
-
-%%% Dispersion curves and images settings
+%%% Dispersion curves and images settings (used if plot1dcal = 1)
 nmodemax   = 5;     % No. of mode for forward calculation
-Dlogscale  = 1;     % Log colorscale for dispersion (=1) or linear (=0)
+Dlogscale  = 0;     % Log colorscale for dispersion (=1) or linear (=0)
 Flogscale  = 0;     % Logscale frequency axis (=1) or linear (=0)
 axetop     = 0;     % Plot Xaxis on top (=1) or bottom (=0)
 axerev     = 0;     % Yaxis pointing down (=1) or up (=0)
@@ -65,29 +62,29 @@ VphMIN     = [];                    % Min. phase velocity (m/s)
 VphMAX     = [];                    % Max. phase velocity (m/s)
 % Vphticks   = (VphMIN:250:VphMAX);   % Phase velocity ticks (m/s)
 
-%%% Vs, Vp, Vp/Vs and Poisson's ratio 1D models settings
-plot1dstd  = 1;     % Plot STD enveloppe (=1), % error (=2) or none (=0)
+%%% Vs, Vp, Vp/Vs and Poisson's ratio 1D models settings (used if plot1dmod = 1)
+plot1dstd  = 1;     % Plot error enveloppe (=1) or none (=0)
 errstd     = 0;     % Percentage error on velocity models (in %) (0 for STD from SWIP)
 plotDOI    = 2;     % Plot DOI estimated from wavelength (=1), from VsSTD (=2) or not (=0)
 doifact    = 0.66;  % DOI factor (DOI = Lmax*fact) (used if plotDOI=1)
 stdMAX     = 200;   % Max. STdVs (m/s) (used if plotDOI=2)
-plot1dvp   = 0;     % Plot 1D Vp models with 1D Vs models (=1) or not (=0)
+plot1dvp   = 0;     % Plot 1D Vp models on same graph with 1D Vs models (=1) or not (=0)
 
-dpMIN      = [];                    % Min. depth (m)
-dpMAX      = [];                    % Max. depth (m)
-% dticks     = (dpMIN:10:dpMAX);      % Depth ticks (m)
-vsMIN      = [];                    % Min. Vs (m/s)
-vsMAX      = [];                    % Max. Vs (m/s)
-% vsticks    = (vsMIN:500:vsMAX);     % Vs ticks (m/s)
-vpMIN      = [];                    % Min. Vp (m/s)
-vpMAX      = [];                    % Max. Vp (m/s)
-% vpticks    = (vpMIN:1000:vpMAX);    % Vp ticks (m/s)
-vpvsMIN    = [];                    % Min. Vp/Vs
-vpvsMAX    = [];                    % Max. Vp/Vs
-% vpvsticks  = (vpvsMIN:vpvsMAX);     % Vp/Vs ticks
-poisMIN    = [];                    % Min. Poisson's ratio
-poisMAX    = [];                    % Max. Poisson's ratio
-% poisticks  = (poisMIN:0.1:poisMAX); % Poisson's ratio ticks
+dpMIN      = [];                    % Min. depth (m) 
+dpMAX      = [];                    % Max. depth (m) 
+% dticks     = (dpMIN:10:dpMAX);      % Depth ticks (m) 
+vsMIN      = [];                    % Min. Vs (m/s) 
+vsMAX      = [];                    % Max. Vs (m/s) 
+% vsticks    = (vsMIN:500:vsMAX);     % Vs ticks (m/s) 
+vpMIN      = [];                    % Min. Vp (m/s) 
+vpMAX      = [];                    % Max. Vp (m/s) 
+% vpticks    = (vpMIN:1000:vpMAX);    % Vp ticks (m/s) 
+vpvsMIN    = [];                    % Min. Vp/Vs 
+vpvsMAX    = [];                    % Max. Vp/Vs 
+% vpvsticks  = (vpvsMIN:vpvsMAX);     % Vp/Vs ticks 
+poisMIN    = [];                    % Min. Poisson's ratio 
+poisMAX    = [];                    % Max. Poisson's ratio 
+% poisticks  = (poisMIN:0.1:poisMAX); % Poisson's ratio ticks 
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%
