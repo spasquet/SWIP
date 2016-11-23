@@ -1,8 +1,9 @@
 function quick_invert(inversion,plotinvres,plotparam,targetfile,paramfile,nrun,itmax,ns0,ns,nr,...
-    calcmod,nbest,outpoints,modeltype,avertype,imgform,imgres,concat,colnb)
-%%% S. Pasquet - V16.7.1
+    nbest,outpoints,modeltype,imgform,imgres,concat,colnb)
+%%% S. Pasquet - V16.11.22
+%%% Quick inversion of dispersion data
 %%% quick_invert(inversion,plotinvres,plotparam,targetfile,paramfile,nrun,itmax,ns0,ns,nr,...
-%%%    calcmod,nbest,outpoints,modeltype,avertype,imgform,imgres,concat,colnb)
+%%%    calcmod,nbest,outpoints,modeltype,imgform,imgres,concat,colnb)
 
 run('SWIP_defaultsettings')
 
@@ -14,30 +15,20 @@ else
 end
 
 if modeltype==1
-    modeltype='best';
+    modeltype='best'; avertype='Vms';
 elseif modeltype==2
-    modeltype='layered';
+    modeltype='layered'; avertype='Vms';
 elseif modeltype==3
-    modeltype='smooth';
+    modeltype='smooth'; avertype='Vms';
 elseif modeltype==4
-    modeltype='smlay';
+    modeltype='layered'; avertype='Vws';
 elseif modeltype==5
-    modeltype='ridge';
+    modeltype='smooth'; avertype='Vws';
+elseif modeltype==6
+    modeltype='ridge'; avertype='Vms';
 else
-    modeltype='layered';
-    fprintf('\n  Layered model selected by default\n');
-end
-if avertype==0
-    avertype='Vms';
-elseif avertype==1
-    if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-        avertype='Vms';
-    else
-        avertype='Vws';
-    end
-else
-    avertype='Vms';
-    fprintf('\n  Average model selected by default\n');
+    modeltype='smooth'; avertype='Vws';
+    fprintf('\n  Weighted smooth model selected by default\n');
 end
 
 [testimgmgck,~]=unix('which montage');
@@ -52,10 +43,10 @@ if isunix==1
 else
     zipmethod=1;
 end
+tstart=tic;
 
 %%
 %%%%%% Inversion %%%%%%
-
 if inversion==1
     if exist('targetfile','var')==0 || isempty(targetfile)==1
         [targetfile,targetpath]=uigetfile('*.target','Select target file');
@@ -398,17 +389,17 @@ if calcmod==1
         
         %%%%%% Mean layered smoothed model %%%%%%
         
-        Zmeani=Zmean;
-        Zmeani(2:2:end-2,:)=Zmeani(2:2:end-2,:)-dz;
-        VSmeanI=interp1q(Zmeani,VSmean,ZZ');
-        VPmeanI=interp1q(Zmeani,VPmean,ZZ');
-        RHOmeanI=interp1q(Zmeani,RHOmean,ZZ');
-        % Standard deviation layered smoothed model
-        Zstdi=Zstd;
-        Zstdi(2:2:end-2,:)=Zstdi(2:2:end-2,:)-dz;
-        VSstdI=interp1q(Zmeani,VSstd,ZZ');
-        VPstdI=interp1q(Zmeani,VPstd,ZZ');
-        RHOstdI=interp1q(Zmeani,RHOstd,ZZ');
+        %         Zmeani=Zmean;
+        %         Zmeani(2:2:end-2,:)=Zmeani(2:2:end-2,:)-dz;
+        %         VSmeanI=interp1q(Zmeani,VSmean,ZZ');
+        %         VPmeanI=interp1q(Zmeani,VPmean,ZZ');
+        %         RHOmeanI=interp1q(Zmeani,RHOmean,ZZ');
+        %         % Standard deviation layered smoothed model
+        %         Zstdi=Zstd;
+        %         Zstdi(2:2:end-2,:)=Zstdi(2:2:end-2,:)-dz;
+        %         VSstdI=interp1q(Zmeani,VSstd,ZZ');
+        %         VPstdI=interp1q(Zmeani,VPstd,ZZ');
+        %         RHOstdI=interp1q(Zmeani,RHOstd,ZZ');
         
         %%%%%% Gaussian weighting models %%%%%%
         
@@ -470,11 +461,11 @@ if calcmod==1
             
             %%%%%% Weighted layered smoothed model %%%%%%
             
-            Zweighti=Zweight;
-            Zweighti(2:2:end-2,:)=Zweighti(2:2:end-2,:)-dz;
-            VSweightI=interp1q(Zweighti,VSweight,ZZ');
-            VPweightI=interp1q(Zweighti,VPweight,ZZ');
-            RHOweightI=interp1q(Zweighti,RHOweight,ZZ');
+            %             Zweighti=Zweight;
+            %             Zweighti(2:2:end-2,:)=Zweighti(2:2:end-2,:)-dz;
+            %             VSweightI=interp1q(Zweighti,VSweight,ZZ');
+            %             VPweightI=interp1q(Zweighti,VPweight,ZZ');
+            %             RHOweightI=interp1q(Zweighti,RHOweight,ZZ');
         end
         
         %%%%%% Save velocity models %%%%%%
@@ -491,8 +482,8 @@ if calcmod==1
             extens,'.Vms.layered']); % Layered model
         nameDINsm=fullfile(dir_rep_ind,[targetfile(1:end-7),...
             extens,'.Vms.smooth']); % Smooth model
-        nameDINsmlay=fullfile(dir_rep_ind,[targetfile(1:end-7),...
-            extens,'.Vms.smlay']); % Smooth layered model
+        %         nameDINsmlay=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+        %             extens,'.Vms.smlay']); % Smooth layered model
         % Std
         nameDINlaystd=fullfile(dir_rep_ind,[targetfile(1:end-7),...
             extens,'.VmsStd.layered']); % Layered model
@@ -505,8 +496,8 @@ if calcmod==1
             extens,'.Vws.layered']); % Layered model
         nameDINsmw=fullfile(dir_rep_ind,[targetfile(1:end-7),...
             extens,'.Vws.smooth']); % Smooth model
-        nameDINsmlayw=fullfile(dir_rep_ind,[targetfile(1:end-7),...
-            extens,'.Vws.smlay']); % Smooth layered model
+        %         nameDINsmlayw=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+        %             extens,'.Vws.smlay']); % Smooth layered model
         
         % Save best model
         dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
@@ -517,16 +508,16 @@ if calcmod==1
         % Save mean models (layered, smoothed, layered smooth)
         dinsave(nameDINlay,THmean,VPmean(1:2:end),VSmean(1:2:end),RHOmean(1:2:end));
         dinsave(nameDINsm,repmat(dz,1,length(ZZ)),IVPmean,IVSmean,IRHOmean);
-        dinsave(nameDINsmlay,repmat(dz,1,length(ZZ)),VPmeanI,VSmeanI,RHOmeanI);
+        %         dinsave(nameDINsmlay,repmat(dz,1,length(ZZ)),VPmeanI,VSmeanI,RHOmeanI);
         % Save std models (layered, smoothed, layered smooth)
         dinsave(nameDINlaystd,THstd,VPstd(1:2:end),VSstd(1:2:end),RHOstd(1:2:end));
         dinsave(nameDINsmstd,repmat(dz,1,length(ZZ)),IVPstd,IVSstd,IRHOstd);
-        dinsave(nameDINsmlaystd,repmat(dz,1,length(ZZ)),VPstdI,VSstdI,RHOstdI);
+        %         dinsave(nameDINsmlaystd,repmat(dz,1,length(ZZ)),VPstdI,VSstdI,RHOstdI);
         % Save weighted models (layered, smoothed, layered smooth)
         if weightcalc==1
             dinsave(nameDINlayw,THweight,VPweight(1:2:end),VSweight(1:2:end),RHOweight(1:2:end));
             dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
-            dinsave(nameDINsmlayw,repmat(dz,1,length(ZZ)),VPweightI,VSweightI,RHOweightI);
+            %             dinsave(nameDINsmlayw,repmat(dz,1,length(ZZ)),VPweightI,VSweightI,RHOweightI);
         end
         
         % Plot and save average and weighted models
@@ -536,21 +527,22 @@ if calcmod==1
         hold on
         str0='Best model';
         h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
-        str1='Average parameters';
-        h2=plot(VSmeanI,ZZ,'g-','linewidth',1.5);
-        str2='Average parameters and interpolation';
+        str1='Average layered model';
+        %             h2=plot(VSmeanI,ZZ,'g-','linewidth',1.5);
+        %             str2='Average parameters and interpolation';
         h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
-        str3='Interpolation and average parameters';
-        if weightcalc==1
-            h4=dashline(VSweight,Zweight,2,2,2,2,'color','b','linewidth',1.5);
-            str4='Weighted parameters';
-            h5=dashline(VSweightI,ZZ,2,2,2,2,'color','g','linewidth',1.5);
-            str5='Weighted parameters and interpolation';
-            h6=dashline(IVSweight,ZZ,2,2,2,2,'color','r','linewidth',1.5);
-            str6='Interpolation and weighted parameters';
+        str3='Average smooth model';
+        if weightcalc==1 && nmod>1
+            h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
+            str4='Weighted layered model';
+            %                 h5=plot(VSweightI,ZZ*NaN,'g--','linewidth',1.5);
+            %                 dashline(VSweightI,ZZ,2,2,2,2,'color','g','linewidth',1.5);
+            %                 str5='Weighted parameters and interpolation';
+            h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
+            str6='Weighted smooth model';
         end
-        if ridgecalc==1
-            h7=dashline(VSridge,ZZ,2,2,2,2,'color','m','linewidth',1.5);
+        if ridgecalc==1 && nmod>1
+            h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
             str7='Ridge model';
         end
         colorbar; cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
@@ -558,16 +550,18 @@ if calcmod==1
             caxis([0 max(NN(:))]);
         end
         set(cbhandle,'visible','off');
-        if weightcalc==0 && ridgecalc==0
-            h_legend=legend([h0,h1,h2,h3],str0,str1,str2,str3);
+        if (weightcalc==0 || (weightcalc==1 && nmod==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod==1))
+            %                 h_legend=legend([h0,h1,h2,h3],str0,str1,str2,str3);
+            h_legend=legend([h0,h1,h3],str0,str1,str3);
         elseif weightcalc==1 && ridgecalc==0
-            h_legend=legend([h0,h1,h2,h3,h4,h5,h6],str0,str1,str2,str3,...
-                str4,str5,str6);
+            %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6],str0,str1,str2,str3,str4,str5,str6);
+            h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
         elseif weightcalc==0 && ridgecalc==1
-            h_legend=legend([h0,h1,h2,h3,h7],str0,str1,str2,str3,str7);
+            %                 h_legend=legend([h0,h1,h2,h3,h7],str0,str1,str2,str3,str7);
+            h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
         else
-            h_legend=legend([h0,h1,h2,h3,h4,h5,h6,h7],str0,str1,str2,str3,...
-                str4,str5,str6,str7);
+            %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6,h7],str0,str1,str2,str3,str4,str5,str6,str7);
+            h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
         end
         set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
         hold off
@@ -582,9 +576,11 @@ if calcmod==1
             colnb_tmp=colnb;
         end
         filename_panel0=fullfile(dir_rep_ind,[targetfile(1:end-7),'.mod1d.mean.',imgform]);
-        if exist('file_ridge','var')==1 && testplot==1
+        if exist('file_ridge','var')==1 && testplot==1 && nmod>1
             cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
-            delete(file_ridge);
+            if concat==1
+                delete(file_ridge);
+            end
         end
     end
     
@@ -699,17 +695,22 @@ if calcmod==1
                         VSplot=IVSmean;
                         Zplot=ZZ;
                     else
-                        VSplot=IVSweight;
-                        Zplot=ZZ;
+                        if nmod>1
+                            VSplot=IVSweight;
+                            Zplot=ZZ;
+                        else
+                            VSplot=[];
+                            Zplot=[];
+                        end
                     end
-                elseif strcmp(modeltype,'smlay')==1
-                    if strcmp(avertype,'Vms')==1
-                        VSplot=VSmeanI;
-                        Zplot=ZZ;
-                    else
-                        VSplot=VSweightI;
-                        Zplot=ZZ;
-                    end
+                    %                     elseif strcmp(modeltype,'smlay')==1
+                    %                         if strcmp(avertype,'Vms')==1
+                    %                             VSplot=VSmeanI;
+                    %                             Zplot=ZZ;
+                    %                         else
+                    %                             VSplot=VSweightI;
+                    %                             Zplot=ZZ;
+                    %                         end
                 elseif strcmp(modeltype,'ridge')==1
                     VSplot=VSridge;
                     Zplot=ZZ;
@@ -754,7 +755,9 @@ if calcmod==1
             [],[],[0 0 24 18],sizax,0);
         colormap(map2);
         hold on
-        dashline(VSplot,Zplot,2,2,2,2,'color','k','linewidth',2);
+        if plot1dVS==1
+            dashline(VSplot,Zplot,2,2,2,2,'color','k','linewidth',2);
+        end
         hold off
         set(cbhandle,'visible','off');
         
@@ -764,20 +767,35 @@ if calcmod==1
         save_fig(f4,filename_modall,imgform,imgres,1,1-testplot);
         close(f4); clear f4;
         
-        % Save colorbars
-        f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale, youp(1:3:end),...
-            [min(misin) max(misin)], fs, [0 0 24 18], sizax);
-        filename_cbin=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+        filename_cbin=fullfile(dir_img_ind,[targetfile(1:end-7),...
             '.cbmisin.',imgform]);
-        save_fig(f4,filename_cbin,imgform,imgres,1,0);
-        close(f4); clear f4;
-        
-        f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale, youpout(1:2:end),...
-            [min(misout) maxmisout], fs, [0 0 24 18], sizax);
-        filename_cbout=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+        filename_cbout=fullfile(dir_img_ind,[targetfile(1:end-7),...
             '.cbmisout.',imgform]);
-        save_fig(f4,filename_cbout,imgform,imgres,1,0);
-        close(f4); clear f4;
+        
+        % Save colorbars
+        if nmod>1
+            % Save colorbars
+            if cbpos==1
+                cbticks=youp(1:3:end);
+            else
+                cbticks=youp(1:4:end);
+            end
+            f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale, cbticks,...
+                [min(misin) max(misin)], fs, [0 0 24 18], sizax, 2);
+            save_fig(f4,filename_cbin,imgform,imgres,1,0);
+            close(f4); clear f4;
+        end
+        if nmod<nrun*nmaxmod-1
+            if cbpos==1
+                cbticks=youpout(1:2:end);
+            else
+                cbticks=youpout(1:3:end);
+            end
+            f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale, cbticks,...
+                [min(misout) maxmisout], fs, [0 0 24 18], sizax, 1);
+            save_fig(f4,filename_cbout,imgform,imgres,1,0);
+            close(f4); clear f4;
+        end
         
         %%
         if strcmp(imgform,'fig')~=1 && testplot==1
@@ -809,38 +827,45 @@ if calcmod==1
             
             filename_cbtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.cb.',imgform]);
-            if (cbpos==1 && colnb_tmp==nmodeinv+1) || (cbpos==2 && colnb_tmp>1)
-                cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
-            elseif (cbpos==1 && colnb_tmp<nmodeinv+1) || (cbpos==2 && colnb_tmp==1)
-                cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
-            end
-            
-            if cbpos==2 && strcmp(imgform,'pdf')~=1
-                if isunix==1
-                    [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
-                    sizefig_cb=str2double(sizefig_cb);
-                    [~,sizefig]=unix(['convert ',filename_imgtmp,' -format "%w" info:']);
-                    sizefig=str2double(sizefig);
-                    [~,~]=unix(['convert ',filename_cbtmp,' -gravity center -extent ',...
-                        num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp]);
-                else
-                    com1=['img_convert ',filename_cbtmp,' -format "%h" info:'];
-                    com1=strrep(com1,'\','/');
-                    [~,sizefig_cb]=unix(com1);
-                    sizefig_cb=str2double(sizefig_cb);
-                    com1=['img_convert ',filename_imgtmp,' -format "%w" info:'];
-                    com1=strrep(com1,'\','/');
-                    [~,sizefig]=unix(com1);
-                    sizefig=str2double(sizefig);
-                    com1=['img_convert ',filename_cbtmp,' -gravity center -extent ',...
-                        num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp];
-                    com1=strrep(com1,'\','/');
-                    [~,~]=unix(com1);
-                end
-            end
-            
-            filename_panel=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+            filename_panel=fullfile(dir_img_ind,[targetfile(1:end-7),...
                 '.invresults.',imgform]);
+            
+            if  nmod>1 && nmod<nrun*nmaxmod-1
+                if (cbpos==1 && colnb_tmp==nmodeinv+1) || (cbpos==2 && colnb_tmp>1)
+                    cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
+                elseif (cbpos==1 && colnb_tmp<nmodeinv+1) || (cbpos==2 && colnb_tmp==1)
+                    cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
+                end
+                
+                if cbpos==2 && strcmp(imgform,'pdf')~=1
+                    if isunix==1
+                        [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
+                        sizefig_cb=str2double(sizefig_cb);
+                        [~,sizefig]=unix(['convert ',filename_imgtmp,' -format "%w" info:']);
+                        sizefig=str2double(sizefig);
+                        [~,~]=unix(['convert ',filename_cbtmp,' -gravity center -extent ',...
+                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp]);
+                    else
+                        com1=['img_convert ',filename_cbtmp,' -format "%h" info:'];
+                        com1=strrep(com1,'\','/');
+                        [~,sizefig_cb]=unix(com1);
+                        sizefig_cb=str2double(sizefig_cb);
+                        com1=['img_convert ',filename_imgtmp,' -format "%w" info:'];
+                        com1=strrep(com1,'\','/');
+                        [~,sizefig]=unix(com1);
+                        sizefig=str2double(sizefig);
+                        com1=['img_convert ',filename_cbtmp,' -gravity center -extent ',...
+                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp];
+                        com1=strrep(com1,'\','/');
+                        [~,~]=unix(com1);
+                    end
+                end
+            elseif nmod==1
+                movefile(filename_cbout,filename_cbtmp)
+            elseif nmod>=nrun*nmaxmod-1
+                movefile(filename_cbin,filename_cbtmp)
+            end
+            
             if cbpos==1 && colnb_tmp==nmodeinv+1
                 cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'south',filename_panel);
             elseif cbpos==1 && colnb_tmp<nmodeinv+1
@@ -850,7 +875,15 @@ if calcmod==1
             else
                 cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_panel);
             end
-            delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+            if concat==1
+                if nmod>1 && nmod<nrun*nmaxmod-1
+                    delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                elseif nmod==1
+                    delete(filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                elseif nmod>=nrun*nmaxmod-1
+                    delete(filename_cbin,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                end
+            end
         end
     end
     
@@ -866,7 +899,7 @@ if calcmod==1
             p1=[VSout,VSin];
             p1=p1(1:2:end,:);
             xticks=vsticks;
-            XMIN=vsMIN; XMAX=vsMAX;
+            XMIN=[]; XMAX=[];
         elseif strcmp(param1,'Th')==1
             axtit1='Thickness (m)';
             p1=[Zout,Zin];
@@ -878,13 +911,13 @@ if calcmod==1
             p1=[VPout,VPin];
             p1=p1(1:2:end,:);
             xticks=vpticks;
-            XMIN=vpMIN; XMAX=vpMAX;
+            XMIN=[]; XMAX=[];
         elseif strcmp(param1,'Dens')==1
             axtit1='Density (kg/m^3)';
             p1=[RHOout,RHOin];
             p1=p1(1:2:end,:);
             xticks=rhoticks;
-            XMIN=rhoMIN; XMAX=rhoMAX;
+            XMIN=[]; XMAX=[];
         end
         % Second parameter
         if strcmp(param2,'Vs')==1
@@ -892,7 +925,7 @@ if calcmod==1
             p2=[VSout,VSin];
             p2=p2(1:2:end,:);
             yticks=vsticks;
-            YMIN=vsMIN; YMAX=vsMAX;
+            YMIN=[]; YMAX=[];
         elseif strcmp(param2,'Th')==1
             axtit2='Thickness (m)';
             p2=[Zout,Zin];
@@ -904,19 +937,13 @@ if calcmod==1
             p2=[VPout,VPin];
             p2=p2(1:2:end,:);
             yticks=vpticks;
-            YMIN=vpMIN; YMAX=vpMAX;
+            YMIN=[]; YMAX=[];
         elseif strcmp(param2,'Dens')==1
             axtit2='Density (kg/m^3)';
             p2=[RHOout,RHOin];
             p2=p2(1:2:end,:);
             yticks=rhoticks;
-            YMIN=rhoMIN;YMAX=rhoMAX;
-        end
-        
-        if colnb>length(np1)*length(np2)
-            colnb_tmp=length(np1)*length(np2);
-        else
-            colnb_tmp=colnb;
+            YMIN=[];YMAX=[];
         end
         
         % Loop over all selected parameters
@@ -947,38 +974,59 @@ if calcmod==1
                 drawnow
                 
                 % Save figure
-                filename=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+                filename=fullfile(dir_img_ind,[targetfile(1:end-7),...
                     '.param.',param1,num2str(np1(i)),param2,num2str(np2(j)),'.',imgform]);
                 save_fig(f4,filename,imgform,imgres,1,0);
                 close(f4); clear f4;
                 
+                filename_cbin=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                    '.cbmisin.',imgform]);
+                filename_cbout=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                    '.cbmisout.',imgform]);
+                
                 % Save colorbars
                 if i==1 && j==1
-                    f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale, youp(1:3:end),...
-                        [min(misin) max(misin)], fs, [0 0 24 18], sizax);
-                    filename_cbin=fullfile(dir_rep_ind,[targetfile(1:end-7),...
-                        '.cbmisin.',imgform]);
-                    save_fig(f4,filename_cbin,imgform,imgres,1,0);
-                    close(f4); clear f4;
-                    
-                    f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale, youpout(1:2:end),...
-                        [min(misout) maxmisout], fs, [0 0 24 18], sizax);
-                    filename_cbout=fullfile(dir_rep_ind,[targetfile(1:end-7),...
-                        '.cbmisout.',imgform]);
-                    save_fig(f4,filename_cbout,imgform,imgres,1,0);
-                    close(f4); clear f4;
+                    if nmod>1
+                        % Save colorbars
+                        if cbpos==1
+                            cbticks=youp(1:3:end);
+                        else
+                            cbticks=youp(1:4:end);
+                        end
+                        f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale,cbticks,...
+                            [min(misin) max(misin)], fs, [0 0 24 18], sizax, 2);
+                        save_fig(f4,filename_cbin,imgform,imgres,1,0);
+                        close(f4); clear f4;
+                    end
+                    if nmod<nrun*nmaxmod-1
+                        if cbpos==1
+                            cbticks=youpout(1:2:end);
+                        else
+                            cbticks=youpout(1:3:end);
+                        end
+                        f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale,cbticks,...
+                            [min(misout) maxmisout], fs, [0 0 24 18], sizax, 1);
+                        save_fig(f4,filename_cbout,imgform,imgres,1,0);
+                        close(f4); clear f4;
+                    end
                 end
             end
         end
         
+        if colnb>length(np1)*length(np2)
+            colnb_tmp=length(np1)*length(np2);
+        else
+            colnb_tmp=colnb;
+        end
+        
         if testplot==1
-            filename_paramall=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+            filename_paramall=fullfile(dir_img_ind,[targetfile(1:end-7),...
                 '.param.*.',imgform]);
-            filename_imgtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+            filename_imgtmp=fullfile(dir_img_ind,[targetfile(1:end-7),...
                 '.imgtmp.',imgform]);
             cat_img(filename_paramall,imgform,colnb_tmp,'east',filename_imgtmp,0);
             
-            filename_cbtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
+            filename_cbtmp=fullfile(dir_img_ind,[targetfile(1:end-7),...
                 '.cb.',imgform]);
             if (cbpos==1 && colnb_tmp==length(np1)*length(np2)) || (cbpos==2 && colnb_tmp>1)
                 cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
@@ -1010,9 +1058,9 @@ if calcmod==1
                 end
             end
             
-            filename_param=fullfile(dir_rep_ind,[targetfile(1:end-7),...
-                '.param.',param1,num2str(np1(1)),'_',num2str(np1(end)),...
-                    param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
+            filename_param=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                '.param_',param1,num2str(np1(1)),'_',num2str(np1(end)),...
+                param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
             if cbpos==1 && colnb_tmp==length(np1)*length(np2)
                 cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'south',filename_param);
             elseif cbpos==1 && colnb_tmp<length(np1)*length(np2)
@@ -1022,11 +1070,17 @@ if calcmod==1
             else
                 cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_param);
             end
-            delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);
+            if concat==1
+                delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);
+            end
         end
     end
 end
-fprintf('\n  **********************************************************');
-fprintf('\n  **********************************************************\n');
-
+tend=toc(tstart);
+[time_string]=secs2hms(tend);
+if inversion==1 || plotinvres==1 || plotparam==1
+    fprintf(['\n  Elapsed time: ',time_string,'\n']);
+    fprintf('\n  **********************************************************');
+    fprintf('\n  **********************************************************\n');
+end
 end

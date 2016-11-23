@@ -1,6 +1,8 @@
 function [col,youp]=createcolormap(data,map,colorlogscale)
-%%% S. Pasquet - V16.4.14
+
+%%% S. Pasquet - V16.11.18
 % Create colormap
+% [col,youp]=createcolormap(data,map,colorlogscale)
 
 if exist('map','var')==0 || isempty(map)==1
     map=colormap;

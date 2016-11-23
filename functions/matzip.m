@@ -1,7 +1,8 @@
 function matzip(compress,files,method,del,output,verbose)
-%%% S. Pasquet - V16.5.7
-% GZIP in matlab
 
+%%% S. Pasquet - V16.11.18
+% GZIP in matlab
+% matzip(compress,files,method,del,output,verbose)
 if nargin<5
     output=[];
 end

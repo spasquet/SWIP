@@ -1,8 +1,8 @@
-function plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX)
-%%% S. Pasquet - V16.8.18
+function plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX,imgsize)
+
+%%% S. Pasquet - V16.11.22
 % Quick plot of seismogram
-%
-% plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX)
+% plot_seismo(seismofile,tMIN,tMAX,imgform,imgres,fs,fldr,scal,clip,perc,xticks,tticks,xMIN,xMAX,imgsize)
 
 if exist('seismofile','var')==0 || isempty(seismofile)==1
     [seismofile,seismopath]=uigetfile('*.su','Select seismogram file');
@@ -34,6 +34,10 @@ if exist('perc','var')==0 || isempty(perc)==1
     perc=95;
 end
 
+if exist('imgsize','var')==0 || isempty(imgsize)==1
+    imgsize=[0 0 25 15];
+end
+
 [~,xsca]=unix(['sugethw < ',fullfile(seismopath,seismofile),' key=scalco output=geom | uniq']);
 xsca=abs(str2double(xsca));
 
@@ -43,7 +47,7 @@ for i=1:length(fldr)
     [seismomat,tseis,xseis]=seismo2dat(fullfile(seismopath,'tmp.su'),0);
     delete(fullfile(seismopath,'tmp.su'));
     fig=plot_wiggle(showplot,-seismomat',xseis/xsca,tseis*1000,scal,clip,perc,...
-        fs,'Gx (m)','Time (ms)',[xMIN xMAX],[tMIN tMAX],xticks,tticks,[0 0 25 6],[]);
+        fs,'Gx (m)','Time (ms)',[xMIN xMAX],[tMIN tMAX],xticks,tticks,imgsize,[]);
     file1=[num2str(fldr(i)),'.seismo.',imgform];
     save_fig(fig,file1,imgform,imgres,1);
 end

@@ -1,8 +1,8 @@
-function [dspmat,f,v]=matpomegal(sufile,coord,nray,fmin,fmax,vmin,vmax,...
-    flip,xsca,tsca,norm,dspfile,datsave)
+function [dspmat,f,v]=matpomegal(sufile,coord,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,norm,dspfile,datsave)
 
-%%% S. Pasquet - V16.5.6
+%%% S. Pasquet - V16.11.18
 % SUPOMEGAL for matlab
+% [dspmat,f,v]=matpomegal(sufile,coord,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,norm,dspfile,datsave)
 
 com1=sprintf(['supomegal < %s coord=%d nray=%d fmin=%d fmax=%d',...
     ' vmin=%d vmax=%d flip=%d xsca=%d tsca=%d > %s'],...

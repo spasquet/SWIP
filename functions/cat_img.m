@@ -1,8 +1,9 @@
 function cat_img(infiles,imgformat,columns,align,outfile,verbose)
-%%% S. Pasquet - V16.7.5
+
+%%% S. Pasquet - V16.11.18
 % Concatenate images files in various format
 %
-% cat_img(infiles,imgformat,columns,outfile)
+% cat_img(infiles,imgformat,columns,align,outfile,verbose)
 
 if exist('infiles','var')==0 || isempty(infiles)==1
     infiles=[];

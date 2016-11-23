@@ -1,6 +1,8 @@
-function plot_disp(dspfile,pvcfile,Dlogscale,fMIN,fMAX,imgform,imgres,flip,eb)
-%%% S. Pasquet - V16.5.3
+function plot_disp(dspfile,targetfile,Dlogscale,fMIN,fMAX,imgform,imgres,flip,eb)
+
+%%% S. Pasquet - V16.11.22
 % Quick plot of dispersion image and curves
+% plot_disp(dspfile,targetfile,Dlogscale,fMIN,fMAX,imgform,imgres,flip,eb)
 
 if exist('dspfile','var')==0 || isempty(dspfile)==1
     [dspfile,dsppath]=uigetfile('*.dsp','Select dispersion file');
@@ -14,10 +16,10 @@ else
     dsppath=[];
 end
 
-if exist('pvcfile','var')==0 || isempty(pvcfile)==1
-        [pvcfile,pvcpath]=uigetfile('*.target','Select dispersion curve or cancel');
+if exist('targetfile','var')==0 || isempty(targetfile)==1
+        [targetfile,targetpath]=uigetfile('*.target','Select dispersion curve or cancel');
 else
-    pvcpath=[];
+    targetpath=[];
 end
 
 run('SWIP_defaultsettings')
@@ -36,9 +38,9 @@ else
         [],[],[],[],[],[],[1 1 24 18],[]);
 end
 
-if pvcfile~=0
+if targetfile~=0
     % Read target file to get picked dispersion curves
-    [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(fullfile(pvcpath,pvcfile));
+    [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(fullfile(targetpath,targetfile));
     npvc=length(modes);
     for ip=1:npvc
         % Resample in lambda or frequency

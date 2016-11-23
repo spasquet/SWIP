@@ -2,11 +2,11 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V16.9.15
+%%% S. Pasquet - V16.11.22
 %%% SWIPparam.m creates the parameterization file for surface-wave inversion
 %%% It can create either a global file for all the profile or create
 %%% automatic parameterization for specific Xmid based on a velocity model
-%%% Comment line to use default settings (cf defaultsettings.m)
+%%% Comment line to use default settings (cf SWIP_defaultsettings.m)
 
 %%%-------------------------%%%
 %%% START OF INITIALIZATION %%%
@@ -27,7 +27,7 @@ nlay      = 11;   % No. of layers (including half-space)
 %%% The following settings can be either scalars (same parameters for all layers)
 %%% or vectors with nlay elements (specific parameters for each layer)
 
-nsublay   = 10;   % No. of sublayers per layer
+nsublay   = 10;   % No. of sublayers per layer (used if shape ~=1)
 thmin     = 0.5;  % Min. thickness per layer (m)
 thmax     = 2.5;    % Max. thickness per layer (m)
 
@@ -48,11 +48,10 @@ Vplink    = 1;    % Vp linked (=1) or not (=0) to Vs
 Rholink   = 1;    % Rho linked (=1) or not (=0) to Vs
 Nulink    = 1;    % Nu linked (=1) or not (=0) to Vs
 
-%%% Semi-automatic parameterization settings (used if paramtype=1,2,3 or 4)
+%%% Semi-automatic parameterization settings (used if paramtype~=0)
 plot2dVP  = 1;    % Plot imported Vp models (=1) or not (=0)
 dz        = 0.2;  % Sampling in depth (m)
-vfac      = 0.25; % Increase Vp range (Vpmin-vfac*Vpmin<v<Vpmax+vfac*Vpmax)
-linklvz   = 0;    % Link Vs LVZ with Vp LVZ (=1) or not (=0)
+vfac      = 0.25; % Increase Vp range (Vpmin-vfac*Vpmin<Vp<Vpmax+vfac*Vpmax)
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%

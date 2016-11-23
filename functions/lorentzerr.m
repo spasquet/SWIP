@@ -1,7 +1,8 @@
 function deltac=lorentzerr(vel,lam,nW,dx,fac,maxerr,minvelerr,a)
 
-%%% S. Pasquet - V16.2.29
+%%% S. Pasquet - V16.11.18
 %%% Compute Lorentzian error according to O'Neill's workflow
+% deltac=lorentzerr(vel,lam,nW,dx,fac,maxerr,minvelerr,a)
 
 if exist('fac','var')==0 || isempty(fac)==1    
     fac=1; % factor to increase error

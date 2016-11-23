@@ -1,7 +1,8 @@
 function [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
-%%% S. Pasquet - V16.3.28
+%%% S. Pasquet - V16.11.18
 % Resample velocity model according to another one
+% [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
 if nargin>3
     modifpois=1;

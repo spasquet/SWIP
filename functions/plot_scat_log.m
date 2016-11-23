@@ -1,12 +1,12 @@
 function [fig,han1,han2,han3,c]=plot_scat_log(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
 
-%%% S. Pasquet - V16.6.16
+%%% S. Pasquet - V16.11.18
 %
-% plot_scat_log(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
-%    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
+% plot_scat_log(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,...
+% xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
 %
-% h -> Figure handle
+% f -> Figure handle
 % X, Y -> vector of length N & M of meshgrid matrix of size N-by-M
 % Z -> matrix N-by-M
 % marker -> marker type
@@ -176,7 +176,15 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb==1
         else
             ztickslog=get(cbhandle,'Ytick');
         end
-        zticks=round(10.^(mn+rng*(ztickslog-1)/(length(map)-1)));
+        zticks=10.^(mn+rng*(ztickslog-1)/(length(map)-1));
+        if min(zticks)<1
+            prec=1;
+        elseif min(zticks)<0.1
+            prec=2;
+        else
+            prec=0;
+        end
+        zticks = round(10^prec*zticks)/10^prec;
     end
     if cb==2
         set(cbhandle,'Xtick',ztickslog,'XTicklabel',zticks);

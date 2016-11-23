@@ -1,7 +1,8 @@
 function matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
-%%% S. Pasquet - V16.4.14
+%%% S. Pasquet - V16.11.18
 % Read dinver report files
+% matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
 if nargin>6
     resamp=1;

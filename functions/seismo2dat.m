@@ -1,6 +1,8 @@
 function [seismomat,t,x]=seismo2dat(seismofile,datsave)
-%%% S. Pasquet - V16.6.14
+
+%%% S. Pasquet - V16.11.18
 % Convert .su seismo file in ASCII file .dat for matlab
+% [seismomat,t,x]=seismo2dat(seismofile,datsave)
 
 % Time minimum
 [~,tmin]=unix(['sugethw < ',seismofile,' key=delrt output=geom | uniq']);

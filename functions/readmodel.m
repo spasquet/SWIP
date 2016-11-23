@@ -1,8 +1,9 @@
 function model=readmodel(file,nmaxmod,runnb)
 
-% S. Pasquet - V16.1.21
+%%% S. Pasquet - V16.11.18
 % Read velocity and density models calculated by dinver inversion and
 % extracted using gpdcreport
+% model=readmodel(file,nmaxmod,runnb)
 
 % Read model
 fileID=fopen(file);

@@ -1,18 +1,10 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V16.9.15
+%%% S. Pasquet - V16.11.22
 %%% SWIPinv.m performs surface-wave inversion along the seismic profile
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 
 run('SWIP_defaultsettings')
-
-if inversion==0 && calcmod==0 && plotinvres==0 && plotparam==0
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    fprintf('\n   Select at least one option');
-    fprintf('\n   Set either "inversion, "calcmod", "plotinvres" or "plotparam" to 1');
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
-    return
-end
 
 % Directories settings
 if inversion==1
@@ -61,6 +53,7 @@ nshot=xmidparam.nshot;
 % Get parameter file and create folders to store inversion results
 if inversion==1
     if paramtype==0
+        fprintf('\n  Select parameterization file\n');
         [paramfile,parampath]=uigetfile(fullfile(dir_param,'*.param'),...
             'Select parameterization file');
         if paramfile==0
@@ -137,67 +130,96 @@ else
 end
 nmaxmod=(inv_set.itmax.*inv_set.ns)+inv_set.ns0;
 
-if calcmod==1 || plotinvres==1 || plotparam==1
-    % Get previous settings
-    xmin=plotopt.xmin;
-    xmax=plotopt.xmax;
-    wave=targopt.wave(1);
-    resampvec=targopt.resampvec;
-    lmaxpick=targopt.lmaxpick;
-    zround=xmidparam.zround; % Get topography
-    if isempty(dpMAX)==1
-        if size(resampvec,1)==size(lmaxpick,1)
-            if size(resampvec,1)==1
-                maxdepth=max([resampvec,lmaxpick]);
-            else
-                maxdepth=max([resampvec;lmaxpick]);
-            end
-        else
-            if size(resampvec,1)==1
-                maxdepth=max([resampvec';lmaxpick]);
-            else
-                maxdepth=max([resampvec',lmaxpick]);
+% Get previous settings
+xmin=plotopt.xmin;
+xmax=plotopt.xmax;
+wave=targopt.wave(1);
+resampvec=targopt.resampvec;
+sampling=targopt.sampling;
+lmaxpick=targopt.lmaxpick;
+zround=xmidparam.zround; % Get topography
+if isempty(dpMAX)==1
+    if inversion == 0
+        dpMAX=zeros(size(Xmidselec));
+        for ix=Xmidselec
+            dir_rep_ind=fullfile(dir_rep_inv,[num2str(XmidT(ix),xmidformat),'_reports']);
+            if exist(dir_rep_ind,'dir')==7
+                paramstruct=dir(fullfile(dir_rep_ind,'*.param'));
+                for ip=1:length(paramstruct)
+                    paramfile=fullfile(dir_rep_ind,paramstruct(ip).name);
+                    [~,dpMAX(ix)]=param2mod(paramfile);
+                end
             end
         end
-    else
-        maxdepth=dpMAX;
+        dpMAX=max(dpMAX);
+        if dpMAX == 0
+            if paramtype==0
+                if isempty(strfind(dir_rep_inv,dir_inv))==1
+                    dir_rep_inv=fullfile(dir_all.dir_start,dir_rep_inv);
+                end
+                paramname=fullfile(dir_param,[dir_rep_inv(length(dir_inv)+1:end),'.param']);
+            end
+        end
     end
-    depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
-    ZZ=0:dz:maxdepth;
-    nZ=length(ZZ);
-    
-    % Memory allocation
-    indf=nC;
-    indi=nC;
-    layered=zeros(length(depth),Xlength);
-    
-    % File name extensions
-    if nbest==0
-        extens=['.bweb',num2str(outpoints)]; % Best within error bars
-    else
-        extens=['.best',num2str(nbest)]; % Arbitrary nb
+    if inversion == 1 || (inversion == 0 && dpMAX == 0)
+        if paramtype>0
+            paramstruct=dir(fullfile(dir_targ,['*.type',num2str(paramtype),'.param']));
+            dpMAX=zeros(size(paramstruct));
+            for ip=1:length(paramstruct)
+                paramfile=fullfile(dir_targ,paramstruct(ip).name);
+                [~,dpMAX(ip)]=param2mod(paramfile);
+            end
+            dpMAX=max(dpMAX);
+        else
+            if exist(paramname,'file')==2
+                [~,dpMAX]=param2mod(paramname);
+            else
+                fprintf('\n  !!!!!!!!!!!!!!!!!!!!!');
+                fprintf('\n   Missing .param file');
+                fprintf('\n  !!!!!!!!!!!!!!!!!!!!!\n\n');
+                return
+            end
+        end
     end
-    dir_img_inv_mod=fullfile(dir_img_inv,['models',extens]);
-    dir_img_inv_1d=fullfile(dir_img_inv_mod,'1dmodels');
-    
-    if modeltype==1
-        modeltype='best'; avertype='Vms';
-    elseif modeltype==2
-        modeltype='layered'; avertype='Vms';
-    elseif modeltype==3
-        modeltype='smooth'; avertype='Vms';
-    elseif modeltype==4
-        modeltype='layered'; avertype='Vws';
-    elseif modeltype==5
-        modeltype='smooth'; avertype='Vws';
-%     elseif modeltype==4
-%         modeltype='smlay';
-    elseif modeltype==6
-        modeltype='ridge'; avertype='Vms';
-    else
-        modeltype='smooth'; avertype='Vws';
-        fprintf('\n  Weighted smooth model selected by default\n');
-    end
+    dpMIN=0;
+end
+maxdepth=dpMAX;
+depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
+ZZ=0:dz:maxdepth;
+nZ=length(ZZ);
+
+% Memory allocation
+indf=nC;
+indi=nC;
+layered=zeros(length(depth),Xlength);
+
+% File name extensions
+if nbest==0
+    extens=['.bweb',num2str(outpoints)]; % Best within error bars
+else
+    extens=['.best',num2str(nbest)]; % Arbitrary nb
+end
+dir_img_inv_mod=fullfile(dir_img_inv,['models',extens]);
+dir_img_inv_1d=fullfile(dir_img_inv_mod,'1dmodels');
+
+if modeltype==1
+    modeltype='best'; avertype='Vms';
+elseif modeltype==2
+    modeltype='layered'; avertype='Vms';
+elseif modeltype==3
+    modeltype='smooth'; avertype='Vms';
+elseif modeltype==4
+    modeltype='layered'; avertype='Vws';
+elseif modeltype==5
+    modeltype='smooth'; avertype='Vws';
+    %     elseif modeltype==4
+    %         modeltype='smlay';
+elseif modeltype==6
+    modeltype='ridge'; avertype='Vms';
+else
+    modeltype='smooth'; avertype='Vws';
+    fprintf('\n  Weighted smooth model selected by default\n');
+end
 %     if avertype==0
 %         avertype='Vms';
 %     elseif avertype==1
@@ -210,7 +232,6 @@ if calcmod==1 || plotinvres==1 || plotparam==1
 %         avertype='Vms';
 %         fprintf('\n  Average model selected by default\n');
 %     end
-end
 
 [testimgmgck,~]=unix('which montage');
 [testpdfjam,~]=unix('which pdfjam');
@@ -227,6 +248,9 @@ end
 
 matrelease=version('-release');
 
+fprintf('\n  **********************************************************');
+fprintf('\n  **********************************************************\n');
+
 %% CALCULATIONS FOR ALL XMIDS
 Tstart=tic;
 %%%%%% Loop over all Xmids %%%%%%
@@ -234,7 +258,7 @@ Tstart=tic;
 for ix=Xmidselec
     tstart=tic;
     
-    if sum(nshot(ix,:))>=0
+    if sum(nshot(ix,:))>=0 && (inversion==1 || calcmod==1 || plotinvres==1 || plotparam==1)
         fprintf(['\n  Xmid',num2str(ix),' = ',num2str(XmidT(ix),xmidformat),' m\n']);
     end
     % Create folder to store inversion results for each Xmid
@@ -284,6 +308,7 @@ for ix=Xmidselec
             continue
         end
         copyfile(nametarg,dir_rep_ind);
+        copyfile(paramname,dir_rep_ind);
         matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
         
         % Read target file to get picked dispersion curves
@@ -308,6 +333,23 @@ for ix=Xmidselec
         end
     end
     
+    % Get maximum wavelength
+    nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
+    if exist(nametarg,'file')==2
+        % Read target file to get picked dispersion curves
+        [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
+        npvc=length(modes);
+        lmaxpicktmp=zeros(npvc,1);
+        for ip=1:npvc
+            % Resample in lambda or frequency
+            [freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1}]=...
+                resampvel(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},...
+                deltaresamp{modes(ip)+1},resampvec,sampling,1);
+            lmaxpicktmp(ip)=max(vresamp{modes(ip)+1}./freqresamp{modes(ip)+1});
+        end
+        lmaxpick(ix)=max(lmaxpicktmp);
+    end
+    
     %%
     %%%%%% Extraction of results / Building of average models %%%%%%
     
@@ -329,10 +371,15 @@ for ix=Xmidselec
         
         % Get target file
         nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
-        if exist(nametarg,'file')~=2
-            if sum(nshot(ix,:))>=0
+        if exist(nametarg,'file')~=2 && sum(nshot(ix,:))>=0
+            if exist(nametarg(1:end-3),'file')==2
+                movefile(nametarg(1:end-3),nametarg);
+            else
                 fprintf('\n  No target - Go to next Xmid\n\n');
+                continue
             end
+        else
+            fprintf('\n  No target - Go to next Xmid\n\n');
             continue
         end
         % Read target file to get picked dispersion curves
@@ -617,17 +664,17 @@ for ix=Xmidselec
             
             %%%%%% Mean layered smoothed model %%%%%%
             
-%             Zmeani=Zmean;
-%             Zmeani(2:2:end-2,:)=Zmeani(2:2:end-2,:)-dz;
-%             VSmeanI=interp1q(Zmeani,VSmean,ZZ');
-%             VPmeanI=interp1q(Zmeani,VPmean,ZZ');
-%             RHOmeanI=interp1q(Zmeani,RHOmean,ZZ');
-%             % Standard deviation layered smoothed model
-%             Zstdi=Zstd;
-%             Zstdi(2:2:end-2,:)=Zstdi(2:2:end-2,:)-dz;
-%             VSstdI=interp1q(Zmeani,VSstd,ZZ');
-%             VPstdI=interp1q(Zmeani,VPstd,ZZ');
-%             RHOstdI=interp1q(Zmeani,RHOstd,ZZ');
+            %             Zmeani=Zmean;
+            %             Zmeani(2:2:end-2,:)=Zmeani(2:2:end-2,:)-dz;
+            %             VSmeanI=interp1q(Zmeani,VSmean,ZZ');
+            %             VPmeanI=interp1q(Zmeani,VPmean,ZZ');
+            %             RHOmeanI=interp1q(Zmeani,RHOmean,ZZ');
+            %             % Standard deviation layered smoothed model
+            %             Zstdi=Zstd;
+            %             Zstdi(2:2:end-2,:)=Zstdi(2:2:end-2,:)-dz;
+            %             VSstdI=interp1q(Zmeani,VSstd,ZZ');
+            %             VPstdI=interp1q(Zmeani,VPstd,ZZ');
+            %             RHOstdI=interp1q(Zmeani,RHOstd,ZZ');
             
             %%%%%% Gaussian weighting models %%%%%%
             
@@ -689,11 +736,11 @@ for ix=Xmidselec
                 
                 %%%%%% Weighted layered smoothed model %%%%%%
                 
-%                 Zweighti=Zweight;
-%                 Zweighti(2:2:end-2,:)=Zweighti(2:2:end-2,:)-dz;
-%                 VSweightI=interp1q(Zweighti,VSweight,ZZ');
-%                 VPweightI=interp1q(Zweighti,VPweight,ZZ');
-%                 RHOweightI=interp1q(Zweighti,RHOweight,ZZ');
+                %                 Zweighti=Zweight;
+                %                 Zweighti(2:2:end-2,:)=Zweighti(2:2:end-2,:)-dz;
+                %                 VSweightI=interp1q(Zweighti,VSweight,ZZ');
+                %                 VPweightI=interp1q(Zweighti,VPweight,ZZ');
+                %                 RHOweightI=interp1q(Zweighti,RHOweight,ZZ');
             end
             
             %%%%%% Save velocity models %%%%%%
@@ -710,8 +757,8 @@ for ix=Xmidselec
                 extens,'.Vms.layered']); % Layered model
             nameDINsm=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vms.smooth']); % Smooth model
-%             nameDINsmlay=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-%                 extens,'.Vms.smlay']); % Smooth layered model
+            %             nameDINsmlay=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+            %                 extens,'.Vms.smlay']); % Smooth layered model
             % Std
             nameDINlaystd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.VmsStd.layered']); % Layered model
@@ -724,8 +771,8 @@ for ix=Xmidselec
                 extens,'.Vws.layered']); % Layered model
             nameDINsmw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vws.smooth']); % Smooth model
-%             nameDINsmlayw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-%                 extens,'.Vws.smlay']); % Smooth layered model
+            %             nameDINsmlayw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+            %                 extens,'.Vws.smlay']); % Smooth layered model
             
             % Save best model
             dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
@@ -736,78 +783,82 @@ for ix=Xmidselec
             % Save mean models (layered, smoothed, layered smooth)
             dinsave(nameDINlay,THmean,VPmean(1:2:end),VSmean(1:2:end),RHOmean(1:2:end));
             dinsave(nameDINsm,repmat(dz,1,length(ZZ)),IVPmean,IVSmean,IRHOmean);
-%             dinsave(nameDINsmlay,repmat(dz,1,length(ZZ)),VPmeanI,VSmeanI,RHOmeanI);
+            %             dinsave(nameDINsmlay,repmat(dz,1,length(ZZ)),VPmeanI,VSmeanI,RHOmeanI);
             % Save std models (layered, smoothed, layered smooth)
             dinsave(nameDINlaystd,THstd,VPstd(1:2:end),VSstd(1:2:end),RHOstd(1:2:end));
             dinsave(nameDINsmstd,repmat(dz,1,length(ZZ)),IVPstd,IVSstd,IRHOstd);
-%             dinsave(nameDINsmlaystd,repmat(dz,1,length(ZZ)),VPstdI,VSstdI,RHOstdI);
+            %             dinsave(nameDINsmlaystd,repmat(dz,1,length(ZZ)),VPstdI,VSstdI,RHOstdI);
             % Save weighted models (layered, smoothed, layered smooth)
             if weightcalc==1 && nmod(ix)>1
                 dinsave(nameDINlayw,THweight,VPweight(1:2:end),VSweight(1:2:end),RHOweight(1:2:end));
                 dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
-%                 dinsave(nameDINsmlayw,repmat(dz,1,length(ZZ)),VPweightI,VSweightI,RHOweightI);
+                %                 dinsave(nameDINsmlayw,repmat(dz,1,length(ZZ)),VPweightI,VSweightI,RHOweightI);
             end
             
-            % Plot and save average and weighted models
-            [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
-                'Vs (m/s)','Depth (m)',[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
-                [],[],[],[0 0 24 18],[],0);
-            hold on
-            str0='Best model';
-            h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
-            str1='Average layered model';
-%             h2=plot(VSmeanI,ZZ,'g-','linewidth',1.5);
-%             str2='Average parameters and interpolation';
-            h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
-            str3='Average smooth model';
-            if weightcalc==1 && nmod(ix)>1
-                h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
-                str4='Weighted layered model';
-%                 h5=plot(VSweightI,ZZ*NaN,'g--','linewidth',1.5);
-%                 dashline(VSweightI,ZZ,2,2,2,2,'color','g','linewidth',1.5);
-%                 str5='Weighted parameters and interpolation';
-                h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
-                str6='Weighted smooth model';
-            end
-            if ridgecalc==1 && nmod(ix)>1
-                h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
-                str7='Ridge model';
-            end
-            colorbar; cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
-            if exist('NN','var')==1
-                caxis([0 max(NN(:))]);
-            end
-            set(cbhandle,'visible','off');
-            if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
-                %                 h_legend=legend([h0,h1,h2,h3],str0,str1,str2,str3);
-                h_legend=legend([h0,h1,h3],str0,str1,str3);
-            elseif weightcalc==1 && ridgecalc==0
-                %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6],str0,str1,str2,str3,str4,str5,str6);
-                h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
-            elseif weightcalc==0 && ridgecalc==1
-%                 h_legend=legend([h0,h1,h2,h3,h7],str0,str1,str2,str3,str7);
-                h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
-            else
-%                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6,h7],str0,str1,str2,str3,str4,str5,str6,str7);
-                h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
-            end
-            set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
-            hold off
-            % Save figure
-            file_mod=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
-            save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
-            close(f3);
-            
-            if colnb>1
-                colnb_tmp=2;
-            else
-                colnb_tmp=colnb;
-            end
-            filename_panel0=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
-                '.mod1d.mean.',imgform]);
-            if exist('file_ridge','var')==1 && testplot==1 && nmod(ix)>1
-                cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
-               delete(file_ridge);
+            if plotinvres==1
+                % Plot and save average and weighted models
+                [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
+                    'Vs (m/s)','Depth (m)',[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
+                    [],[],[],[0 0 24 18],[],0);
+                hold on
+                str0='Best model';
+                h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
+                str1='Average layered model';
+                %             h2=plot(VSmeanI,ZZ,'g-','linewidth',1.5);
+                %             str2='Average parameters and interpolation';
+                h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
+                str3='Average smooth model';
+                if weightcalc==1 && nmod(ix)>1
+                    h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
+                    str4='Weighted layered model';
+                    %                 h5=plot(VSweightI,ZZ*NaN,'g--','linewidth',1.5);
+                    %                 dashline(VSweightI,ZZ,2,2,2,2,'color','g','linewidth',1.5);
+                    %                 str5='Weighted parameters and interpolation';
+                    h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
+                    str6='Weighted smooth model';
+                end
+                if ridgecalc==1 && nmod(ix)>1
+                    h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
+                    str7='Ridge model';
+                end
+                colorbar; cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
+                if exist('NN','var')==1
+                    caxis([0 max(NN(:))]);
+                end
+                set(cbhandle,'visible','off');
+                if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
+                    %                 h_legend=legend([h0,h1,h2,h3],str0,str1,str2,str3);
+                    h_legend=legend([h0,h1,h3],str0,str1,str3);
+                elseif weightcalc==1 && ridgecalc==0
+                    %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6],str0,str1,str2,str3,str4,str5,str6);
+                    h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
+                elseif weightcalc==0 && ridgecalc==1
+                    %                 h_legend=legend([h0,h1,h2,h3,h7],str0,str1,str2,str3,str7);
+                    h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
+                else
+                    %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6,h7],str0,str1,str2,str3,str4,str5,str6,str7);
+                    h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
+                end
+                set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
+                hold off
+                % Save figure
+                file_mod=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
+                save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
+                close(f3);
+                
+                if colnb>1
+                    colnb_tmp=2;
+                else
+                    colnb_tmp=colnb;
+                end
+                filename_panel0=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                    '.mod1d.mean.',imgform]);
+                if exist('file_ridge','var')==1 && testplot==1 && nmod(ix)>1
+                    cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
+                    if concat==1
+                        delete(file_ridge);
+                    end
+                end
             end
         end
         
@@ -881,7 +932,7 @@ for ix=Xmidselec
         
         if plotinvres==1 && nmod(ix)>0
             
-            %% 
+            %%
             %%%%%% Plot and save calculated dispersion curves %%%%%%
             
             fprintf('\n  Saving calculated dispersion curves\n');
@@ -929,7 +980,7 @@ for ix=Xmidselec
             filename_dspall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                 '.calcdisp.*.',imgform]);
             
-            %% 
+            %%
             %%%%%% Plot and save calculated Vs models %%%%%%
             
             % Get the 1D Vs average model to plot
@@ -952,21 +1003,21 @@ for ix=Xmidselec
                             Zplot=ZZ;
                         else
                             if nmod(ix)>1
-                            VSplot=IVSweight;
-                            Zplot=ZZ;
+                                VSplot=IVSweight;
+                                Zplot=ZZ;
                             else
                                 VSplot=[];
                                 Zplot=[];
                             end
                         end
-%                     elseif strcmp(modeltype,'smlay')==1
-%                         if strcmp(avertype,'Vms')==1
-%                             VSplot=VSmeanI;
-%                             Zplot=ZZ;
-%                         else
-%                             VSplot=VSweightI;
-%                             Zplot=ZZ;
-%                         end
+                        %                     elseif strcmp(modeltype,'smlay')==1
+                        %                         if strcmp(avertype,'Vms')==1
+                        %                             VSplot=VSmeanI;
+                        %                             Zplot=ZZ;
+                        %                         else
+                        %                             VSplot=VSweightI;
+                        %                             Zplot=ZZ;
+                        %                         end
                     elseif strcmp(modeltype,'ridge')==1
                         VSplot=VSridge;
                         Zplot=ZZ;
@@ -1131,12 +1182,14 @@ for ix=Xmidselec
                 else
                     cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_panel);
                 end
-                if nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
-                    delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
-                elseif nmod(ix)==1
-                    delete(filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
-                elseif nmod(ix)>=inv_set.nrun(ix)*nmaxmod(ix)-1
-                    delete(filename_cbin,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                if concat==1
+                    if nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
+                        delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                    elseif nmod(ix)==1
+                        delete(filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                    elseif nmod(ix)>=inv_set.nrun(ix)*nmaxmod(ix)-1
+                        delete(filename_cbin,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
+                    end
                 end
             end
         end
@@ -1226,7 +1279,7 @@ for ix=Xmidselec
                     sizax=get(gca,'Position');
                     set(cbhandle,'visible','off');
                     drawnow
-
+                    
                     % Save figure
                     filename=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                         '.param.',param1,num2str(np1(i)),param2,num2str(np2(j)),'.',imgform]);
@@ -1324,50 +1377,62 @@ for ix=Xmidselec
                 else
                     cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_param);
                 end
-                delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);
+                if concat==1
+                    delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);
+                end
             end
         end
     end
     tend=toc(tstart);
     [time_string]=secs2hms(tend);
-    fprintf(['\n  Elapsed time: ',time_string,'\n']);
-    fprintf('\n  **********************************************************');
-    fprintf('\n  **********************************************************\n');
+    if inversion==1 || calcmod==1 || plotinvres==1 || plotparam==1
+        fprintf(['\n  Elapsed time: ',time_string,'\n']);
+        fprintf('\n  **********************************************************');
+        fprintf('\n  **********************************************************\n');
+    end
 end
 
 %%
 %%%%%% Plot and save inversion settings %%%%%%
 
-if calcmod==1 && sum(isnan(nmodeinv))<Xlength && sum(isnan(nC))<Xlength
+if sum(isnan(nmodeinv))<Xlength && sum(isnan(nC))<Xlength
     fprintf('\n  Saving inversion QC\n');
     f5=figure(5);
+    set(f5,'Units','centimeters');
+    set(f5,'Position',[0,0,24,18])
+    % Lambda max for each Xmid
+    f11=subplot(5,1,1);
+    plot(XmidT,lmaxpick,'k.','linewidth',1)
+    xlabel('X (m)');ylabel('\lambda_{max}');
+    xlim([xmin xmax]); ylim([0 10*ceil(max(lmaxpick)/10)]);
+    set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Nb of modes for each Xmid
-    f11=subplot(4,1,1);
-    plot(XmidT,nmodeinv,'kx','linewidth',1)
+    f12=subplot(5,1,2);
+    plot(XmidT,nmodeinv,'k.','linewidth',1)
     xlabel('X (m)');ylabel('Nb of modes');
     xlim([xmin xmax]); ylim([0 max(nmodeinv)+1]);
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Nb of layers for each Xmid
-    f12=subplot(4,1,2);
-    plot(XmidT,nC,'kx','linewidth',1)
+    f13=subplot(5,1,3);
+    plot(XmidT,nC,'k.','linewidth',1)
     set(gca,'YTick',0:2:50);
     xlabel('X (m)');ylabel('Nb of layers');
     xlim([xmin xmax]); ylim([0 max(nC)+1]);
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Nb of models for each Xmid
-    f13=subplot(4,1,3);
-    semilogy(XmidT,nmod,'kx','linewidth',1)
+    f14=subplot(5,1,4);
+    semilogy(XmidT,nmod,'k.','linewidth',1)
     xlabel('X (m)');ylabel('Accepted models');
     xlim([xmin xmax]); ylim([1 nmaxmod(ix)*max(inv_set.nrun(ix))]);
     set(gca,'Ytick',[10^0 10^1 10^2 10^3 10^4 10^5 ...
         10^6 10^7 10^8 10^9 10^10 10^11]);
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Lambda max for each Xmid
-    f14=subplot(4,1,4);
-    plot(XmidT,minmis,'kx','linewidth',1)
+    f15=subplot(5,1,5);
+    plot(XmidT,minmis,'k.','linewidth',1)
     xlabel('X (m)');ylabel('Misfit min.');
     xlim([xmin xmax]); ylim([0 max(minmis)+0.05]);
-    set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
+    set(gca,'TickDir','out','linewidth',1.5,'XMinorTick','on','YMinorTick','on');
     % Save figure
     filename=fullfile(dir_img_inv_mod,['C_SWIPinv_summary.',imgform]);
     save_fig(f5,filename,imgform,imgres,1);

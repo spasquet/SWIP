@@ -1,8 +1,8 @@
 function [vmaxamp,fmaxamp]=findpeak(dspmat,f,v,fpick,vpick,wl)
 
-% S. Pasquet - V16.1.20
-% findpeak.m looks at dispersion image maximum in specified window at the
-% picked frequency
+% S. Pasquet - V16.11.18
+% findpeak.m looks at dispersion image maximum in specified window at the picked frequency
+% [vmaxamp,fmaxamp]=findpeak(dspmat,f,v,fpick,vpick,wl)
 
 nbpick=length(fpick);
 fmaxamp=[]; vmaxamp=[];

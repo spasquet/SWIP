@@ -1,6 +1,8 @@
 function [ZI,XI,YI]=bln2xyz(datafile,blnfile,xsca)
-%%% S. Pasquet - V16.3.14
+
+%%% S. Pasquet - V16.11.18
 % Blank X,Y,Z file
+% [ZI,XI,YI]=bln2xyz(datafile,blnfile,xsca)
 
 if nargin<3
     xsca=100;

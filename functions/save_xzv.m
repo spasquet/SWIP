@@ -1,13 +1,19 @@
-function [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2)
+function [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
 
-% S. Pasquet - V16.4.13
+%%% S. Pasquet - V16.11.18
 % Save velocity model and mask in .xzv column ascii file 
+% [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
 
-if nargin<5
-    mask1=[]; mask2=[];
-elseif nargin<6
+if exist('mask1','var')==0 || isempty(mask1)==1
+    mask1=[];
+end
+if exist('mask2','var')==0 || isempty(mask2)==1
     mask2=[];
 end
+if exist('convert','var')==0 || isempty(convert)==1
+   convert=0;
+end
+
 
 % Save velocity model for Vp/Vs calculation
 sizevi=size(vi);
@@ -32,5 +38,18 @@ end
 VV=reshape(vi,size(vi,1)*size(vi,2),1);
 MASK1=reshape(mask1,size(mask1,1)*size(mask1,2),1);
 MASK2=reshape(mask2,size(mask2,1)*size(mask2,2),1);
+
+XX(isnan(VV)==1)=[];
+ZZ(isnan(VV)==1)=[];
+if isempty(mask1)==0
+    MASK1(isnan(VV)==1)=[];
+end
+if isempty(mask2)==0
+    MASK2(isnan(VV)==1)=[];
+end
+VV(isnan(VV)==1)=[];
+if convert==1;
+    VV=VV*1000;
+end
 
 dlmwrite(filexzv,[XX,ZZ,VV,MASK1,MASK2],'\t');

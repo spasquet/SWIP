@@ -1,9 +1,10 @@
 function fig = plot_colorbar(h, dims, orientation, title_string, cmap, Clogscale, cticks, val, fs, sizefig, sizeax, prec)
 % PLOT_COLORBAR plot a standalone colorbar for inclusion in a publication
-% fig = plot_colorbar(h, dims, orientation, title_string, cmap, Clogscale, cticks, val, fs, sizefig, sizeax, prec)
 %
 % Matt Foster <ee1mpf@bath.ac.uk>
-% Modified by S. Pasquet - V16.8.22
+% Modified by S. Pasquet - V16.11.18
+%
+% fig = plot_colorbar(h, dims, orientation, title_string, cmap, Clogscale, cticks, val, fs, sizefig, sizeax, prec)
 
 error(nargchk(1, 12, nargin, 'struct'))
 

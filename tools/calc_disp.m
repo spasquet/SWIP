@@ -1,6 +1,8 @@
-function calc_disp(sufile,nWmin,dSmin,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,imgform,imgres)
-%%% S. Pasquet - V16.3.27
-% Quick plot of seismogram
+function calc_disp(sufile,nWvec,dSmin,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,imgform,imgres)
+
+%%% S. Pasquet - V16.11.22
+% Quick extraction of dispersion image from seismogram
+% calc_disp(sufile,nWvec,dSmin,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,imgform,imgres)
 
 if exist('sufile','var')==0 || isempty(sufile)==1
     [sufile,supath]=uigetfile('*.su','Select seismogram file');
@@ -44,15 +46,15 @@ end
 
 xmin=min(Gxsing); % Get starting X coordinate (m)
 xmax=max(Gxsing); % Get ending X coordinate (m)
-winsize=nWmin;
+winsize=nWvec;
 maxwinsize=(winsize-1)*dx;
 nwin=length(winsize);
 
-if mod(nWmin,2)==1
-    XmidT=Gxsing(1+(nWmin-1)/2:dW:end-(nWmin-1)/2);
+if mod(nWvec,2)==1
+    XmidT=Gxsing(1+(nWvec-1)/2:dW:end-(nWvec-1)/2);
 else
-    XmidT=mean([Gxsing((nWmin)/2:dW:end-(nWmin)/2),...
-        Gxsing(1+(nWmin)/2:dW:1+end-(nWmin)/2)],2);
+    XmidT=mean([Gxsing((nWvec)/2:dW:end-(nWvec)/2),...
+        Gxsing(1+(nWvec)/2:dW:1+end-(nWvec)/2)],2);
 end
 XmidT=round(XmidT'*xsca)/xsca;
 Xlength=length(XmidT);
@@ -61,7 +63,7 @@ for ix=1:Xlength
     j=0; % Stack flag
     for jw=1:nwin
         % Retrieve first and last geophone position for the current window
-        if mod(nWmin,2)==1 % Non-even number of traces
+        if mod(nWvec,2)==1 % Non-even number of traces
             Gleft=Gxsing(find(Gxsing<XmidT(ix),(winsize(jw)-1)/2,'last'));
             Gright=Gxsing(find(Gxsing>XmidT(ix),(winsize(jw)-1)/2));
             ntr=length(Gleft)+length(Gright)+1;
@@ -135,8 +137,8 @@ for ix=1:Xlength
     end
 end
 
-% plot_disp(dspfile,0,Dlogscale,0,max(f(:)),imgform,imgres,flip,eb)
-% plot_spec(specfile,0,max(f(:)),imgform,imgres)
+plot_disp(dspfile,0,Dlogscale,0,max(f(:)),imgform,imgres,flip,eb)
+plot_spec(specfile,0,max(f(:)),imgform,imgres)
 plot_seismo(seismofile,0,750,imgform,imgres)
 
 end

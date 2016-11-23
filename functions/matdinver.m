@@ -1,8 +1,10 @@
 function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
 
-% S. Pasquet - V16.6.22
-
+% S. Pasquet - V16.11.18
 % matdinver execute dinver inversion through matlab
+
+% status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
+%
 % targetfile = name of the file containing dispersion curves
 % paramfile = name of the file containing the parameter space
 % nrun = Nb of run

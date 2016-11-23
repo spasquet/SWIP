@@ -1,6 +1,8 @@
 function velout = mov_aver(vel,npts,b1,b2)
-%%% S. Pasquet - V16.4.14
+
+%%% S. Pasquet - V16.11.18
 % Moving average filter
+% velout = mov_aver(vel,npts,b1,b2)
 
 vel=vel';
 velout=vel;

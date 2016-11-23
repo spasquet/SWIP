@@ -1,7 +1,8 @@
 function lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
-%%% S. Pasquet - V16.9.13
+%%% S. Pasquet - V16.11.18
 % Convert .pvc ASCII file in .target dinver file
+% lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
 if nargin<7
     flim=0;
@@ -156,6 +157,8 @@ fclose(fid0);
 % Conversion in target
 if ismac == 1
     unix(['gtar czf ',nametarg,' contents.xml']);
+elseif ispc == 1
+    unix(['tar czf ',nametarg,' contents.xml --force-local']);
 else
     unix(['tar czf ',nametarg,' contents.xml']);
 end

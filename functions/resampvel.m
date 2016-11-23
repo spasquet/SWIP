@@ -1,7 +1,8 @@
 function [freqresamp,vresamp,deltaresamp]=resampvel(freq,vel,deltac,resampvec,sampling,withnan)
 
-%%% S. Pasquet - V16.5.17
+%%% S. Pasquet - V16.11.18
 % Resample phase velocity in lambda or frequency
+% [freqresamp,vresamp,deltaresamp]=resampvel(freq,vel,deltac,resampvec,sampling,withnan)
 
 if nargin<6
     withnan=0;
@@ -16,7 +17,8 @@ if sampling==1
     %     end
     if length(unique(lambda))<length(lambda)
         [lambda,I]=unique(lambda,'first');
-        vel=vel(I);        
+        vel=vel(I);    
+        deltac=deltac(I);
     end
     vresamp=interp1(lambda,vel,resampvec,'linear');
     freqresamp=vresamp./resampvec;

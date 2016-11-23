@@ -1,19 +1,9 @@
 function [fig,han1]=plot_wiggle(h,seismomat,xseis,tseis,scal,clip,perc,fs,xtitle,...
     ttitle,xlimit,tlimit,xticks,tticks,sizefig,sizeax)
 
-%%% S. Pasquet - V16.8.18
-%
+%%% S. Pasquet - V16.11.18
 % plot_wiggle: Plot seismic data using wiggles
-%
-% [fig,han1]=plot_wiggle(h,seismomat,xseis,tseis,scal,clip,perc,fs,xtitle,ttitle,xlimit,tlimit,xticks,tticks,sizefig,sizeax)
-%
-% h -> Figure handle
-% xseis, tseis -> vector of length N & M of meshgrid matrix of size N-by-M
-% seismomat -> matrix N-by-M
-% fs -> font size
-% xtitle, ytitle -> axis title
-% sizefig -> 4 values vector [left, bottom, width, height] for figure
-% sizeax -> 4 values vector [left, bottom, width, height] for axis
+% plot_wiggle(h,seismomat,xseis,tseis,scal,clip,perc,fs,xtitle,ttitle,xlimit,tlimit,xticks,tticks,sizefig,sizeax)
 
 % Figure handle
 if isempty(h)==0 && h~=0

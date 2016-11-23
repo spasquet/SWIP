@@ -1,8 +1,10 @@
 function [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,pickstyle,modeinit,...
     err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
 
-%%% S. Pasquet - V16.9.15
+%%% S. Pasquet - V16.11.18
 % Pick amplitudes of dispersion image
+% [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,...
+%    pickstyle,modeinit,err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
 
 fprintf(['\n  Picking mode ',num2str(modeinit),'\n']);
 hold on;

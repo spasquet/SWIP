@@ -1,9 +1,9 @@
 function acquiparam=get_acquiparam(sufile,xsca,istomo)
 
-%%% S. Pasquet - V16.9.14
+%%% S. Pasquet - V16.11.18
 % get_acquiparam.m retrieves .SU file acquisition parameters
 %
-% acquiparam=get_acquiparam(sufile,xsca)
+% acquiparam=get_acquiparam(sufile,xsca,istomo)
 %
 % sufile (required) => name of the .SU file
 % xsca (optionnal) => scaling factor for spatial coordinates

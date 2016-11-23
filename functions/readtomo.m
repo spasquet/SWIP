@@ -1,8 +1,9 @@
 function [VelI,XI,ZI]=readtomo(Velfile,mask,X,Z,xsca,vaverage,nW,dx)
 
-% S. Pasquet - V16.4.13
+%%% S. Pasquet - V16.11.18
 % Read tomography velocity file with x,z,v columns and resample it along
 % input X and Z (with window averaging or not)
+% [VelI,XI,ZI]=readtomo(Velfile,mask,X,Z,xsca,vaverage,nW,dx)
 
 if exist('mask','var')==0 || isempty(mask)==1
     mask=0;

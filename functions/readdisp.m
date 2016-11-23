@@ -1,9 +1,10 @@
 function [D,dispselec]=readdisp(file,nmaxmod,runnb,nbest,marg,freq,vphmin,vphmax)
 
-% S. Pasquet - V16.3.10
+%%% S. Pasquet - V16.11.18
 % Read dispersion computed by gpdc (single forward model) or by gpdcreport
 % (dinver inversion results). Look for nbest models, or for the models
 % included within the error bars
+% [D,dispselec]=readdisp(file,nmaxmod,runnb,nbest,marg,freq,vphmin,vphmax)
 
 if exist('runnb','var')==0 && exist('nbest','var')==0
     runnb=1;

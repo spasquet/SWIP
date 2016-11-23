@@ -1,10 +1,9 @@
 function [fig,han1,han2,han3]=plot_stairs(h,X,Y,symb,col,lw,axetop,fs,xtitle,ytitle,...
     xlimit,ylimit,xticks,yticks,xline,yline,sizefig,sizeax,vertex)
 
-%%% S. Pasquet - V16.4.25
+%%% S. Pasquet - V16.11.18
 %
-% [fig,han]=plot_stairs(h,X,Y,errbar,symb1,symb2,col,axetop,fs,xtitle,ytitle,
-%     xlimit,ylimit,xticks,yticks,xline,yline,sizefig,sizeax,axeq)
+% plot_stairs(h,X,Y,symb,col,lw,axetop,fs,xtitle,ytitle,xlimit,ylimit,xticks,yticks,xline,yline,sizefig,sizeax,vertex)
 %
 % h -> Figure handle
 % X, Y -> vectors of length N

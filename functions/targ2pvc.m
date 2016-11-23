@@ -1,7 +1,8 @@
 function [freq,vel,deltac,modes]=targ2pvc(nametarg)
 
-%%% S. Pasquet - V16.5.6
+%%% S. Pasquet - V16.11.18
 % Read .target dinver file
+% [freq,vel,deltac,modes]=targ2pvc(nametarg)
 
 dir_inv=fileparts(nametarg);
 if strcmp(dir_inv,'')==1

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V16.9.14
+%%% S. Pasquet - V16.11.22
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -26,7 +26,7 @@ end
 if swip==1
     [dir_all,dir_inv_img]=dir_create(2);
     if dir_all.dir_main==0
-        return
+        returnF
     end
     if dir_inv_img.dir_rep_inv==0
         return
@@ -50,6 +50,7 @@ if swip==1
         nmodeinv=inv_set.nmodeinv;
         maxmodeinv=nmodeinv-1;
     end
+    paramtype=inv_set.paramtype;
 else
     dir_all=dir_create(0);
     if dir_all.dir_main==0
@@ -60,6 +61,7 @@ end
 dir_dat=dir_all.dir_dat;
 dir_img=dir_all.dir_img;
 dir_pick=dir_all.dir_pick;
+dir_param=dir_all.dir_param;
 dir_targ=dir_all.dir_targ;
 dir_inv=dir_all.dir_inv;
 matstruct=dir(fullfile(dir_dat,'*.param.mat'));
@@ -97,22 +99,49 @@ sampling=targopt.sampling;
 lmaxpick=targopt.lmaxpick;
 zround=xmidparam.zround; % Get topography
 if isempty(dpMAX)==1
-    if size(resampvec,1)==size(lmaxpick,1)
-        if size(resampvec,1)==1
-            maxdepth=max([resampvec,lmaxpick]);
-        else
-            maxdepth=max([resampvec;lmaxpick]);
+    if swip==1
+        dpMAX=zeros(size(Xmidselec));
+        for ix=Xmidselec
+            dir_rep_ind=fullfile(dir_rep_inv,[num2str(XmidT(ix),xmidformat),'_reports']);
+            if exist(dir_rep_ind,'dir')==7
+                paramstruct=dir(fullfile(dir_rep_ind,'*.param'));
+                for ip=1:length(paramstruct)
+                    paramfile=fullfile(dir_rep_ind,paramstruct(ip).name);
+                    [~,dpMAX(ix)]=param2mod(paramfile);
+                end
+            end
+        end
+        dpMAX=max(dpMAX);
+        if dpMAX == 0
+            if paramtype>0
+                paramstruct=dir(fullfile(dir_targ,['*.type',num2str(paramtype),'.param']));
+                dpMAX=zeros(size(paramstruct));
+                for ip=1:length(paramstruct)
+                    paramfile=fullfile(dir_targ,paramstruct(ip).name);
+                    [~,dpMAX(ip)]=param2mod(paramfile);
+                end
+                dpMAX=max(dpMAX);
+            else
+                if isempty(strfind(dir_rep_inv,dir_inv))==1
+                    dir_rep_inv=fullfile(dir_all.dir_start,dir_rep_inv);
+                end
+                paramname=fullfile(dir_param,[dir_rep_inv(length(dir_inv)+1:end),'.param']);
+                if exist(paramname,'file')==2
+                    [~,dpMAX]=param2mod(paramname);
+                else
+                    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!');
+                    fprintf('\n   Missing .param file');
+                    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!\n\n');
+                    return
+                end
+            end
         end
     else
-        if size(resampvec,1)==1
-            maxdepth=max([resampvec';lmaxpick]);
-        else
-            maxdepth=max([resampvec',lmaxpick]);
-        end
+        dpMAX=max(resampvec);
     end
-else
-    maxdepth=dpMAX;
+    dpMIN=0;
 end
+maxdepth=dpMAX;
 depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 ZZ=0:dz:maxdepth;
 nZ=length(ZZ);
@@ -168,7 +197,8 @@ end
 
 % Select velocity and STD models
 if usevptomo==1 || tomo==1
-    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vp model');
+    fprintf('\n  Select Vp model file\n');
+    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vp model');
     Vpfile=fullfile(pathvel,filevel); % File with velocity (3 columns X,Z,Vp)
     if pathvel==0
         VpI=[]; VpItomo=[]; VsItomo=[];
@@ -177,8 +207,8 @@ if usevptomo==1 || tomo==1
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
     else
         try
-            VpI=readtomo(Vpfile,2,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp tomo file
-            VpItomo=readtomo(Vpfile,2,XmidT,depth,xsca); % Read Vp tomo file
+            VpI=readtomo(Vpfile,0,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp tomo file
+            VpItomo=readtomo(Vpfile,0,XmidT,depth,xsca); % Read Vp tomo file
         catch
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   Invalid Vp model file - Ignore Vptomo');
@@ -187,17 +217,18 @@ if usevptomo==1 || tomo==1
         end
     end
     %     if plot1dstd==1
-    %         [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vp STD model');
+    %         [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vp STD model');
     %         if pathvelvelstd==0
     %             VpIstd=[]; VpIstdtomo=[];
     %         else
     %             Vpstdfile=fullfile(pathvelstd,filevelstd); % File with velocity STD (3 columns X,Z,VpSTD)
-    %             VpIstd=readtomo(Vpstdfile,2,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp STD tomo file
-    %             VpIstdtomo=readtomo(Vpstdfile,2,XmidT,depth,xsca); % Read Vp STD tomo file
+    %             VpIstd=readtomo(Vpstdfile,0,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp STD tomo file
+    %             VpIstdtomo=readtomo(Vpstdfile,0,XmidT,depth,xsca); % Read Vp STD tomo file
     %         end
     %     end
     if tomo==1 && isempty(VpItomo)==0
-        [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vs model');
+        fprintf('\n  Select Vs model file\n');
+        [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model');
         if pathvel==0
             VsItomo=[]; VpItomo=[];
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -206,7 +237,7 @@ if usevptomo==1 || tomo==1
         else
             Vsfile=fullfile(pathvel,filevel); % File with velocity (3 columns X,Z,Vs)
             try
-                VsItomo=readtomo(Vsfile,2,XmidT,depth,xsca); % Read Vs tomo file
+                VsItomo=readtomo(Vsfile,0,XmidT,depth,xsca); % Read Vs tomo file
                 VpItomo(isnan(VsItomo)==1)=NaN;
                 VsItomo(isnan(VpItomo)==1)=NaN;
                 VsItomo=VsItomo/2;
@@ -219,12 +250,12 @@ if usevptomo==1 || tomo==1
             
         end
         %         if plot1dstd==1
-        %             [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vs STD model');
+        %             [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs STD model');
         %             if pathvelvelstd==0
         %                 VsIstdtomo=[];
         %             else
         %                 Vsstdfile=fullfile(pathvelstd,filevelstd); % File with velocity STD (3 columns X,Z,VsSTD)
-        %                 VsIstdtomo=readtomo(Vsstdfile,2,XmidT,depth,xsca); % Read Vs STD tomo file
+        %                 VsIstdtomo=readtomo(Vsstdfile,0,XmidT,depth,xsca); % Read Vs STD tomo file
         %                 VpIstdtomo(isnan(VsIstdtomo)==1)=NaN;
         %                 VsIstdtomo(isnan(VpIstdtomo)==1)=NaN;
         %             end
@@ -275,6 +306,9 @@ matrelease=version('-release');
 
 showplotinit=showplot;
 
+fprintf('\n  **********************************************************');
+fprintf('\n  **********************************************************\n');
+
 for ix=Xmidselec
     if Xlength>1
         close all
@@ -295,7 +329,7 @@ for ix=Xmidselec
         if plotflim==1
             flimsing=flim(ix);
         else
-            flimsing=NaN;
+            flimsing=[];
         end
         dspfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.dsp']);
         if exist(dspfile_sum,'file')==2
@@ -319,18 +353,27 @@ for ix=Xmidselec
                 [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                 [],[],[0 0 24 18],[]);
         end
+        hold on
+        hh=dashline(f,f,2,2,2,2,'color',[0 0 1],'linewidth',2);
+        set(hh,'visible','off');
+        if plotlamlim==1 && sampling==1
+            dashline(f,f*max(resampvec),2,2,2,2,'color',[0 0 1],'linewidth',2);
+        end
         if Flogscale==1
             set(gca,'xscale','log');
         end
-        hold on
         if plot1dobs==1
             if swip==0
                 nametarg=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.target']);
             else
                 nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
                 if exist(nametarg,'file')~=2 && sum(nshot(ix,:))>=0
-                    fprintf(['\n  No inversion for Xmid',num2str(ix),' = ',...
-                        num2str(XmidT(ix),xmidformat),' m\n']);
+                    if exist(nametarg(1:end-3),'file')==2
+                        movefile(nametarg(1:end-3),nametarg);
+                    else
+                        fprintf(['\n  No dispersion picked for Xmid',num2str(ix),' = ',...
+                            num2str(XmidT(ix),xmidformat),' m\n']);
+                    end
                 end
             end
             if exist(nametarg,'file')~=2
@@ -486,9 +529,9 @@ for ix=Xmidselec
                         break
                     end
                 end
-%                 if usevptomo==1
-%                     unix(['rm -rf ',filevel]);
-%                 end
+                %                 if usevptomo==1
+                %                     unix(['rm -rf ',filevel]);
+                %                 end
                 delete(filedisp);
                 if isempty(D)==0
                     for m=1:nmodemax
@@ -670,17 +713,17 @@ for ix=Xmidselec
     %%% PLOTS 1D MODELS %%%
     
     if plot1dmod==1
-        
-        fprintf('\n  Saving 1D models\n');
-        
+        if (swip==1 && isempty(vssw)==0) || user>0 || (tomo==1 && isempty(VpItomo)==0 && isempty(VsItomo)==0)
+            fprintf('\n  Saving 1D models\n');
+        end
         %%% PLOTS 1D VS MODELS %%%
         
         if swip==1 && isempty(vssw)==0
             % Plot Vs
             [VSplot,Zplot]=stair2plot(vssw,moddepth);
             f1=plot_curv(showplot,VSplot,Zplot,[],'-',[1 0 0],[],1,1,...
-                    0,fs,'Vs (m/s)','Depth (m)',[],[vsMIN vsMAX],[dpMIN dpMAX],[],...
-                    vsticks,dticks,[],[],[],[0 0 24 18],[],0);
+                0,fs,'Vs (m/s)','Depth (m)',[],[vsMIN vsMAX],[dpMIN dpMAX],[],...
+                vsticks,dticks,[],[],[],[0 0 24 18],[],0);
             hold on
             if plot1dstd==1 % Plot VsSTD on same plot
                 depthstdcalc=[0;diff(vssw)<0;0];
@@ -705,7 +748,7 @@ for ix=Xmidselec
                 [VPplot,Zplot]=stair2plot(vpsw,moddepth);
                 plot(VPplot,Zplot,'m-','linewidth',1.5);
                 xlabel('V (m/s)');
-%                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
+                %                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
                 if plot1dstd==1 % Plot VpSTD on same plot
                     depthstdcalc=[0;diff(vpsw)<0;0];
                     depthstdcalc(depthstdcalc==0)=-1;
@@ -772,7 +815,7 @@ for ix=Xmidselec
                 [VPplotuser,Zplotuser]=stair2plot(vpuserok,moddepthuser);
                 plot(VPplotuser,Zplotuser,'c-','linewidth',1.5);
                 xlabel('V (m/s)');
-%                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
+                %                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
                 if plot1dstd==1 && errstd>0 % Plot VpSTD on same plot
                     depthstdcalc=[0;diff(vpuserok)<0;0];
                     depthstdcalc(depthstdcalc==0)=-1;
@@ -810,7 +853,7 @@ for ix=Xmidselec
             if plot1dvp==1 % Plot Vp on same plot
                 plot(vptomo,cumsum(ztomo),'g-','linewidth',1.5);
                 xlabel('V (m/s)');
-%                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
+                %                 xlim([vsMIN vpMAX]); set(gca,'XTick',vpticks);
                 if plot1dstd==1 % Plot VpSTD on same plot
                     if errstd>0
                         dashline(vptomo+vptomo*errstd/100,cumsum(ztomo),2,2,2,2,'color','g','linewidth',1.5);
@@ -822,7 +865,7 @@ for ix=Xmidselec
             end
         end
         if (swip==1 && isempty(vssw)==0) || user>0 || (tomo==1 && isempty(VpItomo)==0 && isempty(VsItomo)==0)
-%             fprintf('\n  Saving Vs 1D model\n');
+            %             fprintf('\n  Saving Vs 1D model\n');
             % Plot DOI
             if plotDOI>0
                 xL=get(gca,'XLim');
@@ -845,8 +888,8 @@ for ix=Xmidselec
             % Plot Vp
             [VPplot,Zplot]=stair2plot(vpsw,moddepth);
             f1=plot_curv(showplot,VPplot,Zplot,[],'-',[1 0 0],[],1,1,...
-                    0,fs,'Vp (m/s)','Depth (m)',[],[vpMIN vpMAX],[dpMIN dpMAX],[],...
-                    vpticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
+                0,fs,'Vp (m/s)','Depth (m)',[],[vpMIN vpMAX],[dpMIN dpMAX],[],...
+                vpticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
             hold on
             if plot1dstd==1 % Plot VpSTD on same plot
                 depthstdcalc=[0;diff(vpsw)<0;0];
@@ -937,8 +980,8 @@ for ix=Xmidselec
         if swip==1 && isempty(vssw)==0
             % Plot Vp/Vs
             f1=plot_curv(showplot,VPplot./VSplot,Zplot,[],'-',[1 0 0],[],1,1,...
-                    0,fs,'Vp/Vs','Depth (m)',[],[vpvsMIN vpvsMAX],[dpMIN dpMAX],[],...
-                    vpvsticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
+                0,fs,'Vp/Vs','Depth (m)',[],[vpvsMIN vpvsMAX],[dpMIN dpMAX],[],...
+                vpvsticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
             hold on
             %         if plot1dstd==1 % Plot VsSTD on same plot
             %             depthstdcalc=[0;diff(vssw)<0;0];
@@ -1003,7 +1046,7 @@ for ix=Xmidselec
             %             end
         end
         if (swip==1 && isempty(vssw)==0) || user>0 || (tomo==1 && isempty(VpItomo)==0 && isempty(VsItomo)==0)
-%             fprintf('\n  Saving Vp/Vs 1D model\n');
+            %             fprintf('\n  Saving Vp/Vs 1D model\n');
             % Plot DOI
             if plotDOI>0
                 xL=get(gca,'XLim');
@@ -1024,8 +1067,8 @@ for ix=Xmidselec
         if swip==1 && isempty(vssw)==0
             % Plot Poisson's ratio
             f1=plot_curv(showplot,poisson(VPplot,VSplot),Zplot,[],'-',[1 0 0],[],1,1,...
-                    0,fs,'Poisson''s ratio','Depth (m)',[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
-                    poisticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
+                0,fs,'Poisson''s ratio','Depth (m)',[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
+                poisticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
             hold on
             %         if plot1dstd==1 % Plot VsSTD on same plot
             %             depthstdcalc=[0;diff(vssw)<0;0];
@@ -1113,7 +1156,9 @@ for ix=Xmidselec
                 cat_img([file_vs,' ',file_vpvs],imgform,1,'west',filename_imgtmp,0);
                 cat_img([file_vp,' ',file_pois],imgform,1,'west',filename_imgtmp2,0);
                 cat_img([filename_imgtmp,' ',filename_imgtmp2],imgform,2,'west',filename_panel,1);
-                delete(file_vs,file_vp,file_vpvs,file_pois,filename_imgtmp,filename_imgtmp2);
+                if concat==1
+                    delete(file_vs,file_vp,file_vpvs,file_pois,filename_imgtmp,filename_imgtmp2);
+                end
             end
         end
         

@@ -1,4 +1,5 @@
 function datablank
+
 %%% S. Pasquet - V16.2.17
 % Blank X,Y,Z file and save blanked file
 

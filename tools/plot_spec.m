@@ -1,6 +1,8 @@
 function plot_spec(specfile,fMIN,fMAX,imgform,imgres)
-%%% S. Pasquet - V16.5.3
+
+%%% S. Pasquet - V16.11.22
 % Quick plot of spectrogram
+% plot_spec(specfile,fMIN,fMAX,imgform,imgres)
 
 if exist('specfile','var')==0 || isempty(specfile)==1
     [specfile,specpath]=uigetfile('*.spec','Select spectrogram file');

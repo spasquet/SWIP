@@ -1,25 +1,27 @@
 function [dir_all,dir_inv_img]=dir_create(flag,nWmin,nWmax,dW,dSmin,dSmax,side)
 
-%%% S. Pasquet - V16.6.28
+%%% S. Pasquet - V16.11.18
 % Create directories for surface-wave analysis
+% [dir_all,dir_inv_img]=dir_create(flag,nWmin,nWmax,dW,dSmin,dSmax,side)
 
 dir_inv_img=[];
 dir_all.dir_start=pwd; % Current working directory
 
 if flag~=1
     % Select main folder (Wmin_max.dWb.nSmin_max.side)
-    dir_all.dir_main=uigetdir('./','Select main folder');
+    fprintf('\n  Select subproject folder (Wmin_max.dWx.dSmin_max.side)\n');
+    dir_all.dir_main=uigetdir('./','Select subproject folder (Wmin_max.dWx.dSmin_max.side)');
     if dir_all.dir_main==0
-        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        fprintf('\n   Please select a SWIP folder');
-        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        fprintf('\n   Please select a subproject folder');
+        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
         return
     end
-    [~,dir_all.dir_main,ext]=fileparts(dir_all.dir_main);
-    dir_all.dir_main=[dir_all.dir_main,ext];
+%     [~,dir_all.dir_main,ext]=fileparts(dir_all.dir_main);
+%     dir_all.dir_main=[dir_all.dir_main,ext];
 else
-    dir_all.dir_main=['W',num2str(nWmin),'_',num2str(nWmax),'.dW'...
-        ,num2str(dW),'.dS',num2str(dSmin),'_',num2str(dSmax),'.',side];
+    dir_all.dir_main=fullfile(dir_all.dir_start,['W',num2str(nWmin),'_',num2str(nWmax),'.dW'...
+        ,num2str(dW),'.dS',num2str(dSmin),'_',num2str(dSmax),'.',side]);
     if exist(dir_all.dir_main,'dir')~=7
         mkdir(dir_all.dir_main);
     end
@@ -36,7 +38,7 @@ dir_all.dir_img_xmid=fullfile(dir_all.dir_img,'/1D_data/');
 % Path of file.targ folder to store .targ files
 dir_all.dir_targ=fullfile(dir_all.dir_main,'/file.targ/');
 % Path of file.param folder to store global .param files
-dir_all.dir_param='file.param';
+dir_all.dir_param=fullfile(dir_all.dir_start,'file.param');
 % Path of file.inv folder to store inversion results
 dir_all.dir_inv=fullfile(dir_all.dir_main,'/file.inv/');
 % Path of file.xzv folder to store final 2D models
@@ -77,6 +79,7 @@ end
 
 if flag==2
     % Select inversion folder containing report folders
+    fprintf('\n  Select inversion folder\n');
     dir_inv_img.dir_rep_inv=uigetdir([dir_all.dir_main,'/file.inv/'],...
         'Select inversion folder');
     if dir_inv_img.dir_rep_inv==0

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V16.6.28
+%%% S. Pasquet - V16.11.21
 %%% SWIPparam.m creates the parameterization file for surface-wave inversion
 %%% It can create either a global file for all the profile or create
 %%% automatic parameterization for specific Xmid based on a velocity model
@@ -16,8 +16,9 @@ if paramtype==0
     if isempty(paramname)==1
         return
     end
-    if exist('file.param','dir')==7
-        movefile(paramname,'file.param');
+    parampath=fullfile(pwd,'file.param');
+    if exist(parampath,'dir')==7
+        movefile(paramname,parampath);
     end
     fprintf(['\n  Parameterization file saved in file.param as ',paramname,'\n\n']);
 else
@@ -52,7 +53,8 @@ else
     nshot=xmidparam.nshot;
     
     % Read refraction velocity model
-    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv'},'Select Vp model');
+    fprintf('\n  Select Vp model file\n');
+    [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vp model');
     if filevel==0
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         fprintf('\n   Please select a Vp model file');
@@ -61,7 +63,7 @@ else
     end
     Vpfile=fullfile(pathvel,filevel); % File with velocity (3 columns X,Z,Vp)
     try
-        [VpI,XI,ZI]=readtomo(Vpfile,2,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp tomo file
+        [VpI,XI,ZI]=readtomo(Vpfile,0,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp tomo file
     catch
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         fprintf('\n   Invalid file - Please select a valid Vp model file');
@@ -79,6 +81,9 @@ else
     depth2=max(zround):-thmax:min(zround)-maxdepth; % Depth vector with topo
     vpmat=zeros(length(depth2),Xlength).*NaN;
     indf=zeros(Xlength,1); indi=indf;
+    
+    fprintf('\n  **********************************************************');
+    fprintf('\n  **********************************************************\n');
     
     %%%%%% Loop over all Xmids %%%%%%
     

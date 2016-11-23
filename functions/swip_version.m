@@ -1,5 +1,6 @@
 function swip_version
-%%% S. Pasquet - V16.5.4
+
+%%% S. Pasquet - V16.11.18
 % Give SWIP current version
 
 Ascript=which('A_SWIPdisp_script');

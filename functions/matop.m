@@ -1,7 +1,8 @@
 function matop(infile,op,flip,outfile)
 
-%%% S. Pasquet - V16.4.14
+%%% S. Pasquet - V16.11.18
 % SUOP for matlab
+% matop(infile,op,flip,outfile)
 
 if nargin==3
     outfile=infile;

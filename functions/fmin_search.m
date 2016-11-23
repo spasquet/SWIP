@@ -1,7 +1,8 @@
 function [flim,specfileOK]=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,specfmin)
 
-%%% S. Pasquet - V16.4.1
+%%% S. Pasquet - V16.11.18
 %%% Look for minimum frequency where spectrogram normalized amplitude reaches specampmin
+% [flim,specfileOK]=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,specfmin)
 
 flim=NaN*zeros(length(specstruct),1); 
 for ip=1:length(specstruct)

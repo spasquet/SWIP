@@ -1,0 +1,95 @@
+% Langage et encodage
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% UPMC recommendations for margin sizes
+\usepackage[left=2.5cm,right=2.5cm,top=1.5cm,bottom=2.0cm,includefoot,includehead,headheight=13.6pt]{geometry}
+\setlength{\skip\footins}{0.7cm}
+\usepackage[bottom]{footmisc}
+
+% Tableaux
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{booktabs}
+%\addto\captionsfrench{\def\tablename{Table}}
+
+% Typo et formules
+\usepackage{eurosym} % Symbole euro
+\usepackage{latexsym} % Additional symbols
+\usepackage{url} % citer des adresses électroniques et des URL
+\usepackage{amsmath,amssymb,amsthm} % AMS Math
+\usepackage{leftidx} % Better sub and superscripts
+\usepackage[mediumspace,mediumqspace,Grey,squaren]{SIunits} % SI units
+
+% Biblio
+\usepackage{natbib} % Package for multiple citation with author-date style
+%\setcitestyle{citesep={~;}} % Semicolon separator with french typography
+\usepackage{microtype}
+\usepackage{breakcites}
+\usepackage[hyphenbreaks]{breakurl}
+\def\UrlBreaks{\do\/\do-}
+
+
+% Puces numérotées
+\usepackage{enumitem}
+\setlist{noitemsep}
+
+% Figures
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{rotating} % Sideways of figures & tables
+\usepackage[singlelinecheck=false]{caption} % Package for caption
+
+%\DeclareCaptionLabelSeparator{virg}{~: } % New caption label separator
+%\captionsetup{labelfont=bf,textfont=it,labelsep=virg} % Set fonts and label separators
+%\addto\captionsfrench{%
+%  \renewcommand{\listfigurename}{Liste des figures}%
+%}
+
+%% Table of contents for each chapter
+%\usepackage{tocbibind}
+%\usepackage[french]{minitoc}
+%\setcounter{minitocdepth}{2}
+%\mtcindent=15pt
+%\renewcommand{\mtcSfont}{\small\normalfont} % Normal font for minitoc entries
+%\newcommand{\miniminitoc}{\minitoc \vspace{12pt}}
+%% Use \dominitoc at the beginning of the document
+%% Use \minitoc where to put a table of contents
+
+% Nicer backref links
+\usepackage[breaklinks=true,bookmarks=true,pagebackref,hyperindex=true,pdfa]{hyperref}
+\backreffrench
+\renewcommand*{\backref}[1]{}
+\renewcommand*{\backrefalt}[4]{%
+\ifcase #1 %
+(Non cited)%
+\or
+(Cited page~#2)%
+\else
+(Cited pages~#2)%
+\fi}
+\renewcommand*{\backrefsep}{, }
+\renewcommand*{\backreftwosep}{ and~}
+\renewcommand*{\backreflastsep}{ and~}
+
+% Informations included in the pdf file
+\hypersetup
+{
+bookmarksopen=true,
+pdftitle="Surface-Wave dispersion Inversion and Profiling",
+pdfauthor="Sylvain PASQUET", %auteur du document
+pdftoolbar=false, %barre d'outils non visible
+pdfmenubar=true, %barre de menu visible
+pdfhighlight=/O, %effet d'un clic sur un lien hypertexte
+colorlinks=true, %couleurs sur les liens hypertextes
+pdfpagemode=UseNone, %aucun mode de page
+pdfpagelayout=SinglePage, %ouverture en simple page
+pdffitwindow=true, %pages ouvertes entierement dans toute la fenetre
+linkcolor=black, %couleur des liens hypertextes internes
+citecolor=blue, %couleur des liens pour les citations
+urlcolor=black, %couleur des liens pour les url
+hyperfootnotes=true
+}

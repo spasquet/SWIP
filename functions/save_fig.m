@@ -1,7 +1,8 @@
 function save_fig(h,filename,format,res,crop,verbose,autosize)
 
-%%% S. Pasquet - V16.9.12
+%%% S. Pasquet - V16.11.18
 % Save figure in various format
+% save_fig(h,filename,format,res,crop,verbose,autosize)
 
 if exist('verbose','var')==0 || isempty(verbose)==1
     verbose=1;

@@ -1,7 +1,8 @@
 function [specmat,f,x]=matspecfx(seismofile,xsca,specfile,datsave,norm)
 
-%%% S. Pasquet - V16.5.6
+%%% S. Pasquet - V16.11.18
 % SUSPECFX for matlab
+% [specmat,f,x]=matspecfx(seismofile,xsca,specfile,datsave,norm)
 
 if exist('norm','var')==0 || isempty(norm)==1
     norm=1;

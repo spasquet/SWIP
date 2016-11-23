@@ -1,6 +1,8 @@
 function [specmat,f,x]=spec2dat(specfile,datsave)
-%%% S. Pasquet - V16.6.14
+
+%%% S. Pasquet - V16.11.18
 % Convert .spec su file in ASCII file .dat for matlab
+% [specmat,f,x]=spec2dat(specfile,datsave)
 
 % Frequency minimum
 fmin=0;

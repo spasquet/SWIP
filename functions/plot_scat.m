@@ -1,10 +1,10 @@
 function [fig,han1,han2,han3,c]=plot_scat(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
 
-%%% S. Pasquet - V16.6.16
+%%% S. Pasquet - V16.11.18
 %
-% plot_scat(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
-%    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
+% plot_scat(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,...
+% xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
 %
 % h -> Figure handle
 % X, Y -> vector of length N & M of meshgrid matrix of size N-by-M

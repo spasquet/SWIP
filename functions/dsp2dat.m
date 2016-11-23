@@ -1,6 +1,8 @@
 function [dspmat,f,v]=dsp2dat(dspfile,flip,datsave)
-%%% S. Pasquet - V16.3.27
+
+%%% S. Pasquet - V16.11.18
 % Convert .dsp su file in ASCII file .dat for matlab
+% [dspmat,f,v]=dsp2dat(dspfile,flip,datsave)
 
 if  flip==0
     % Frequency minimum

@@ -1,10 +1,10 @@
 function [fig,han1,han2,han3,c]=plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 
-%%% S. Pasquet - V16.8.22
+%%% S. Pasquet - V16.11.18
 %
-% plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,
-%       zlimit,xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
+% plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,...
+%    xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 %
 % h -> Figure handle
 % X, Y -> vector of length N & M of meshgrid matrix of size N-by-M
@@ -187,13 +187,14 @@ end
 % Plot vertical or horizontal line
 if exist('xline','var')==1 && isempty(xline)~=1
     xL=get(gca,'XLim');
-    han2=dashline([xline xline],xL,2,2,2,2,'color','k','linewidth',1.5);
+    han2=dashline([xline xline],xL,1.5,1.5,1.5,1.5,'color',[1 0 0],'linewidth',2);
 else
     han2=[];
 end
 if exist('yline','var')==1 && isempty(yline)~=1
     yL=get(gca,'YLim');
-    han3=line([yline yline],yL,'linestyle','--','color','k','linewidth',1.5);
+    han3=dashline([yline yline],yL,1.5,1.5,1.5,1.5,'color',[1 0 0],'linewidth',2);
+%     han3=line([yline yline],yL,'linestyle','--','color',[0.5 0.5 0.5],'linewidth',2);
 else
     han3=[];
 end
