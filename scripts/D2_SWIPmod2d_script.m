@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V16.11.30
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -794,6 +794,7 @@ if usevptomo==1 && input_vel==1
     avertype=[avertype,'_Vptomo'];
 elseif input_vel==2
     vpmat=VpItomo;
+    vpmat(vpmat>2000)=NaN;
     maskmat=ones(size(maskmat));
     if isempty(VsItomo)==0
         vsmat=VsItomo;
@@ -822,11 +823,11 @@ if sum(modexist)>0
                     % Observed phase velocity
                     if sampling==0
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,0,cbpos,fs,'X (m)',...
-                            'Freq. (Hz)','Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+                            freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
                             [Vphmin Vphmax],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
                     else
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,1,cbpos,fs,'X (m)',...
-                            '\lambda (m)','Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                            lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                             [vphMIN vphMAX],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
                     end
                     sizeax=get(gca,'position');
@@ -843,11 +844,11 @@ if sum(modexist)>0
                 % Calculated phase velocity
                 if sampling==0
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,0,cbpos,fs,'X (m)',...
-                        'Freq. (Hz)','Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+                        freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
                         [Vphmin Vphmax],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
                 else
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,1,cbpos,fs,'X (m)',...
-                        '\lambda (m)','Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                        lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                         [vphMIN vphMAX],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
                 end
                 filecal=fullfile(dir_img_inv_2d,['Vphcalc','.M',num2str(ip-1),'.',avertype,...
@@ -866,11 +867,11 @@ if sum(modexist)>0
                 if plot2dcal==1
                     if sampling==0
                         f1=plot_img(showplot,XmidT,resampvec,abs(vph2dres{ip}),map4,axetop,0,cbpos,fs,'X (m)',...
-                            'Freq. (Hz)','Residuals (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+                            freqtitle_short,'Residuals (m/s)',[xMIN xMAX],[0 max(resampvec)],...
                             [Vphmin Vphmax],xticks,lticks,residticks,[],[],[],[12 8.5 24 12],[],1,0);
                     else
                         f1=plot_img(showplot,XmidT,resampvec,abs(vph2dres{ip}),map4,axetop,1,cbpos,fs,'X (m)',...
-                            '\lambda (m)','Residuals (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                            lamtitle,'Residuals (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                             [residMIN residMAX],xticks,lticks,residticks,[],[],[],[12 8.5 24 12],[],1,0);
                     end
                     fileaux=fullfile(dir_img_inv_2d,['Vphres','.M',num2str(ip-1),'.',avertype,...
@@ -1001,8 +1002,10 @@ if sum(modexist)>0
             specmat=poismat;
         elseif plotiso==6
             specmat=auxmat;
+        else
+            specmat=[];
         end
-        if input_vel==2
+        if input_vel==2 && plotiso>0
            specmat=flipud(specmat); 
         end
         
@@ -1342,4 +1345,8 @@ if savexzv==1 && input_vel==1
     save_xzv(fullfile(dir_xzv_inv_mod,['VPVS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpvsmat.*maskmat);
     save_xzv(fullfile(dir_xzv_inv_mod,['Poisson.',avertype,'.',modeltype,'.xzv']),XmidT,depth,poismat.*maskmat);
     save_xzv(fullfile(dir_xzv_inv_mod,['VSstd.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsstdmat.*maskmat);
+    if input_aux==1 && auxmask==1
+        auxmat(isnan(auxmat)==1 & isnan(vpmat)==0)=min(auxmat(isnan(auxmat)==0));
+        save_xzv(fullfile(dir_xzv_inv_mod,['Aux.',avertype,'.',modeltype,'.xzv']),XmidT,depth,auxmat.*maskmat);
+    end
 end

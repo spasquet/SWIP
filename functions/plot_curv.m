@@ -1,10 +1,10 @@
 function [fig,han1,han2,han3,c]=plot_curv(h,X,Y,errbar,symb,col,lw,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
-    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
+    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex,xlogscale,markersize)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V16.11.30
 %
 % [fig,han1,han2,han3,c]=plot_curv(h,X,Y,errbar,symb,col,lw,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
-%    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
+%    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex,xlogscale,markersize)
 %
 % h -> Figure handle
 % X, Y -> vectors of length N
@@ -63,28 +63,53 @@ end
 if exist('lw','var')==0 || isempty(lw)==1
     lw=1.5;
 end
+
+if exist('xlogscale','var')==0 || isempty(xlogscale)==1
+    xlogscale=0;
+end
+
+if exist('markersize','var')==0 || isempty(markersize)==1
+    markersize=10;
+end
+
 if exist('errbar','var')==1 && isempty(errbar)~=1
     % Plot errorbars
     if multiplot==0
         if str2double(matrelease(1:4))>2014
-            han1=plot(X,Y,symb,'Color',col,'linewidth',lw,'markersize',10);
+            han1=plot(X,Y,symb,'Color',col,'linewidth',lw,'markersize',markersize);
+            if xlogscale==1
+                set(gca,'xscale','log');
+            end
             hold on;
             herrorbars=terrorbar(X,Y,errbar,1,'units');
             set(herrorbars,'Color',col,'linewidth',lw);
         else
-            han1=errorbar(X,Y,errbar,symb,'Color',col,'linewidth',lw,'markersize',10);
-            errorbar_tick(han1,1,'units');
+            han1=errorbar(X,Y,errbar,symb,'Color',col,'linewidth',lw,'markersize',markersize);
+            if xlogscale==1
+                set(gca,'xscale','log');
+            end
+            xlimits=xlim;
+            tick_length=diff(xlimits)/100;
+            errorbar_tick(han1,tick_length,'units');
         end
     else
         for i=1:size(X,2)
             if str2double(matrelease(1:4))>2014
-                han1=line(X(i),Y(i),'color',col(i,:),'markerfacecolor',col(i,:),'markersize',5,'marker',symb,'linestyle','none');
+                han1=line(X(i),Y(i),'color',col(i,:),'markerfacecolor',col(i,:),'markersize',markersize/2,'marker',symb,'linestyle','none');
+                if xlogscale==1 && i==1
+                    set(gca,'xscale','log');
+                end
                 hold on;
                 herrorbars=terrorbar(X(:,i),Y(:,i),errbar(:,i),1,'units');
                 set(herrorbars,'Color',col(i,:),'linewidth',lw);
             else
-                han1=errorbar(X(:,i),Y(:,i),errbar(:,i),'Color',col(i,:),'linewidth',lw,'markersize',10,'marker',symb);
-                errorbar_tick(han1,1,'units');
+                han1=errorbar(X(:,i),Y(:,i),errbar(:,i),'Color',col(i,:),'linewidth',lw,'markersize',markersize,'marker',symb);
+                if xlogscale==1 && i==1
+                    set(gca,'xscale','log');
+                end
+                xlimits=xlim;
+                tick_length=diff(xlimits)/100;
+                errorbar_tick(han1,tick_length,'units');
             end
             if i==1
                 hold on
@@ -96,14 +121,17 @@ else
     if multiplot==1 && min(size(col))>1
         set(gca,'ColorOrder',col);
         if size(X,1)>1 && size(X,2)>1 && size(Y,1)>1 && size(Y,2)>1
-            han1=line(X,Y,'linewidth',lw,'markersize',10,'marker',symb);
+            han1=line(X,Y,'linewidth',lw,'markersize',markersize,'marker',symb);
         else
             for i=1:length(X)
-                han1=line(X(i),Y(i),'color',col(i,:),'markerfacecolor',col(i,:),'markersize',5,'marker',symb,'linestyle','none');
+                han1=line(X(i),Y(i),'color',col(i,:),'markerfacecolor',col(i,:),'markersize',markersize/2,'marker',symb,'linestyle','none');
             end
         end
     else
-        han1=plot(X,Y,symb,'Color',col,'linewidth',lw,'markersize',10);    
+        han1=plot(X,Y,symb,'Color',col,'linewidth',lw,'markersize',markersize);    
+    end
+    if xlogscale==1
+        set(gca,'xscale','log');
     end
 end
 grid on; box on;

@@ -1,4 +1,6 @@
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V16.11.30
+
+matrelease=version('-release');
 
 %% A_SWIPdisp settings
 % Main settings
@@ -250,6 +252,24 @@ end
 if exist('cbpos','var')==0 || isempty(cbpos)==1
     cbpos=1;
 end
+
+% Frequency title long
+if exist('freqtitle_long','var')==0 || isempty(freqtitle_long)==1
+    freqtitle_long='Frequency (Hz)';
+end
+% Frequency title short
+if exist('freqtitle_short','var')==0 || isempty(freqtitle_short)==1
+    freqtitle_short='Freq. (Hz)';
+end
+% Lambda title
+if exist('lamtitle','var')==0 || isempty(lamtitle)==1
+    lamtitle='\lambda (m)';
+end
+% Depth title
+if exist('depthtitle','var')==0 || isempty(depthtitle)==1
+    depthtitle='Depth (m)';
+end
+
 
 %%% Dispersion image, spectrogram and seismogram settings
 % Log colorscale for dispersion (=1) or linear (=0)

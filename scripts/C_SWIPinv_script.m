@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V16.11.30
 %%% SWIPinv.m performs surface-wave inversion along the seismic profile
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 
@@ -245,8 +245,6 @@ if isunix==1
 else
     zipmethod=1;
 end
-
-matrelease=version('-release');
 
 fprintf('\n  **********************************************************');
 fprintf('\n  **********************************************************\n');
@@ -639,7 +637,7 @@ for ix=Xmidselec
                 % Plot ridgesearch results
                 if nmod(ix)>1
                     [f2,~,~,~,c]=plot_img(showplot,velocityS,ZZ,NN,flipud(autumn),...
-                        1,1,1,fs,'Vs (m/s)','Depth (m)','Number of models',...
+                        1,1,1,fs,'Vs (m/s)',depthtitle,'Number of models',...
                         [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
                     hold on
                     dashline(VSridge,ZZ,2,2,2,2,'color','k','linewidth',1.5);
@@ -798,7 +796,7 @@ for ix=Xmidselec
             if plotinvres==1
                 % Plot and save average and weighted models
                 [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
-                    'Vs (m/s)','Depth (m)',[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
+                    'Vs (m/s)',depthtitle,[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
                     [],[],[],[0 0 24 18],[],0);
                 hold on
                 str0='Best model';
@@ -948,7 +946,7 @@ for ix=Xmidselec
                     num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
                 
                 f1=plot_curv(showplot,tmpall{1,1},1./tmpall{1,2},[],'-',colall(1,:),2,1,1,...
-                    cbpos,fs,'Frequency (Hz)','Phase velocity (m/s)',str1,...
+                    cbpos,fs,freqtitle_long,'Phase velocity (m/s)',str1,...
                     [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                     [],[],[0 0 24 18],[],0);
                 hold on
@@ -964,7 +962,9 @@ for ix=Xmidselec
                 else
                     h3=errorbar(freqresamp{m+1},vresamp{m+1},deltaresamp{m+1},'k+',...
                         'linewidth',1.25,'markersize',4);
-                    errorbar_tick(h3,0.75,'units');
+                    xlimits=xlim;
+                    tick_length=diff(xlimits)/100;
+                    errorbar_tick(h3,tick_length,'units');
                 end
                 hold off
                 colormap(map2);
@@ -1059,7 +1059,7 @@ for ix=Xmidselec
                 ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
             
             f4=plot_curv(showplot,tmpall,zall,[],[],colall,2,1,1,...
-                cbpos,fs,'Vs (m/s)','Depth (m)',str1,...
+                cbpos,fs,'Vs (m/s)',depthtitle,str1,...
                 [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],...
                 [],[],[0 0 24 18],sizax,0);
             colormap(map2);

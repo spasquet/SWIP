@@ -69,7 +69,7 @@ If you have experience on how to install and compile codes under a Linux environ
 \end{enumerate}
 
 \section{How to use SWIP (quick start)}
-Here is a quick tutorial to run SWIP and reproduce the figures presented in the paper (soon) provided in \verb|SWIP/docs/publi|.
+Here is a quick tutorial to run SWIP and reproduce the figures presented in a paper submitted to Geophysics in December 2016.
 \begin{enumerate}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item In \verb|your_working_directory|, extract the content of the \verb|yellowstone.tar.gz| file located in \verb|SWIP/docs/example|.
@@ -421,7 +421,7 @@ To install these codes, follow these steps in the {\Cygwin} terminal:
 
 Go in the \verb|SWIP/src| directory by typing: 
 
-\verb|cd /cygdrive/c/Users/yourusername/Documents/MATLAB| (if your {\MATLAB} path in Windows is \verb|C:\Users\yourusername\Documents\MATLAB|)
+\verb|cd /cygdrive/c/Users/yourusername/Documents/MATLAB/SWIP/src| (if your {\MATLAB} path in Windows is \verb|C:\Users\yourusername\Documents\MATLAB|)
 
 Assign "execute" permission to the \verb|configure| file by typing: \verb|chmod +x configure|
 
@@ -468,6 +468,8 @@ Select the system variable \verb|Path| in the bottom list, click on \textit{Edit
 Variable value => \verb|...;\your\cygwin\path\bin;\your\SU\path\bin;\your\Geopsy\path\bin|\\
 Example => \verb|...;C:\cygwin\bin;C:\cygwin\home\yourusername\SU\bin;C:\Program Files (x86)|\\
 \verb|\Geopsy.org\bin|
+
+!! Make sure there are no spaces between each path definition !!
 
 Relog your session and check if the environment variables are correctly setup by typing \verb|swip_version| in the {\MATLAB} prompt.
 
