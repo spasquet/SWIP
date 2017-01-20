@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.01.20
 %%% SWIPinv.m performs surface-wave inversion along the seismic profile
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 
@@ -102,6 +102,10 @@ if inversion==1
         nmod=inv_set.nmod;
         minmis=inv_set.minmis;
     end
+    targopt_inv.wave=targopt.wave(1);
+    targopt_inv.resampvec=targopt.resampvec;
+    targopt_inv.sampling=targopt.sampling;
+    targopt_inv.lmaxpick=targopt.lmaxpick;
 else
     % Read previous inversion settings
     dir_rep_inv=dir_inv_img.dir_rep_inv;
@@ -127,16 +131,31 @@ else
     nC=inv_set.nC;
     nmod=inv_set.nmod;
     minmis=inv_set.minmis;
+    if exist('targopt_inv','var')==0
+        targopt_inv.wave=targopt.wave(1);
+        targopt_inv.resampvec=targopt.resampvec;
+        targopt_inv.sampling=targopt.sampling;
+        targopt_inv.lmaxpick=targopt.lmaxpick;
+    end
 end
 nmaxmod=(inv_set.itmax.*inv_set.ns)+inv_set.ns0;
 
 % Get previous settings
 xmin=plotopt.xmin;
 xmax=plotopt.xmax;
-wave=targopt.wave(1);
-resampvec=targopt.resampvec;
-sampling=targopt.sampling;
-lmaxpick=targopt.lmaxpick;
+
+wave=targopt_inv.wave(1);
+resampvec=targopt_inv.resampvec;
+sampling=targopt_inv.sampling;
+lmaxpick=targopt_inv.lmaxpick;
+
+if inversion==1
+    if exist(matfileinv,'file')==2
+        save(matfileinv,'-append','targopt_inv');
+    else
+        save(matfileinv,'dir_inv_img','inv_set','targopt_inv');
+    end
+end
 zround=xmidparam.zround; % Get topography
 if isempty(dpMAX)==1
     if inversion == 0
@@ -212,26 +231,12 @@ elseif modeltype==4
     modeltype='layered'; avertype='Vws';
 elseif modeltype==5
     modeltype='smooth'; avertype='Vws';
-    %     elseif modeltype==4
-    %         modeltype='smlay';
 elseif modeltype==6
     modeltype='ridge'; avertype='Vms';
 else
     modeltype='smooth'; avertype='Vws';
     fprintf('\n  Weighted smooth model selected by default\n');
 end
-%     if avertype==0
-%         avertype='Vms';
-%     elseif avertype==1
-%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-%             avertype='Vms';
-%         else
-%             avertype='Vws';
-%         end
-%     else
-%         avertype='Vms';
-%         fprintf('\n  Average model selected by default\n');
-%     end
 
 [testimgmgck,~]=unix('which montage');
 [testpdfjam,~]=unix('which pdfjam');
@@ -326,8 +331,6 @@ for ix=Xmidselec
         inv_set.maxmodeinv(ix)=maxmodeinv(ix);
         if exist(matfileinv,'file')==2
             save(matfileinv,'-append','inv_set');
-        else
-            save(matfileinv,'dir_inv_img','inv_set');
         end
     end
     
@@ -369,12 +372,9 @@ for ix=Xmidselec
         
         % Get target file
         nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
-        if exist(nametarg,'file')~=2 && sum(nshot(ix,:))>=0
+        if sum(nshot(ix,:))>=0 && (exist(nametarg,'file')==2 || exist(nametarg(1:end-3),'file')==2)
             if exist(nametarg(1:end-3),'file')==2
                 movefile(nametarg(1:end-3),nametarg);
-            else
-                fprintf('\n  No target - Go to next Xmid\n\n');
-                continue
             end
         else
             fprintf('\n  No target - Go to next Xmid\n\n');

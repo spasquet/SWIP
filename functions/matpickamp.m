@@ -1,7 +1,7 @@
 function [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,pickstyle,modeinit,...
     err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.01.16
 % Pick amplitudes of dispersion image
 % [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,...
 %    pickstyle,modeinit,err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
@@ -318,8 +318,8 @@ while button==1
             end
             Vi=findpeak(dspmat,f,v,f,Vi,wl);
             if smoothpick==1
-                Vi=median_filt(Vi,9,1,length(Vi));
-                Vi=mov_aver(Vi',5,1,length(Vi));
+                Vi=median_filt(Vi,5,1,length(Vi));
+                Vi=mov_aver(Vi',3,1,length(Vi));
                 Vi=Vi';
             end
         else

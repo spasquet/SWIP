@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V17.01.20
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
@@ -46,6 +46,7 @@ lamMAX     = [];                     % Max. wavelength (m)
 vphMIN     = [];                     % Min. phase velocity (m/s)
 vphMAX     = [];                     % Max. phase velocity (m/s)
 % vphticks   = (vphMIN:200:vphMAX);    % Phase velocity ticks (m/s)
+vphISO     = [];                     % Phase velocity isocontours (m/s)
 residMIN   = [];                     % Min. residual (m/s)
 residMAX   = [];                     % Max. residual (m/s)
 % residticks = (residMIN:20:residMAX); % Residual ticks (m/s)
@@ -80,6 +81,7 @@ vpMIN      = [];                     % Min. Vp (m/s)
 vpMAX      = [];                     % Max. Vp (m/s) 
 % vpticks    = (vpMIN:500:vpMAX);     % Vp ticks (m/s) 
 vpISO      = [];                     % Vp isocontours (m/s)
+vpmask     = 0;                      % Mask Vp with SWIP mask (=1) or not (=0)
 stdMIN     = [];                     % Min. StdVs (m/s) 
 stdMAX     = [];                     % Max. STdVs (m/s) 
 % stdticks   = (stdMIN:50:stdMAX);     % Vs STD ticks (m/s) 

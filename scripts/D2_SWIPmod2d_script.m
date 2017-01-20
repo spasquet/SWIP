@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.01.20
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -66,6 +66,7 @@ dir_pick=dir_all.dir_pick;
 dir_param=dir_all.dir_param;
 dir_targ=dir_all.dir_targ;
 dir_inv=dir_all.dir_inv;
+dir_xzv=dir_all.dir_xzv;
 matstruct=dir(fullfile(dir_dat,'*.param.mat'));
 matfile=fullfile(dir_dat,matstruct.name);
 try
@@ -95,10 +96,17 @@ fmin=pomega.fmin;
 fmax=pomega.fmax;
 f=plotopt.f;
 nf=length(f);
-wave=targopt.wave(1);
-resampvec=targopt.resampvec;
-sampling=targopt.sampling;
-lmaxpick=targopt.lmaxpick;
+if exist('targopt_inv','var')==0
+    wave=targopt.wave(1);
+    resampvec=targopt.resampvec;
+    sampling=targopt.sampling;
+    lmaxpick=targopt.lmaxpick;
+else
+    wave=targopt_inv.wave(1);
+    resampvec=targopt_inv.resampvec;
+    sampling=targopt_inv.sampling;
+    lmaxpick=targopt_inv.lmaxpick;
+end
 zround=xmidparam.zround; % Get topography
 if isempty(dpMAX)==1
     if input_vel==1
@@ -163,8 +171,7 @@ else
     dir_img_ind=fullfile(dir_img,'Usermodels');
     dir_img_inv_mod=dir_img_ind;
     dir_img_inv_2d=fullfile(dir_img_ind,'2dmodels');
-    dir_xzv_inv=fullfile(dir_img,'Usermodels');
-    dir_xzv_inv_mod=fullfile(dir_xzv_inv,'2dmodels');
+    dir_xzv_inv_mod=fullfile(dir_xzv,'Usermodels');
 end
 if exist(dir_img_inv_2d,'dir')~=7
     mkdir(dir_img_inv_2d);
@@ -182,26 +189,14 @@ elseif modeltype==4
     modeltype='layered'; avertype='Vws';
 elseif modeltype==5
     modeltype='smooth'; avertype='Vws';
-    %     elseif modeltype==4
-    %         modeltype='smlay';
 elseif modeltype==6
     modeltype='ridge'; avertype='Vms';
 else
     modeltype='smooth'; avertype='Vws';
     fprintf('\n  Weighted smooth model selected by default\n');
 end
-%     if avertype==0
-%         avertype='Vms';
-%     elseif avertype==1
-%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-%             avertype='Vms';
-%         else
-%             avertype='Vws';
-%         end
-%     else
-%         avertype='Vms';
-%         fprintf('\n  Average model selected by default\n');
-%     end
+
+XmidT_vp=XmidT; depth_vp=depth;
 
 % Select velocity and STD models
 if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1 || savexzv==1)
@@ -220,6 +215,11 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
         try
             if input_vel==1 && usevptomo==1
                 VpI=readtomo(Vpfile,0,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp tomo file
+                if vpmask==1
+                    XmidT_vp=XmidT; depth_vp=depth;
+                else
+                    [VpItomo,XmidT_vp,depth_vp]=readtomo(Vpfile,0,[],[],xsca); % Read Vp tomo file
+                end
             elseif input_vel==2
                 [VpItomo,Xi,Zi]=readtomo(Vpfile,0); % Read Vp tomo file
                 VpItomo=flipud(VpItomo);
@@ -250,8 +250,8 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
     %         end
     %     end
     if input_vel==2 && isempty(VpItomo)==0
-        fprintf('\n  Select Vs model file\n');
-        [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model');
+        fprintf('\n  Select Vs model file (cancel if no Vs model available)\n');
+        [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
             VsItomo=[]; plot2dcal=0; plothisto=0;
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -360,6 +360,7 @@ if plot2dcal==1 || plothisto==1
 end
 
 vpmat=zeros(length(depth),Xlength).*NaN;
+vpmatok=vpmat;
 vsmat=vpmat;
 vpvsmat=vpmat;
 vptvsmat=vpmat;
@@ -367,6 +368,7 @@ poismat=vpmat;
 rhomat=vpmat;
 vsstdmat=vpmat;
 maskmat=vpmat;
+maskmatvp=vpmat;
 
 [testimgmgck,~]=unix('which montage');
 [testpdfjam,~]=unix('which pdfjam');
@@ -721,8 +723,10 @@ for ix=Xmidselec
                 indf(ix)=length(vp0);
             end
             vpmat(indi(ix):indi(ix)+length(vp0)-1,ix)=vp0;
+            vpmatok(indi(ix):indi(ix)+length(vp0)-1,ix)=vp0;
             if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
                 maskmat(indi(ix):indi(ix)+indf(ix)-1,ix)=ones(size(vs0(1:indf(ix))));
+                maskmatvp(indi(ix):indi(ix)+indf(ix)-1,ix)=ones(size(vs0(1:indf(ix))));
                 vsmat(indi(ix):indi(ix)+length(vs0)-1,ix)=vs0;
                 vpvsmat(indi(ix):indi(ix)+length(vs0)-1,ix)=vp0./vs0;
                 vptvsmat(indi(ix):indi(ix)+length(vs0)-1,ix)=vp0.*vs0;
@@ -792,10 +796,16 @@ fprintf('\n  **********************************************************\n');
 
 if usevptomo==1 && input_vel==1
     avertype=[avertype,'_Vptomo'];
+    if vpmask==0
+        vpmatok=VpItomo;
+        maskmatvp=ones(size(vpmatok));
+    else
+        vpmatok=vpmat;
+    end
 elseif input_vel==2
-    vpmat=VpItomo;
-    vpmat(vpmat>2000)=NaN;
+    vpmatok=VpItomo;
     maskmat=ones(size(maskmat));
+    maskmatvp=ones(size(maskmatvp));
     if isempty(VsItomo)==0
         vsmat=VsItomo;
         vpvsmat=vpmat./vsmat;
@@ -824,11 +834,11 @@ if sum(modexist)>0
                     if sampling==0
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,0,cbpos,fs,'X (m)',...
                             freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
-                            [Vphmin Vphmax],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
+                            [Vphmin Vphmax],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                     else
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,1,cbpos,fs,'X (m)',...
                             lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
-                            [vphMIN vphMAX],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
+                            [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                     end
                     sizeax=get(gca,'position');
                     fileobs=fullfile(dir_img_inv_2d,['Vphobs','.M',num2str(ip-1),'.',avertype,...
@@ -845,11 +855,11 @@ if sum(modexist)>0
                 if sampling==0
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,0,cbpos,fs,'X (m)',...
                         freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
-                        [Vphmin Vphmax],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
+                        [Vphmin Vphmax],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                 else
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,1,cbpos,fs,'X (m)',...
                         lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
-                        [vphMIN vphMAX],xticks,lticks,vphticks,[],[],[],[12 0 24 12],[],1,0);
+                        [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                 end
                 filecal=fullfile(dir_img_inv_2d,['Vphcalc','.M',num2str(ip-1),'.',avertype,...
                     '.',modeltype,'.',imgform]);
@@ -939,6 +949,14 @@ if sum(modexist)>0
                 cat_img([fileobs,' ',filecal,' ',fileaux],imgform,1,[],panel1,1);
                 delete(fileobs,filecal,fileaux);
             end
+            if savexzv==1
+                if input_vel==1
+                    save_xzv(fullfile(dir_xzv_inv_mod,['Vphobs','.M',num2str(ip-1),'.',avertype,'.',modeltype,'.xzv']),...
+                        XmidT,resampvec,vph2dobs{ip});
+                end
+                save_xzv(fullfile(dir_xzv_inv_mod,['Vphcalc','.M',num2str(ip-1),'.',avertype,'.',modeltype,'.xzv']),...
+                    XmidT,resampvec,vph2dcal{ip});
+            end
         end
         
         if testplot==1 && plothisto==1 && input_vel~=2
@@ -1006,7 +1024,7 @@ if sum(modexist)>0
             specmat=[];
         end
         if input_vel==2 && plotiso>0
-           specmat=flipud(specmat); 
+            specmat=flipud(specmat);
         end
         
         % Saving Vs section
@@ -1052,7 +1070,7 @@ if sum(modexist)>0
         end
         
         % Saving Vp section
-        f1=plot_img(showplot,XmidT,depth,vpmat.*maskmat,map5,axetop,0,cbpos,fs,'X (m)',...
+        f1=plot_img(showplot,XmidT_vp,depth_vp,vpmatok.*maskmatvp,map5,axetop,0,cbpos,fs,'X (m)',...
             'Altitude (m)','Vp (m/s)',[xMIN xMAX],[zMIN zMAX],...
             [vpMIN vpMAX],xticks,zticks,vpticks,[],[],vpISO,[12 8.5 24 12],sizeax,vertex,blocky);
         if plotiso>0 && isempty(specISO)==0
@@ -1199,7 +1217,7 @@ if sum(modexist)>0
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
             % Saving Poisson's ratio section
             f1=plot_img(showplot,XmidT,depth,poismat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
-                'Altitude (m)','Poisson''s ratio',[xMIN xMAX],[zMIN zMAX],...
+                'Altitude (m)','Poisson',[xMIN xMAX],[zMIN zMAX],...
                 [poisMIN poisMAX],xticks,zticks,poisticks,[],[],poisISO,[25 16 24 12],sizeax,vertex,blocky);
             if plotiso>0 && isempty(specISO)==0
                 hold on;
@@ -1308,8 +1326,11 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
             cat_img([filevp,' ',filevs,' ',filevpvs,' ',fileAUX],imgform,1,[],panel7,1);
             delete(panel4);
         elseif input_vel==2 && isempty(VpItomo)==0 && isempty(VsItomo)==1
-            panel8=fullfile(dir_img_inv_2d,['VP_Aux.',avertype,'.',modeltype,'.',imgform]);
+            panel8=fullfile(dir_img_inv_2d,['Aux_VP.',avertype,'.',modeltype,'.',imgform]);
             cat_img([fileAUX,' ',filevp],imgform,1,[],panel8,1);
+        elseif input_vel==2 && isempty(VpItomo)==0 && isempty(VsItomo)==0
+            panel9=fullfile(dir_img_inv_2d,['Aux_VP_VS.',avertype,'.',modeltype,'.',imgform]);
+            cat_img([fileAUX,' ',filevp,' ',filevs],imgform,1,[],panel9,1);
         end
         
     end
@@ -1317,7 +1338,9 @@ end
 
 if testplot==1 && plot2dmod==1 && concat==1
     if exist('filevp','var')==1 && exist(filevp,'file')==2
-        delete(filevp);
+        if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
+            delete(filevp);
+        end
     end
     if exist('filevs','var')==1 && exist(filevs,'file')==2
         delete(filevs);

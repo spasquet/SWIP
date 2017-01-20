@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.01.20
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -26,7 +26,7 @@ end
 if swip==1
     [dir_all,dir_inv_img]=dir_create(2);
     if dir_all.dir_main==0
-        returnF
+        return
     end
     if dir_inv_img.dir_rep_inv==0
         return
@@ -93,10 +93,17 @@ fmin=pomega.fmin;
 fmax=pomega.fmax;
 f=plotopt.f;
 nf=length(f);
-wave=targopt.wave(1);
-resampvec=targopt.resampvec;
-sampling=targopt.sampling;
-lmaxpick=targopt.lmaxpick;
+if exist('targopt_inv','var')==0
+    wave=targopt.wave(1);
+    resampvec=targopt.resampvec;
+    sampling=targopt.sampling;
+    lmaxpick=targopt.lmaxpick;
+else
+    wave=targopt_inv.wave(1);
+    resampvec=targopt_inv.resampvec;
+    sampling=targopt_inv.sampling;
+    lmaxpick=targopt_inv.lmaxpick;
+end
 zround=xmidparam.zround; % Get topography
 if isempty(dpMAX)==1
     if swip==1
@@ -174,26 +181,12 @@ elseif modeltype==4
     modeltype='layered'; avertype='Vws';
 elseif modeltype==5
     modeltype='smooth'; avertype='Vws';
-    %     elseif modeltype==4
-    %         modeltype='smlay';
 elseif modeltype==6
     modeltype='ridge'; avertype='Vms';
 else
     modeltype='smooth'; avertype='Vws';
     fprintf('\n  Weighted smooth model selected by default\n');
 end
-%     if avertype==0
-%         avertype='Vms';
-%     elseif avertype==1
-%         if strcmp(modeltype,'best')==1 || strcmp(modeltype,'ridge')==1
-%             avertype='Vms';
-%         else
-%             avertype='Vws';
-%         end
-%     else
-%         avertype='Vms';
-%         fprintf('\n  Average model selected by default\n');
-%     end
 
 % Select velocity and STD models
 if usevptomo==1 || tomo==1
@@ -1067,7 +1060,7 @@ for ix=Xmidselec
         if swip==1 && isempty(vssw)==0
             % Plot Poisson's ratio
             f1=plot_curv(showplot,poisson(VPplot,VSplot),Zplot,[],'-',[1 0 0],[],1,1,...
-                0,fs,'Poisson''s ratio',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
+                0,fs,'Poisson',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
                 poisticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
             hold on
             %         if plot1dstd==1 % Plot VsSTD on same plot
@@ -1095,7 +1088,7 @@ for ix=Xmidselec
                 plot(poisson(VPplotuser,VSplotuser),Zplotuser,'b-','linewidth',1.5);
             else
                 f1=plot_curv(showplot,poisson(VPplotuser,VSplotuser),Zplotuser,[],'-',[0 0 1],[],1,1,...
-                    0,fs,'Poisson''s ratio',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
+                    0,fs,'Poisson',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
                     poisticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
                 hold on
             end
@@ -1119,7 +1112,7 @@ for ix=Xmidselec
                 plot(poisson(vptomo,vstomo),cumsum(ztomo),'-','color',[0 0.75 0],'linewidth',1.5);
             else
                 f1=plot_curv(showplot,poisson(vptomo,vstomo),cumsum(ztomo),[],'-',[0 0.75 0],[],1,1,...
-                    0,fs,'Poisson''s ratio',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
+                    0,fs,'Poisson',depthtitle,[],[poisMIN poisMAX],[dpMIN dpMAX],[],...
                     poisticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
                 hold on
             end

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.01.20
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
 %%% Required file : one SU file containing all shot gathers
@@ -97,7 +97,14 @@ end
 if calc==1
     sustruct=dir(fullfile(dir_start,'*.su'));
     if length(sustruct)>1
+        fprintf('\n  Multiple SU files in working directory - Select correct SU file\n');
         sufile=uigetfile('*.su','Select SU file to use');
+        if sufile==0
+            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!');
+            fprintf('\n   Please provide SU file');
+            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+            return
+        end
     elseif isempty(sustruct)==1
         fprintf('\n  !!!!!!!!!!!!!!!!!!');
         fprintf('\n   No SU file found');
@@ -394,6 +401,14 @@ if calc~=0
     end
 end
 
+if target==1
+    targopt.sampling=sampling;
+    targopt.resampvec=resampvec;
+    targopt.wave=wave;
+    % Save param in .mat file
+    save(matfile,'-append','targopt');
+end
+    
 if cb_disp==1 && cbpos==2
     cb_disp=2;
 end
@@ -424,6 +439,22 @@ while i<length(Xmidselec)
         dspfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.dsp']);
         if exist(dspfile_sum,'file')==2 && (calc==1 || plotstkdisp==1)
             delete(dspfile_sum);
+        end
+        specfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.spec']);
+        seisfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.su']);
+        specfile_all=[];
+        
+        if stack==2
+            % New disp
+            % Stacked seismogram file name (delete if exists and calc=1)
+            seisfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.su']);
+            dspfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.dsp']);
+            specfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.spec']);
+            if exist(seisfile_sum_new,'file')==2 && (calc==1 || plotstkdisp==1)
+                delete(seisfile_sum_new);
+            end
+            seismofile_left=[];
+            seismofile_right=[];
         end
         
         %%%%%% Loop over window sizes %%%%%%
@@ -485,9 +516,19 @@ while i<length(Xmidselec)
                 for ks=1:nshot(ix,jw)
                     % Windowing, muting and saving seismogram in .su file
                     seismofile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
-                        num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.su']);
+                        num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.su']);                    
                     [seismomat,xseis,tseis,ntr]=matwind(sufileOK,Sselec(ks),Gmin(ix,jw),Gmax(ix,jw),xsca,...
                         winsize(jw),seismofile,0,mute,tmin1,tmin2,tmax1,tmax2);
+                    
+                    if stack==2
+                        % New disp
+                        if ((strcmp(side,'L')==1 || strcmp(side,'B')==1) && XmidT(ix)>Sselec(ks))
+                            seismofile_left=[seismofile_left,' ',seismofile];
+                        elseif ((strcmp(side,'R')==1 || strcmp(side,'B')==1) && XmidT(ix)<Sselec(ks))
+                            seismofile_right=[seismofile_right,' ',seismofile];
+                        end
+                    end
+                    
                     if ntr~=winsize(jw) % Check number of extracted traces
                         fprintf('\n  Not enough traces - Go to next shot\n');
                         nshot(ix,jw)=nshot(ix,jw)-1;
@@ -503,9 +544,10 @@ while i<length(Xmidselec)
                     specfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']);
                     [specmat,fspec,xspec]=matspecfx(seismofile,xsca,specfile,0);
+                    specfile_all=[specfile_all,' ',specfile];
                     if ((strcmp(side,'L')==1 || strcmp(side,'B')==1) && XmidT(ix)>Sselec(ks))
                         specfileOK = specfile;
-                    elseif (strcmp(side,'R')==1 && XmidT(ix)<Sselec(ks)) && exist('specfileOK','var')==0
+                    elseif (strcmp(side,'R')==1 && XmidT(ix)<Sselec(ks)) && j==1
                         specfileOK = specfile;
                     end
                     
@@ -522,8 +564,7 @@ while i<length(Xmidselec)
                             specstruct=dir(fullfile(dir_dat_xmid,...
                                 [num2str(XmidT(ix),xmidformat),'.',num2str(winsize(jw)),'.',...
                                 num2str(Sselec(ks)),'.spec']));
-                            flimsing=fmin_search(specstruct,...
-                                dir_dat_xmid,dt,specampmin,fminpick);
+                            flimsing=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,fminpick);
                         else
                             flimsing=[];
                         end
@@ -605,13 +646,13 @@ while i<length(Xmidselec)
                         com1=sprintf('suop2 %s %s op=diff > %s',dspfile,dspfile,dspfile_sum);
                         unix(com1);
                     end
+                    
                     if calc==1 || plotstkdisp==1
                         % Stack current dispersion image with previous stack file
-                        dspfile_sum_new=[dspfile_sum,'.new'];
-                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_sum,...
-                            dspfile,dspfile_sum_new);
+                        dspfile_sum_inter=[dspfile_sum,'.new'];
+                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_sum,dspfile,dspfile_sum_inter);
                         unix(com1);
-                        movefile(dspfile_sum_new,dspfile_sum)
+                        movefile(dspfile_sum_inter,dspfile_sum)
                         
                         % Plot and save intermediate stack
                         if  plotstkdisp==1
@@ -628,8 +669,7 @@ while i<length(Xmidselec)
                                 % Local fmin search
                                 specstruct=dir(fullfile(dir_dat_xmid,...
                                     [num2str(XmidT(ix),xmidformat),'.*.spec']));
-                                flimsing=fmin_search(specstruct,...
-                                    dir_dat_xmid,dt,specampmin,fminpick);
+                                flimsing=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,fminpick);
                             else
                                 flimsing=[];
                             end
@@ -666,6 +706,42 @@ while i<length(Xmidselec)
                     end
                 end
             end
+            unix(sprintf('cat %s > %s',specfile_all,specfile_sum));
+            com1=sprintf('susort < %s +gx | sustack key=gx > %s',specfile_sum,fullfile(dir_dat_xmid,'sort.spec'));
+            unix(com1);
+            movefile(fullfile(dir_dat_xmid,'sort.spec'),specfile_sum);
+            
+            if stack==2
+                % New disp
+                if isempty(seismofile_left)==0
+                    com1=sprintf('cat %s > %s',seismofile_left,fullfile(dir_dat_xmid,'cat_left.su'));
+                    unix(com1);
+                end
+                if isempty(seismofile_right)==0
+                    com1=sprintf('cat %s > %s',seismofile_right,fullfile(dir_dat_xmid,'cat_right.su'));
+                    unix(com1);
+                    com1=sprintf('suop < %s op=neg > %s',fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
+                    unix(com1);
+                end
+                if isempty(seismofile_left)==0 && isempty(seismofile_right)==0
+                    com1=sprintf('cat %s %s > %s',fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
+                    unix(com1);
+                    delete(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
+                elseif isempty(seismofile_left)==0 && isempty(seismofile_right)==1
+                    movefile(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat.su'));
+                elseif isempty(seismofile_left)==1 && isempty(seismofile_right)==0
+                    movefile(fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
+                    delete(fullfile(dir_dat_xmid,'cat_right.su'));
+                end
+                com1=sprintf('susort < %s +offset | sustack key=offset | sushw key=sx,fldr,gelev,selev a=-1,1,0,0 | suchw key1=gx key2=offset > %s',...
+                    fullfile(dir_dat_xmid,'cat.su'),seisfile_sum_new);
+                unix(com1);
+                delete(fullfile(dir_dat_xmid,'cat.su'));
+                
+                [dspmat_new,f_new,v_new]=matpomegal(seisfile_sum_new,1,nray,fmin,fmax,vmin,vmax,...
+                    flip,xsca,tsca,1,dspfile_sum_new,0);
+                [specmat_new,fspec_new,xspec_new]=matspecfx(seisfile_sum_new,xsca,specfile_sum_new,0);
+            end
         end
     end
     
@@ -676,18 +752,34 @@ while i<length(Xmidselec)
     if (sum(nshot(ix,:))>0 && exist(dspfile_sum,'file')==2) || isempty(dt)==1
         if calc==1 || plotstkdisp==1
             matop(dspfile_sum,'norm',flip);
-            copyfile(specfileOK,[dspfile_sum(1:end-3),'spec']);
-            copyfile([specfileOK(1:end-4),'su'],[dspfile_sum(1:end-3),'su']);
+            if stack==2
+                matop(dspfile_sum_new,'norm',flip);
+            end
+%             copyfile(specfileOK,specfile_sum);
+            copyfile([specfileOK(1:end-4),'su'],seisfile_sum);
         end
         
-        % Global fmin search
-        specstruct=dir([dspfile_sum(1:end-3),'spec']);
-        [flim(ix),~]=fmin_search(specstruct,dir_dat,dt,specampmin,fminpick);
+        if calc==1 || target==1 || pick==1 || plotdisp==1 || plotpckdisp==1 || plotspec==1
+            % Global fmin search
+            if stack==2
+                specstruct=dir(specfile_sum_new);
+            else
+                specstruct=dir(specfile_sum);
+            end
+            [flim(ix),~]=fmin_search(specstruct,dir_dat,dt,specampmin,fminpick);
+        end
         
         if plotflim==1
             flimsing=flim(ix);
         else
             flimsing=[];
+        end
+        
+        if stack==2
+            [~,offsets]=unix(sprintf('sugethw < %s key=offset output=geom',seisfile_sum_new));
+            offsets=str2num(offsets)/xsca;
+            noffsets=length(offsets);
+            nWmin=noffsets; nWmax=noffsets;
         end
         
         %%
@@ -705,6 +797,21 @@ while i<length(Xmidselec)
                     end
                 end
             end
+            
+            if stack==2
+                % New disp
+                if exist(dspfile_sum_new,'file')==2
+                    [dspmat_new,f_new,v_new]=dsp2dat(dspfile_sum_new,flip,0);
+                    if pick==1 || pick==2
+                        dspmat2_new=dspmat_new; v2_new=v_new;
+                        while min(diff(v2_new))<dvmin % Downsample dispersion image to 5m/s in velocity to speed display when picking
+                            v2_new=v2_new(1:2:end);
+                            dspmat2_new=dspmat2_new(:,1:2:end);
+                        end
+                    end
+                end
+            end
+            
         end
         if  plotdisp==1
             fprintf('\n  Plot and save stacked dispersion image\n');
@@ -735,11 +842,43 @@ while i<length(Xmidselec)
             file1=fullfile(dir_img_disp,[num2str(XmidT(ix),xmidformat),'.disp.',imgform]);
             save_fig(fig1,file1,imgform,imgres,1);
             close(fig1)
+            
+            if stack==2
+                % New disp
+                if Dlogscale==0
+                    fig1=plot_img(showplot,f_new,v_new,dspmat_new',flipud(map0),axetop,axerev,cb_disp,fs,...
+                        freqtitle_long,'Phase velocity (m/s)',...
+                        'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                        [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
+                else
+                    dspmatinv_new=1./(1-dspmat_new);
+                    dspmatinv_new(isinf(dspmatinv_new))=max(max(dspmatinv_new(isinf(dspmatinv_new)==0)));
+                    fig1=plot_img_log(showplot,f_new,v_new,dspmatinv_new',flipud(map0),axetop,axerev,cb_disp,fs,...
+                        freqtitle_long,'Phase velocity (m/s)',...
+                        '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
+                        [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
+                end
+                hold on
+                %             if plotlamlim==1 && sampling==1
+                %                 dashline(f,f*max(resampvec),2,2,2,2,'color',[0.5 0.5 0.5],'linewidth',2);
+                %             end
+                if Flogscale==1
+                    set(gca,'xscale','log');
+                end
+                sizeax=get(findobj(fig1,'Type','Axes'),'Position');
+                if cb_disp==1
+                    sizeax=sizeax{2};
+                end
+                file1=fullfile(dir_img_disp,[num2str(XmidT(ix),xmidformat),'.disp_new.',imgform]);
+                save_fig(fig1,file1,imgform,imgres,1);
+                close(fig1)
+            end
+            
         end
         % Plot and save spectrogram image
         if plotspec==1
             fprintf('\n  Plot and save final spectrogram image\n');
-            [specmat,fspec,xspec]=spec2dat([dspfile_sum(1:end-3),'spec'],0);
+            [specmat,fspec,xspec]=spec2dat(specfile_sum,0);
             xspec=xspec/xsca;
             fig2=plot_img(showplot,fspec,xspec,specmat,flipud(map0),axetop,axerev,cb_disp,fs,...
                 freqtitle_long,'Gx (m)','Norm. ampli.',...
@@ -764,17 +903,57 @@ while i<length(Xmidselec)
             file2=fullfile(dir_img_spec,[num2str(XmidT(ix),xmidformat),'.spec.',imgform]);
             save_fig(fig2,file2,imgform,imgres,1);
             close(fig2)
+            
+            if stack==2
+                % New disp
+                [specmat_new,fspec_new,xspec_new]=spec2dat(specfile_sum_new,0);
+                xspec_new=xspec_new/xsca;
+                fig2=plot_img(showplot,fspec_new,xspec_new,specmat_new,flipud(map0),axetop,axerev,cb_disp,fs,...
+                    freqtitle_long,'Offset (m)','Norm. ampli.',[fMIN fMAX],[min(xspec_new) max(xspec_new)],[],[],[],...
+                    [],[],[],[],[0 0 24 18],[],[],0);
+                hold on
+                if Flogscale==1
+                    set(gca,'xscale','log');
+                end
+                set(findobj(fig2,'Type','Axes'),'ActivePositionProperty','Position');
+                if cb_disp==1
+                    axeok=findobj(fig2,'Type','Axes');
+                    set(axeok(2),'position',[sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
+                else
+                    set(findobj(fig2,'Type','Axes'),'position',...
+                        [sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
+                end
+                if isempty(flimsing)==0
+                    yL=get(gca,'YLim');
+                    han3=dashline([flimsing flimsing],yL,3,3,3,3,'color',[1 0 0],'linewidth',2);
+                end
+                file2=fullfile(dir_img_spec,[num2str(XmidT(ix),xmidformat),'.spec_new.',imgform]);
+                save_fig(fig2,file2,imgform,imgres,1);
+                close(fig2)
+            end
+            
         end
         % Plot and save seismogram image
         if plotseismo==1
             fprintf('\n  Plot and save final seismogram image\n');
-            [seismomat,tseis,xseis]=seismo2dat([dspfile_sum(1:end-3),'su'],0);
+            [seismomat,tseis,xseis]=seismo2dat(seisfile_sum,0);
             xseis=xseis/xsca;
             fig3=plot_wiggle(showplot,-seismomat',xseis,tseis*1000,1,1,99,...
                 fs,'Gx (m)','Time (ms)',[],[tMIN tMAX],[],tticks,[0 0 18 24],[]);
             file3=fullfile(dir_img_seismo,[num2str(XmidT(ix),xmidformat),'.seismo.',imgform]);
             save_fig(fig3,file3,imgform,imgres,1);
             close(fig3)
+            
+            if stack==2
+                % New disp
+                [seismomat_new,tseis_new,xseis_new]=seismo2dat(seisfile_sum_new,0);
+                xseis_new=xseis_new/xsca;
+                fig3=plot_wiggle(showplot,-seismomat_new',xseis_new,tseis_new*1000,1,1,99,...
+                    fs,'Offset (m)','Time (ms)',[],[tMIN tMAX],[],tticks,[0 0 18 24],[]);
+                file3=fullfile(dir_img_seismo,[num2str(XmidT(ix),xmidformat),'.seismo_new.',imgform]);
+                save_fig(fig3,file3,imgform,imgres,1);
+                close(fig3)
+            end
         end
         
         %%
@@ -782,6 +961,10 @@ while i<length(Xmidselec)
         
         % Manual picking
         if pick==1
+            if stack==2
+               dspmat2=dspmat2_new;
+               v2=v2_new; f=f_new;
+            end
             % Plot previous Xmid to help picking
             if exist('dspmatprev','var')==1
                 % Plot previous dispersion image if existing
@@ -1171,7 +1354,7 @@ while i<length(Xmidselec)
                 end
             end
             % Save 1D image with dispersion curves
-            if (ix==Xmidselec(find(Xmidselec(nshot>0),1,'last')) || (pick==1 && xmidprev==-1)) && plot1dobs==1 && ishandle(4)==1
+            if plot1dobs==1 && ishandle(4)==1 && (ix==Xmidselec(find(Xmidselec(sum(nshot(Xmidselec,:)>0)),1,'last')) || (pick==1 && xmidprev==-1))
                 fprintf('\n  Save picked dispersion curves\n');
                 file1=fullfile(dir_img,['Dispcurve.allmode.',imgform]);
                 save_fig(4,file1,imgform,imgres,1);
@@ -1253,6 +1436,65 @@ while i<length(Xmidselec)
             file1=fullfile(dir_img_pick,[num2str(XmidT(ix),xmidformat),'.disp.pick.',imgform]);
             save_fig(fig1,file1,imgform,imgres,1);
             close(fig1)
+            
+            if stack==2
+               % New disp 
+               if exist(dspfile_sum_new,'file')==2
+                   if Dlogscale==0
+                       fig1=plot_img(showplot,f_new,v_new,dspmat_new',flipud(map0),axetop,axerev,cb_disp,fs,...
+                           freqtitle_long,'Phase velocity (m/s)',...
+                           'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                           [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
+                   else
+                       dspmatinv=1./(1-dspmat_new);
+                       dspmatinv(isinf(dspmatinv))=max(max(dspmatinv(isinf(dspmatinv)==0)));
+                       fig1=plot_img_log(showplot,f_new,v_new,dspmatinv',flipud(map0),axetop,axerev,cb_disp,fs,...
+                           freqtitle_long,'Phase velocity (m/s)',...
+                           '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
+                           [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
+                   end
+               else
+                   fig1=plot_curv(showplot,NaN,NaN,[],'.',[0 0 0],[],axetop,axerev,...
+                       0,fs,freqtitle_long,'Phase velocity (m/s)',[],...
+                       [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
+                       [],[],[0 0 24 18],[]);
+               end
+               hold on
+               hh=dashline(f_new,f_new,2,2,2,2,'color',[0 0 1],'linewidth',2);
+               set(hh,'visible','off');
+               if plotlamlim==1 && sampling==1
+                   dashline(f_new,f_new*max(resampvec),2,2,2,2,'color',[0 0 1],'linewidth',2);
+               end
+               if Flogscale==1
+                   set(gca,'xscale','log');
+               end
+               for ip=1:npvc
+                   hold on
+                   if mod(modes(ip),2)==0
+                       col=pickcol1;
+                   else
+                       col=pickcol2;
+                   end
+                   han=plot(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},'.','Color',col,...
+                       'linewidth',1.5,'markersize',9);
+                   if eb==1
+                       if str2double(matrelease(1:4))>2014
+                           han=terrorbar(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1},1,'units');
+                           set(han,'LineWidth',1.5,'Color',col)
+                       else
+                           han=errorbar(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1},...
+                               '.','Color',col,'linewidth',1.5,'markersize',9);
+                           xlimits=xlim;
+                           tick_length=diff(xlimits)/100;
+                           errorbar_tick(han,tick_length,'units');
+                       end
+                   end
+               end
+               hold off
+               file1=fullfile(dir_img_pick,[num2str(XmidT(ix),xmidformat),'.disp_new.pick.',imgform]);
+               save_fig(fig1,file1,imgform,imgres,1);
+               close(fig1)
+            end
         end
     else
         fprintf('\n  No dispersion data for this Xmid\n');
@@ -1335,11 +1577,11 @@ if plot2dobs==1 && Xlength>1
         if sampling==0
             f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,0,0,cbpos,fs,'X (m)',...
                 freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
-                [vphMIN vphMAX],xticks,fticks,vphticks,[],[],[],[0 0 24 12],[],1,0);
+                [vphMIN vphMAX],xticks,fticks,vphticks,[],[],vphISO,[0 0 24 12],[],1,0);
         else
             f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,1,1,cbpos,fs,'X (m)',...
                 lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
-                [vphMIN vphMAX],xticks,lticks,vphticks,[],[],[],[0 0 24 12],[],1,0);
+                [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[0 0 24 12],[],1,0);
         end
         szfig1=get(f1,'Position');
         file1=fullfile(dir_img,['Vphobs.M',num2str(ip-1),'.',imgform]);
@@ -1358,5 +1600,4 @@ end
 % Remove filtered SU file
 if filt==1 && calc==1
     delete(sufilefilt);
-    %     unix(['rm -f ',sufilefilt]);
 end

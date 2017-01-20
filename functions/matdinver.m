@@ -1,6 +1,6 @@
 function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
 
-% S. Pasquet - V16.11.18
+% S. Pasquet - V17.01.16
 % matdinver execute dinver inversion through matlab
 
 % status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
@@ -27,7 +27,12 @@ for j=1:nrun
     end
     if status~=0
         [status,din_err]=unix(com1);
-        if isempty(strfind(din_err,'parameters'))==0
+        if isempty(strfind(din_err,'Cannot open file for writing'))==0
+            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+            fprintf('\n      Invalid working directory name');
+            fprintf('\n   Remove special characters and spaces');
+            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+    elseif isempty(strfind(din_err,'parameters'))==0
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   Invalid .param file');
             fprintf('\n     Go to next Xmid');

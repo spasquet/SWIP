@@ -1,12 +1,20 @@
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.01.18
 
 matrelease=version('-release');
 
 %% A_SWIPdisp settings
 % Main settings
+% SWIP subproject: new (=1), existing (=0) or import disp. curves (=2)
+if exist('calc','var')==0 || isempty(calc)==1
+    calc=1;
+end
 % Remove intermediate files (=1) or store in file.dat (=0)
 if exist('clearmem','var')==0 || isempty(clearmem)==1
     clearmem=1;
+end
+% Regular stacking only (=1) or with time-domain offset stacking (=2)
+if exist('stack','var')==0 || isempty(stack)==1
+    stack=1;
 end
 
 % Windowing and stacking settings (used if calc=1)
@@ -395,6 +403,10 @@ end
 % Phase velocity ticks (m/s)
 if exist('vphticks','var')==0 || isempty(vphticks)==1
     vphticks=[];
+end
+% Phase velocity isocontours (m/s)
+if exist('vphISO','var')==0 || isempty(vphISO)==1
+    vphISO=[];
 end
 
 %% B_SWIPparam settings
@@ -913,6 +925,10 @@ end
 % Vp isocontours (m/s)
 if exist('vpISO','var')==0 || isempty(vpISO)==1
     vpISO=[];
+end
+% Mask Vp with SWIP mask (=1) or not (=0)
+if exist('vpmask','var')==0 || isempty(vpmask)==1
+    vpmask=0;
 end
 % STdVs isocontours (m/s)
 if exist('stdISO','var')==0 || isempty(stdISO)==1

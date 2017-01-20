@@ -1,6 +1,6 @@
 function [dspmat,f,v]=dsp2dat(dspfile,flip,datsave)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.01.13
 % Convert .dsp su file in ASCII file .dat for matlab
 % [dspmat,f,v]=dsp2dat(dspfile,flip,datsave)
 
@@ -69,6 +69,6 @@ if datsave~=1
     delete([dspfile,'.dat']);
 end
 if isunix==0
-    unix('rm -rf head outpar');
+    delete('head','outpar');
 end
 end

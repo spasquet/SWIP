@@ -20,7 +20,7 @@
 \title{\Huge{\textbf{SWIP User's Manual}}}
 \author{\Large{Sylvain Pasquet} (\url{pasquet.syl@gmail.com})}
 
-\date{\LARGE{Version 1.3: November 2016}\\[2ex]
+\date{\LARGE{Version 1.4: January 2017}\\[2ex]
 \large\url{https://github.com/SWIPdev/SWIP/releases}\\
 \vspace{2.5cm}
 \large{The Surface-Wave dispersion Inversion and Profiling software is supported by:\\
@@ -761,8 +761,9 @@ Target files are stored in \verb|subprojdir/file.targ| and contain all modes sel
 \item \verb|lamMIN|, \verb|lamMAX| and \verb|lticks| control the display of wavelength limits and ticks on the pseudo-section (in m).
 
 \item \verb|vphMIN|, \verb|vphMAX| and \verb|vphticks| control the display of phase velocity limits and ticks on the pseudo-section (in m/s).
-\end{itemize}
 
+\item \verb|vphISO| defines the isocontours of phase velocity to plot over the pseudo-section.
+\end{itemize}
 
 %%%%%
 \subsubsection{Module B\_SWIPparam}
@@ -1205,6 +1206,8 @@ If \verb|input_vel = 2|, images are stored in:\\
 
 \item \verb|vphMIN|, \verb|vphMAX| and \verb|vphticks| control the display of phase velocity limits and ticks on the pseudo-section (in m/s).
 
+\item \verb|vphISO| defines the isocontours of phase velocity to plot over the pseudo-section.
+
 \item \verb|residMIN|, \verb|residMAX| and \verb|residticks| control the display of phase velocity residuals limits and ticks on the pseudo-section (in m/s).
 \end{itemize}
 
@@ -1253,6 +1256,8 @@ Set \verb|plotiso = 6| to plot auxiliary data isocontours.
 
 \item \verb|vpISO| defines the isocontours of $V_P$ to plot over the 2D model.
 
+\item Set \verb|vpmask = 1| to mask $V_P$ with SWIP mask, or \verb|vpmask = 0| for no mask.
+
 \item \verb|stdMIN|, \verb|stdMAX| and \verb|stdticks| control the display of $V_S$ standard deviation limits and ticks on 2D models (in m/s). \verb|stdMAX| also defines the maximum standard deviation of $V_S$ used to estimate the investigation depth when \verb|plotDOI = 2| or \verb|maskDOI = 2|.
 
 \item \verb|stdISO| defines the isocontours of $V_S$ standard deviation to plot over the 2D model.
@@ -1285,6 +1290,9 @@ Some additionnal tools to perform separate steps of the SWIP workflow are availa
 \paragraph{seg2su}
 Convert SEG2 or SEGY files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
 
+\paragraph{ascii2su}
+Convert ASCII files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
+
 \paragraph{calc\_disp}
 Quick extraction of dispersion image from seismogram. Need to provide at least a \verb|.su| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
@@ -1296,6 +1304,12 @@ Quick plot of seismogram. Need to provide at least a \verb|.su| file. If the fil
 
 \paragraph{plot\_spec}
 Quick plot of spectrogram. Need to provide at least a \verb|.spec| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+
+\paragraph{plot\_targ}
+Quick plot of a single dispersion curve. Need to provide at least a \verb|.target| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+
+\paragraph{plot\_targ\_multi}
+Quick plot of multiple dispersion curves. Need to provide at least a folder containing \verb|.target| files. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
 \paragraph{pick\_disp}
 Work in progress.

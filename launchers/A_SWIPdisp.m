@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V17.01.18
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
@@ -119,6 +119,7 @@ lamMAX      = [];                   % Max. wavelength (m)
 vphMIN      = [];                   % Min. phase velocity (m/s)
 vphMAX      = [];                   % Max. phase velocity (m/s)
 % vphticks    = (vphMIN:200:vphMAX);  % Phase velocity ticks (m/s)
+vphISO      = [];                   % Phase velocity isocontours (m/s)
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%

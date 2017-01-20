@@ -1,6 +1,6 @@
 function [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V16.12.02
 % Save velocity model and mask in .xzv column ascii file 
 % [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
 
@@ -52,4 +52,4 @@ if convert==1;
     VV=VV*1000;
 end
 
-dlmwrite(filexzv,[XX,ZZ,VV,MASK1,MASK2],'\t');
+dlmwrite(filexzv,[XX,ZZ,VV,MASK1,MASK2],'delimiter','\t','precision','%6.2f');

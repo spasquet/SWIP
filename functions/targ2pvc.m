@@ -1,6 +1,6 @@
 function [freq,vel,deltac,modes]=targ2pvc(nametarg)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.01.16
 % Read .target dinver file
 % [freq,vel,deltac,modes]=targ2pvc(nametarg)
 
@@ -8,14 +8,14 @@ dir_inv=fileparts(nametarg);
 if strcmp(dir_inv,'')==1
     dir_inv=pwd;
 end
-[~,~]=unix(['mv -f ',nametarg,' ',nametarg(1:end-3)]);
+movefile(nametarg,nametarg(1:end-3));
 if isunix==1
     [~,~]=unix(['tar -xf ',nametarg(1:end-3),' -C ',dir_inv]);
 else
     [~,~]=unix(['tar -xf ',nametarg(1:end-3),' --force-local']);
     [~,~]=unix(['mv contents.xml ',dir_inv]);
 end
-[~,~]=unix(['mv -f ',nametarg(1:end-3),' ',nametarg]);
+movefile(nametarg(1:end-3),nametarg);
 
 fid0=fopen(fullfile(dir_inv,'contents.xml'),'r');
 for i=1:9
@@ -53,6 +53,6 @@ while strcmp(modalcurve(1:end-2),'<ModalCurve>')==1
 end
 fclose(fid0);
 
-unix(['rm -rf ',fullfile(dir_inv,'contents.xml')]);
+delete(fullfile(dir_inv,'contents.xml'));
 
 end
