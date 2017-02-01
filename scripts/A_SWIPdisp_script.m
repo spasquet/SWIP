@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V17.01.20
+%%% S. Pasquet - V17.02.01
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
 %%% Required file : one SU file containing all shot gathers
@@ -499,6 +499,7 @@ while i<length(Xmidselec)
                     Sselec=Sxsing((Sxsing>Smin & Sxsing<=Smed1) | ...
                         (Sxsing<Smax & Sxsing>=Smed2));
                 end
+                leftOK=0;
                 % Get nb of selected shot for the current window
                 nshot(ix,jw)=length(Sselec);
                 if mod(winsize(jw),2)~=mod(winsize(1),2) % Check number of extracted traces
@@ -545,12 +546,19 @@ while i<length(Xmidselec)
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']);
                     [specmat,fspec,xspec]=matspecfx(seismofile,xsca,specfile,0);
                     specfile_all=[specfile_all,' ',specfile];
-                    if ((strcmp(side,'L')==1 || strcmp(side,'B')==1) && XmidT(ix)>Sselec(ks))
-                        specfileOK = specfile;
-                    elseif (strcmp(side,'R')==1 && XmidT(ix)<Sselec(ks)) && j==1
-                        specfileOK = specfile;
+                    if strcmp(side,'L')==1
+                        seismofileOK = seismofile;
+                    elseif strcmp(side,'R')==1 && j==1
+                        seismofileOK = seismofile;
+                    elseif strcmp(side,'B')==1
+                        if XmidT(ix)>Sselec(ks)
+                            seismofileOK = seismofile;
+                            leftOK=1;
+                        elseif XmidT(ix)<Sselec(ks) && j==1 && leftOK==0
+                            seismofileOK = seismofile;
+                        end
                     end
-                    
+                                       
                     %%%%%% Plot and save single images %%%%%%
                     
                     if plotsingle==1 && exist(dir_dat_xmid,'dir')==7
@@ -706,41 +714,44 @@ while i<length(Xmidselec)
                     end
                 end
             end
-            unix(sprintf('cat %s > %s',specfile_all,specfile_sum));
-            com1=sprintf('susort < %s +gx | sustack key=gx > %s',specfile_sum,fullfile(dir_dat_xmid,'sort.spec'));
-            unix(com1);
-            movefile(fullfile(dir_dat_xmid,'sort.spec'),specfile_sum);
             
-            if stack==2
-                % New disp
-                if isempty(seismofile_left)==0
-                    com1=sprintf('cat %s > %s',seismofile_left,fullfile(dir_dat_xmid,'cat_left.su'));
-                    unix(com1);
-                end
-                if isempty(seismofile_right)==0
-                    com1=sprintf('cat %s > %s',seismofile_right,fullfile(dir_dat_xmid,'cat_right.su'));
-                    unix(com1);
-                    com1=sprintf('suop < %s op=neg > %s',fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
-                    unix(com1);
-                end
-                if isempty(seismofile_left)==0 && isempty(seismofile_right)==0
-                    com1=sprintf('cat %s %s > %s',fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
-                    unix(com1);
-                    delete(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
-                elseif isempty(seismofile_left)==0 && isempty(seismofile_right)==1
-                    movefile(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat.su'));
-                elseif isempty(seismofile_left)==1 && isempty(seismofile_right)==0
-                    movefile(fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
-                    delete(fullfile(dir_dat_xmid,'cat_right.su'));
-                end
-                com1=sprintf('susort < %s +offset | sustack key=offset | sushw key=sx,fldr,gelev,selev a=-1,1,0,0 | suchw key1=gx key2=offset > %s',...
-                    fullfile(dir_dat_xmid,'cat.su'),seisfile_sum_new);
+            if sum(nshot(ix,:))>0
+                unix(sprintf('cat %s > %s',specfile_all,specfile_sum));
+                com1=sprintf('susort < %s +gx | sustack key=gx > %s',specfile_sum,fullfile(dir_dat_xmid,'sort.spec'));
                 unix(com1);
-                delete(fullfile(dir_dat_xmid,'cat.su'));
+                movefile(fullfile(dir_dat_xmid,'sort.spec'),specfile_sum);
                 
-                [dspmat_new,f_new,v_new]=matpomegal(seisfile_sum_new,1,nray,fmin,fmax,vmin,vmax,...
-                    flip,xsca,tsca,1,dspfile_sum_new,0);
-                [specmat_new,fspec_new,xspec_new]=matspecfx(seisfile_sum_new,xsca,specfile_sum_new,0);
+                if stack==2
+                    % New disp
+                    if isempty(seismofile_left)==0
+                        com1=sprintf('cat %s > %s',seismofile_left,fullfile(dir_dat_xmid,'cat_left.su'));
+                        unix(com1);
+                    end
+                    if isempty(seismofile_right)==0
+                        com1=sprintf('cat %s > %s',seismofile_right,fullfile(dir_dat_xmid,'cat_right.su'));
+                        unix(com1);
+                        com1=sprintf('suop < %s op=neg > %s',fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
+                        unix(com1);
+                    end
+                    if isempty(seismofile_left)==0 && isempty(seismofile_right)==0
+                        com1=sprintf('cat %s %s > %s',fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
+                        unix(com1);
+                        delete(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
+                    elseif isempty(seismofile_left)==0 && isempty(seismofile_right)==1
+                        movefile(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat.su'));
+                    elseif isempty(seismofile_left)==1 && isempty(seismofile_right)==0
+                        movefile(fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
+                        delete(fullfile(dir_dat_xmid,'cat_right.su'));
+                    end
+                    com1=sprintf('susort < %s +offset | sustack key=offset | sushw key=sx,fldr,gelev,selev a=-1,1,0,0 | suchw key1=gx key2=offset > %s',...
+                        fullfile(dir_dat_xmid,'cat.su'),seisfile_sum_new);
+                    unix(com1);
+                    delete(fullfile(dir_dat_xmid,'cat.su'));
+                    
+                    [dspmat_new,f_new,v_new]=matpomegal(seisfile_sum_new,1,nray,fmin,fmax,vmin,vmax,...
+                        flip,xsca,tsca,1,dspfile_sum_new,0);
+                    [specmat_new,fspec_new,xspec_new]=matspecfx(seisfile_sum_new,xsca,specfile_sum_new,0);
+                end
             end
         end
     end
@@ -755,8 +766,7 @@ while i<length(Xmidselec)
             if stack==2
                 matop(dspfile_sum_new,'norm',flip);
             end
-%             copyfile(specfileOK,specfile_sum);
-            copyfile([specfileOK(1:end-4),'su'],seisfile_sum);
+            copyfile(seismofileOK,seisfile_sum);
         end
         
         if calc==1 || target==1 || pick==1 || plotdisp==1 || plotpckdisp==1 || plotspec==1
@@ -1081,6 +1091,8 @@ while i<length(Xmidselec)
             
             % Automatic picking (requires at least one manually picked file)
         elseif pick==2
+            filepick=fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),...
+                '.M',num2str(modeinit),'.pvc']);
             pvcstructauto=dir(fullfile(dir_pick,['*.M',num2str(modeinit),'.pvc']));
             if length(pvcstructauto)<1
                 fprintf('\n  Autopick requires at least one manually picked file\n');
@@ -1090,12 +1102,18 @@ while i<length(Xmidselec)
             if i>1 && exist('pvcfileauto','var')==1
                 filepickprev=fullfile(dir_pick,[num2str(XmidT(Xmidselec(i-1)),...
                     xmidformat),'.M',num2str(modeinit),'.pvc']);
-                if exist(filepickprev,'file')==2
+                if exist(filepick,'file')==2
+                    pvcfileauto=filepick;
+                elseif exist(filepickprev,'file')==2
                     pvcfileauto=filepickprev;
                 end
             else
-                [~,idx]=sort([pvcstructauto.datenum]);
-                pvcfileauto=fullfile(dir_pick,pvcstructauto(idx(end)).name);
+                if exist(filepick,'file')==0
+                    [~,idx]=sort([pvcstructauto.datenum]);
+                    pvcfileauto=fullfile(dir_pick,pvcstructauto(idx(end)).name);
+                else
+                    pvcfileauto=filepick;
+                end
             end
             Vprevauto=load(pvcfileauto);
             fpick=Vprevauto(:,1);
@@ -1103,12 +1121,10 @@ while i<length(Xmidselec)
             wl=Vprevauto(:,3);
             % Perform autopick, median filter and moving average
             [vpickauto,fpickauto]=findpeak(dspmat2,f,v2,fpick,vpick,1.5*wl);
-            vpickauto=median_filt(vpickauto,9,1,length(vpickauto));
-            vpickauto=mov_aver(vpickauto',5,1,length(vpickauto));
+            vpickauto=median_filt(vpickauto,5,1,length(vpickauto));
+            vpickauto=mov_aver(vpickauto',3,1,length(vpickauto));
             deltacauto=lorentzerr(vpickauto',vpickauto'./fpickauto,mean([nWmin,nWmax]),dx,...
                 nWfac,maxerrrat,minerrvel);
-            filepick=fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),...
-                '.M',num2str(modeinit),'.pvc']);
             dlmwrite(filepick,[fpickauto;vpickauto';deltacauto']','delimiter','\t','precision','%.6f');
             fprintf(['\n  Automatic pick for mode ',num2str(modeinit),'\n']);
         end

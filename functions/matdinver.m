@@ -1,6 +1,6 @@
 function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
 
-% S. Pasquet - V17.01.16
+% S. Pasquet - V17.01.20
 % matdinver execute dinver inversion through matlab
 
 % status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
@@ -16,10 +16,11 @@ function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verb
 
 for j=1:nrun
     fprintf(['\n      Run ',num2str(j),'\n']);
+    dlmwrite(fullfile(dir_out,'input.txt'),1);
     com1=['dinver -i DispersionCurve -optimization -target ',targetfile,...
         ' -param ',paramfile,' -itmax ',num2str(itmax),' -ns0 ',...
         num2str(ns0),' -ns ',num2str(ns),' -nr ',num2str(nr),' -f -nobugreport -o ',...
-        fullfile(dir_out,['run_0',num2str(j),'.report'])];
+        fullfile(dir_out,['run_0',num2str(j),'.report']),' < ',fullfile(dir_out,'input.txt')];
     if verbose==0
         [status,~]=unix(com1);
     else
@@ -45,4 +46,5 @@ for j=1:nrun
         end
         break
     end
+    delete(fullfile(dir_out,'input.txt'));
 end

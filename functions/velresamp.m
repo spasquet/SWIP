@@ -1,6 +1,6 @@
 function [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.01.24
 % Resample velocity model according to another one
 % [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
@@ -18,6 +18,9 @@ else
 end
 nlay=length(zin2)-1;
 if nlay<length(zin)
+    vpout=zeros(1,nlay);
+    vpoutmin=vpout;
+    vpoutmax=vpout;
     for ll=1:nlay
         vpout(ll)=mean(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
         vpoutmin(ll)=min(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
@@ -59,9 +62,8 @@ else
             vpout(ll)=vpin(ll2-1);
             if isnan(vpout(ll))==1
                 vpout(ll)=vpout(ll-1);
-                fprintf(['\n  NaN value for layer ',num2str(ll),'\n']);
                 if verbose==1
-                    
+                    fprintf(['\n  NaN value for layer ',num2str(ll),'\n']);
                 end
             end
             if modifpois==1

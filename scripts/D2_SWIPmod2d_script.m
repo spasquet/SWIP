@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V17.01.20
+%%% S. Pasquet - V17.01.25
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -152,7 +152,7 @@ if isempty(dpMAX)==1
     end
     dpMIN=0;
 end
-maxdepth=dpMAX;
+maxdepth=ceil(dpMAX/dz)*dz;
 depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 ZZ=0:dz:maxdepth;
 nZ=length(ZZ);
@@ -475,13 +475,12 @@ for ix=Xmidselec
         end
         if strcmp(modeltype,'ridge')==1
             filevelstd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
-                'VmsStd.smlay']);
+                'VmsStd.smooth']);
         end
         
         if exist(filevel,'file')==0
-            if exist('npvc','var')==1 && npvc>0 && sum(nshot(ix,:))>=0
-                fprintf(['\n  No ',[num2str(XmidT(ix),xmidformat),extens,'.',...
-                    avertype,'.',modeltype],' SWIP file for Xmid',num2str(ix),' = ',...
+            if exist(dir_rep_ind,'dir')==7 && sum(nshot(ix,:))>=0
+                fprintf(['\n  No SWIP model for Xmid',num2str(ix),' = ',...
                     num2str(XmidT(ix),xmidformat),' m\n']);
             end
             modvel=[];
@@ -513,22 +512,26 @@ for ix=Xmidselec
             
             if usevptomo==1
                 filevel=[filevel,'_vptomo'];
-                filedisp=[filevel,'_vptomo.disp'];
+                filedisp=[filevel,'.disp'];
                 vptomo=VpI(VpI(:,ix)>0,ix);
                 if isempty(vptomo)~=1
                     vptomo=[vptomo(1);vptomo;vptomo(end)];
                     ztmp=dz.*ones(1,size(VpI(VpI(:,ix)>0,ix),1));
                     zinc=[0,cumsum(ztmp)];
-                    if max(zinc)>maxdepth
+                    if max(zinc)>maxdepth && abs(max(zinc)-maxdepth)>1e-10
+%                         zinc=0:dz:max(zinc);
                         vptomo=vptomo(1:length(zinc)+1);
-                    elseif max(zinc)<maxdepth
+                    elseif max(zinc)<maxdepth && abs(max(zinc)-maxdepth)>1e-10
                         zinc=0:dz:maxdepth;
                         vptomo2=vptomo(end)*ones(length(zinc)+1,1);
                         vptomo2(1:length(vptomo))=vptomo;
                         vptomo=vptomo2;
+                    else
+                        zinc=0:dz:maxdepth;
                     end
                     [vpsw,~,~,vssw]=velresamp(zinc,vptomo,moddepth,vssw,0.1,0,0);
-                else modvel=[];
+                else
+                    modvel=[];
                 end
             else
                 filedisp=[filevel,'.disp'];

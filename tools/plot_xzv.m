@@ -1,7 +1,7 @@
-function [Xi,Zi,Vi]=plot_xzv(filevel,mask,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
-    vsticks,vtitle,isoline,blocky,vertex,imgform,imgres,ISOvel2,filevel2)
+function [Xi,Zi,Vi]=plot_xzv(filevel,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
+    vsticks,vtitle,isoline,blocky,vertex,imgform,imgres,ISOvel2,filevel2,mask)
 
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V17.01.26
 % Quick plot of 2D models from X,Z,V ASCII file
 % plot_xzv(filevel,mask,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
 %     vsticks,vtitle,isoline,blocky,vertex,imgform,imgres,ISOvel2,filevel2)

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.01.20
+%%% S. Pasquet - V17.02.01
 %%% SWIPinv.m performs surface-wave inversion along the seismic profile
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 
@@ -109,11 +109,12 @@ if inversion==1
 else
     % Read previous inversion settings
     dir_rep_inv=dir_inv_img.dir_rep_inv;
+    dir_img_inv=dir_inv_img.dir_img_inv;
     matfileinv=fullfile(dir_rep_inv,[sufile,'.invparam.mat']);
     try
         load(matfileinv);
-        dir_rep_inv=dir_inv_img.dir_rep_inv;
-        dir_img_inv=dir_inv_img.dir_img_inv;
+%         dir_rep_inv=dir_inv_img.dir_rep_inv;
+%         dir_img_inv=dir_inv_img.dir_img_inv;
     catch
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         fprintf('\n   Missing .mat file in inversion folder');
@@ -202,7 +203,7 @@ if isempty(dpMAX)==1
     end
     dpMIN=0;
 end
-maxdepth=dpMAX;
+maxdepth=ceil(dpMAX/dz)*dz;
 depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 ZZ=0:dz:maxdepth;
 nZ=length(ZZ);
@@ -420,7 +421,7 @@ for ix=Xmidselec
         end
         delete(fullfile(dir_rep_ind,'best*.txt'));
         % Find best models indexes sorted by decreasing misfit
-        bestrun=find(bestmis(:,1)==min(bestmis(:,1))); % Get best run nb to get best model
+        bestrun=find(bestmis(:,1)==min(bestmis(:,1)),1,'first'); % Get best run nb to get best model
         mis=max(misround,[],2);
         [missort,I]=sortrows(mis,-1);
         if nbest==0
@@ -660,20 +661,6 @@ for ix=Xmidselec
                 end
             end
             
-            %%%%%% Mean layered smoothed model %%%%%%
-            
-            %             Zmeani=Zmean;
-            %             Zmeani(2:2:end-2,:)=Zmeani(2:2:end-2,:)-dz;
-            %             VSmeanI=interp1q(Zmeani,VSmean,ZZ');
-            %             VPmeanI=interp1q(Zmeani,VPmean,ZZ');
-            %             RHOmeanI=interp1q(Zmeani,RHOmean,ZZ');
-            %             % Standard deviation layered smoothed model
-            %             Zstdi=Zstd;
-            %             Zstdi(2:2:end-2,:)=Zstdi(2:2:end-2,:)-dz;
-            %             VSstdI=interp1q(Zmeani,VSstd,ZZ');
-            %             VPstdI=interp1q(Zmeani,VPstd,ZZ');
-            %             RHOstdI=interp1q(Zmeani,RHOstd,ZZ');
-            
             %%%%%% Gaussian weighting models %%%%%%
             
             if weightcalc==1 && nmod(ix)>1
@@ -732,13 +719,6 @@ for ix=Xmidselec
                 IVPweight=sum(repmat(COEF,1,size(IVp,2)).*IVp,1); % Weighted
                 IRHOweight=sum(repmat(COEF,1,size(Irho,2)).*Irho,1); % Weighted
                 
-                %%%%%% Weighted layered smoothed model %%%%%%
-                
-                %                 Zweighti=Zweight;
-                %                 Zweighti(2:2:end-2,:)=Zweighti(2:2:end-2,:)-dz;
-                %                 VSweightI=interp1q(Zweighti,VSweight,ZZ');
-                %                 VPweightI=interp1q(Zweighti,VPweight,ZZ');
-                %                 RHOweightI=interp1q(Zweighti,RHOweight,ZZ');
             end
             
             %%%%%% Save velocity models %%%%%%
@@ -755,22 +735,16 @@ for ix=Xmidselec
                 extens,'.Vms.layered']); % Layered model
             nameDINsm=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vms.smooth']); % Smooth model
-            %             nameDINsmlay=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-            %                 extens,'.Vms.smlay']); % Smooth layered model
             % Std
             nameDINlaystd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.VmsStd.layered']); % Layered model
             nameDINsmstd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.VmsStd.smooth']); % Smooth model
-            nameDINsmlaystd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.VmsStd.smlay']); % Smooth layered model
             % Weighted
             nameDINlayw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vws.layered']); % Layered model
             nameDINsmw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vws.smooth']); % Smooth model
-            %             nameDINsmlayw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-            %                 extens,'.Vws.smlay']); % Smooth layered model
             
             % Save best model
             dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
@@ -781,16 +755,11 @@ for ix=Xmidselec
             % Save mean models (layered, smoothed, layered smooth)
             dinsave(nameDINlay,THmean,VPmean(1:2:end),VSmean(1:2:end),RHOmean(1:2:end));
             dinsave(nameDINsm,repmat(dz,1,length(ZZ)),IVPmean,IVSmean,IRHOmean);
-            %             dinsave(nameDINsmlay,repmat(dz,1,length(ZZ)),VPmeanI,VSmeanI,RHOmeanI);
-            % Save std models (layered, smoothed, layered smooth)
             dinsave(nameDINlaystd,THstd,VPstd(1:2:end),VSstd(1:2:end),RHOstd(1:2:end));
             dinsave(nameDINsmstd,repmat(dz,1,length(ZZ)),IVPstd,IVSstd,IRHOstd);
-            %             dinsave(nameDINsmlaystd,repmat(dz,1,length(ZZ)),VPstdI,VSstdI,RHOstdI);
-            % Save weighted models (layered, smoothed, layered smooth)
             if weightcalc==1 && nmod(ix)>1
                 dinsave(nameDINlayw,THweight,VPweight(1:2:end),VSweight(1:2:end),RHOweight(1:2:end));
                 dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
-                %                 dinsave(nameDINsmlayw,repmat(dz,1,length(ZZ)),VPweightI,VSweightI,RHOweightI);
             end
             
             if plotinvres==1
@@ -802,16 +771,11 @@ for ix=Xmidselec
                 str0='Best model';
                 h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
                 str1='Average layered model';
-                %             h2=plot(VSmeanI,ZZ,'g-','linewidth',1.5);
-                %             str2='Average parameters and interpolation';
                 h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
                 str3='Average smooth model';
                 if weightcalc==1 && nmod(ix)>1
                     h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
                     str4='Weighted layered model';
-                    %                 h5=plot(VSweightI,ZZ*NaN,'g--','linewidth',1.5);
-                    %                 dashline(VSweightI,ZZ,2,2,2,2,'color','g','linewidth',1.5);
-                    %                 str5='Weighted parameters and interpolation';
                     h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
                     str6='Weighted smooth model';
                 end
@@ -825,16 +789,12 @@ for ix=Xmidselec
                 end
                 set(cbhandle,'visible','off');
                 if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
-                    %                 h_legend=legend([h0,h1,h2,h3],str0,str1,str2,str3);
                     h_legend=legend([h0,h1,h3],str0,str1,str3);
                 elseif weightcalc==1 && ridgecalc==0
-                    %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6],str0,str1,str2,str3,str4,str5,str6);
                     h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
                 elseif weightcalc==0 && ridgecalc==1
-                    %                 h_legend=legend([h0,h1,h2,h3,h7],str0,str1,str2,str3,str7);
                     h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
                 else
-                    %                 h_legend=legend([h0,h1,h2,h3,h4,h5,h6,h7],str0,str1,str2,str3,str4,str5,str6,str7);
                     h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
                 end
                 set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
@@ -1010,14 +970,6 @@ for ix=Xmidselec
                                 Zplot=[];
                             end
                         end
-                        %                     elseif strcmp(modeltype,'smlay')==1
-                        %                         if strcmp(avertype,'Vms')==1
-                        %                             VSplot=VSmeanI;
-                        %                             Zplot=ZZ;
-                        %                         else
-                        %                             VSplot=VSweightI;
-                        %                             Zplot=ZZ;
-                        %                         end
                     elseif strcmp(modeltype,'ridge')==1
                         VSplot=VSridge;
                         Zplot=ZZ;
