@@ -1,18 +1,24 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V16.11.21
-%%% SWIPparam.m creates the parameterization file for surface-wave inversion
-%%% It can create either a global file for all the profile or create
-%%% automatic parameterization for specific Xmid based on a velocity model
+%%% S. Pasquet - V17.04.14
+%%% SWIPparam.m creates the parameterization file required to invert with
+%%% module C the dispersion curves picked in module A
+%%% It can create either a single parameterization file for all the profile
+%%% or create automatic parameterization for each Xmid based on a Vp model
 
-run('SWIP_defaultsettings')
+%%%-------------------------%%%
+%%% START OF INITIALIZATION %%%
+
+run('SWIP_defaultsettings') % Read default settings
+
+%%% END OF INITIALIZATION %%%
+%%%-----------------------%%%
 
 fprintf(['\n  Creating "type ',num2str(paramtype),'" parameterization\n']);
-if paramtype==0
-    % Manual parameterization
+if paramtype==0 % User-defined parameterization
     paramname=mod2param(nlay,nsublay,thmin,thmax,shape,lvz,...
         Vpmin,Vpmax,Numin,Numax,Vsmin,Vsmax,Rhomin,Rhomax,...
-        Vplink,Nulink,0,Rholink,paramname);
+        Vplink,Nulink,0,Rholink,paramname); % Create parameterization
     if isempty(paramname)==1
         return
     end
@@ -21,29 +27,31 @@ if paramtype==0
         movefile(paramname,parampath);
     end
     fprintf(['\n  Parameterization file saved in file.param as ',paramname,'\n\n']);
-else
-    % Automatic parameterization
+    
+else % Semi-automatic parameterization
     dir_all=dir_create(0);
     if dir_all.dir_main==0
         return
     end
+    % Get SWIP subfolder and parameters
     dir_dat=dir_all.dir_dat;
     dir_targ=dir_all.dir_targ;
-    matstruct=dir(fullfile(dir_dat,'*.param.mat'));
+    matstruct=dir(fullfile(dir_dat,'*.param.mat')); % .mat file containing subproject parameters
     matfile=fullfile(dir_dat,matstruct.name);
-    load(matfile);
+    load(matfile); % Read .mat file
     dx=acquiparam.dx;
     nWmin=stackdisp.nWmin;
     nWmax=stackdisp.nWmax;
     xsca=pomega.xsca;
     xmin=plotopt.xmin;
     xmax=plotopt.xmax;
-    XmidT=xmidparam.XmidT; % Get Xmids
-    Xlength=xmidparam.Xlength; % Get Xmids
-    xmidformat=stackdisp.xmidformat;
+    XmidT=xmidparam.XmidT; % Xmid positions
+    Xlength=xmidparam.Xlength; % Number of Xmids
+    xmidformat=stackdisp.xmidformat; % Format Xmid with correct number of decimals
     zround=xmidparam.zround; % Get topography
     maxdepth=(nlay-1)*thmax;
     depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
+    % Select Xmids
     if exist('Xmidselec','var')~=1 || isempty(Xmidselec)==1
         Xmidselec=1:Xlength;
     end
@@ -166,7 +174,7 @@ else
                 num2str(paramtype),'.param']);
             paramname=mod2param(nlay,nsublay(1),thmin(1),thmax(1),1,lvz,...
                 Vpmin,Vpmax,Numin(1),Numax(1),Vsmin(1),Vsmax(1),Rhomin(1),Rhomax(1),...
-                Vplink(1),Nulink(1),0,Rholink(1),paramname);
+                Vplink(1),Nulink(1),0,Rholink(1),paramname); % Create parameterization
             if isempty(paramname)==1
                 return
             end

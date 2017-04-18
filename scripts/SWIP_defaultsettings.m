@@ -1,6 +1,8 @@
-%%% S. Pasquet - V17.01.18
+%%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
+%%% Default settings
+%%% S. Pasquet - V17.04.14
 
-matrelease=version('-release');
+matrelease=version('-release'); % Get matlab release
 
 %% A_SWIPdisp settings
 % Main settings
@@ -18,14 +20,6 @@ if exist('stack','var')==0 || isempty(stack)==1
 end
 
 % Windowing and stacking settings (used if calc=1)
-% % Min. window size (nb of traces)
-% if exist('nWmin','var')==0 || isempty(nWmin)==1
-%     nWmin=31;
-% end
-% % Max. window size (nb of traces)
-% if exist('nWmax','var')==0 || isempty(nWmax)==1
-%     nWmax=31;
-% end
 % Vector of window sizes (nb of traces)
 if exist('nWvec','var')==0 || isempty(nWvec)==1
     nWvec=31;
@@ -180,7 +174,7 @@ if exist('fminpick','var')==0 || isempty(fminpick)==1
 end
 % Amplitude threshold (between 0 and 1) (used if freqlim=1)
 if exist('specampmin','var')==0 || isempty(specampmin)==1
-    specampmin=0.01;
+    specampmin=0.025;
 end
 
 % Error settings (used if target=1)
@@ -825,7 +819,7 @@ end
 % Phase velocity and residuals pseudo-section settings
 % Colormap for phase velocity residuals
 if exist('map4','var')==0 || isempty(map4)==1
-    map4=haxby(32);
+    map4=polarmap(32);
 end
 % Minimum residual (m/s)
 if (exist('residMIN','var')==0 || isempty(residMIN)==1) || (exist('residMAX','var')==0 || isempty(residMAX)==1)
@@ -843,7 +837,7 @@ end
 % Vs, Vp, Vp/Vs and Poisson's ratio pseudo-section settings
 % Blocky (=0), smooth interp (=1) or smooth contour (=2) images
 if exist('blocky','var')==0 || isempty(blocky)==1
-    blocky=0;
+    blocky=2;
 end
 % Vertical exageration
 if exist('vertex','var')==0 || isempty(vertex)==1
@@ -894,7 +888,7 @@ if (exist('stdMIN','var')==0 || isempty(stdMIN)==1) || (exist('stdMAX','var')==0
 end
 % Max STdVs (m/s)
 if (exist('stdMIN','var')==0 || isempty(stdMIN)==1) || (exist('stdMAX','var')==0 || isempty(stdMAX)==1)
-    stdMAX=200;
+    stdMAX=150;
 end
 % Vs STD ticks (m/s)
 if exist('stdticks','var')==0 || isempty(stdticks)==1

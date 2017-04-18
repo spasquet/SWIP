@@ -1,7 +1,7 @@
 function [fig,han1,han2,han3,c]=plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.04.03
 %
 % plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,...
 %    xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
@@ -140,7 +140,7 @@ if exist('zlimit','var')==1 && isempty(zlimit)~=1
         caxis(real(zlimit));
     end
 else
-    zlimit=[min(min(Z)) max(max(Z))];
+    zlimit=[min(Z(:)) max(Z(:))];
     zlimit=1+(length(map)-1)*(log10(zlimit)-mn)/rng;
     if isnan(zlimit(1))==0 && isnan(zlimit(2))==0
         caxis(real(zlimit));
@@ -171,6 +171,14 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
             ztickslog=get(cbhandle,'Ytick');
         end
         zticks=round(10.^(mn+rng*(ztickslog-1)/(length(map)-1)));
+        if min(zticks)<1
+            prec=1;
+        elseif min(zticks)<0.1
+            prec=2;
+        else
+            prec=0;
+        end
+        zticks = round(10^prec*zticks)/10^prec;
     end
     if cb==2
         ticklength=get(cbhandle,'TickLength');
@@ -187,13 +195,13 @@ end
 % Plot vertical or horizontal line
 if exist('xline','var')==1 && isempty(xline)~=1
     xL=get(gca,'XLim');
-    han2=dashline([xline xline],xL,1.5,1.5,1.5,1.5,'color',[1 0 0],'linewidth',2);
+    han2=dashline([xline xline],xL,3,3,3,3,'color',[1 0 0],'linewidth',5);
 else
     han2=[];
 end
 if exist('yline','var')==1 && isempty(yline)~=1
     yL=get(gca,'YLim');
-    han3=dashline([yline yline],yL,1.5,1.5,1.5,1.5,'color',[1 0 0],'linewidth',2);
+    han3=dashline([yline yline],yL,3,3,3,3,'color',[1 0 0],'linewidth',5);
 %     han3=line([yline yline],yL,'linestyle','--','color',[0.5 0.5 0.5],'linewidth',2);
 else
     han3=[];

@@ -1,14 +1,14 @@
-function [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
+function [XX,ZZ,VV,MASK]=save_xzv(filexzv,xi,zi,vi,clearnan,mask,convert)
 
-%%% S. Pasquet - V16.12.02
+%%% S. Pasquet - V17.02.13
 % Save velocity model and mask in .xzv column ascii file 
-% [XX,ZZ,VV,MASK1,MASK2]=save_xzv(filexzv,xi,zi,vi,mask1,mask2,convert)
+% [XX,ZZ,VV,MASK]=save_xzv(filexzv,xi,zi,vi,clearnan,mask,convert)
 
-if exist('mask1','var')==0 || isempty(mask1)==1
-    mask1=[];
+if exist('mask','var')==0 || isempty(mask)==1
+    mask=[];
 end
-if exist('mask2','var')==0 || isempty(mask2)==1
-    mask2=[];
+if exist('clearnan','var')==0 || isempty(clearnan)==1
+   clearnan=1;
 end
 if exist('convert','var')==0 || isempty(convert)==1
    convert=0;
@@ -36,20 +36,20 @@ else
     ZZ=repmat(zi,sizeok,1);
 end
 VV=reshape(vi,size(vi,1)*size(vi,2),1);
-MASK1=reshape(mask1,size(mask1,1)*size(mask1,2),1);
-MASK2=reshape(mask2,size(mask2,1)*size(mask2,2),1);
+MASK=reshape(mask,size(mask,1)*size(mask,2),1);
 
-XX(isnan(VV)==1)=[];
-ZZ(isnan(VV)==1)=[];
-if isempty(mask1)==0
-    MASK1(isnan(VV)==1)=[];
+if clearnan==1
+    XX(isnan(VV)==1)=[];
+    ZZ(isnan(VV)==1)=[];
 end
-if isempty(mask2)==0
-    MASK2(isnan(VV)==1)=[];
+if isempty(mask)==0
+    MASK(isnan(VV)==1)=[];
 end
-VV(isnan(VV)==1)=[];
+if clearnan==1
+    VV(isnan(VV)==1)=[];
+end
 if convert==1;
     VV=VV*1000;
 end
 
-dlmwrite(filexzv,[XX,ZZ,VV,MASK1,MASK2],'delimiter','\t','precision','%6.2f');
+dlmwrite(filexzv,[XX,ZZ,VV,MASK],'delimiter','\t','precision','%6.2f');

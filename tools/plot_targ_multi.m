@@ -2,7 +2,7 @@ function plot_targ_multi(dir_targ,mappick,nmodemax,fMIN,fMAX,fticks,freqtitle_lo
 
 %%% S. Pasquet - V16.11.30
 % Quick plot of multiple dispersion curves
-% plot_targ(targetfile,pickcol1,fMIN,fMAX,fticks,freqtitle_long,axetop,Flogscale,VphMIN,VphMAX,fs,imgform,imgres)
+% plot_targ_multi(dir_targ,mappick,nmodemax,fMIN,fMAX,fticks,freqtitle_long,axetop,Flogscale,VphMIN,VphMAX,fs,imgform,imgres)
 
 if exist('dir_targ','var')==0 || isempty(dir_targ)==1
     dir_targ=uigetdir('./','Select folder containing target files');

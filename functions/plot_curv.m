@@ -1,7 +1,7 @@
 function [fig,han1,han2,han3,c]=plot_curv(h,X,Y,errbar,symb,col,lw,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex,xlogscale,markersize)
 
-%%% S. Pasquet - V16.11.30
+%%% S. Pasquet - V17.04.11
 %
 % [fig,han1,han2,han3,c]=plot_curv(h,X,Y,errbar,symb,col,lw,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
 %    xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex,xlogscale,markersize)
@@ -61,7 +61,7 @@ if exist('symb','var')==0 || isempty(symb)==1
 end
 
 if exist('lw','var')==0 || isempty(lw)==1
-    lw=1.5;
+    lw=2;
 end
 
 if exist('xlogscale','var')==0 || isempty(xlogscale)==1
@@ -135,6 +135,7 @@ else
     end
 end
 grid on; box on;
+hold on;
 
 % Vertical exageration
 if exist('vertex','var')==1 && isempty(vertex)~=1
@@ -218,7 +219,7 @@ end
 % Plot vertical or horizontal line
 if exist('xline','var')==1 && isempty(xline)~=1
     xL=get(gca,'XLim');
-    han2=dashline([xline xline],xL,2,2,2,2,'color','k','linewidth',1.5);
+    han2=dashline(xL,[xline xline],2,2,2,2,'color','k','linewidth',1.5);
 else
     han2=[];
 end

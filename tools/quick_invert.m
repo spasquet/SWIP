@@ -1,9 +1,9 @@
 function quick_invert(inversion,plotinvres,plotparam,targetfile,paramfile,nrun,itmax,ns0,ns,nr,...
-    nbest,outpoints,modeltype,imgform,imgres,concat,colnb)
-%%% S. Pasquet - V16.11.22
+    nbest,outpoints,modeltype,imgform,imgres,concat,colnb,verbose)
+%%% S. Pasquet - V17.03.29
 %%% Quick inversion of dispersion data
 %%% quick_invert(inversion,plotinvres,plotparam,targetfile,paramfile,nrun,itmax,ns0,ns,nr,...
-%%%    calcmod,nbest,outpoints,modeltype,imgform,imgres,concat,colnb)
+%%%    calcmod,nbest,outpoints,modeltype,imgform,imgres,concat,colnb,verbose)
 
 run('SWIP_defaultsettings')
 
@@ -77,11 +77,12 @@ if inversion==1
     end
     
     % Run inversion
-    status=matdinver(nametarg,paramname,nrun,itmax,ns0,ns,nr,dir_rep_ind,1);
+    status=matdinver(nametarg,paramname,nrun,itmax,ns0,ns,nr,dir_rep_ind,verbose);
     if status~=0
         return
     end
     copyfile(nametarg,dir_rep_ind);
+    copyfile(paramname,dir_rep_ind);
     matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
 else
     dir_rep_ind=uigetdir('./','Select inversion folder');
@@ -93,7 +94,14 @@ else
     else
         targstruct=dir(fullfile(dir_rep_ind,'*.target'));
         nametarg=fullfile(dir_rep_ind,targstruct.name);
+        paramstruct=dir(fullfile(dir_rep_ind,'*.param'));
+        paramname=fullfile(dir_rep_ind,paramstruct.name);
     end
+end
+
+if isempty(dpMAX)==1
+    dpMIN = 0;
+    [~,dpMAX]=param2mod(paramname);
 end
 
 %%
@@ -767,9 +775,9 @@ if calcmod==1
         save_fig(f4,filename_modall,imgform,imgres,1,1-testplot);
         close(f4); clear f4;
         
-        filename_cbin=fullfile(dir_img_ind,[targetfile(1:end-7),...
+        filename_cbin=fullfile(dir_rep_ind,[targetfile(1:end-7),...
             '.cbmisin.',imgform]);
-        filename_cbout=fullfile(dir_img_ind,[targetfile(1:end-7),...
+        filename_cbout=fullfile(dir_rep_ind,[targetfile(1:end-7),...
             '.cbmisout.',imgform]);
         
         % Save colorbars
@@ -827,7 +835,7 @@ if calcmod==1
             
             filename_cbtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.cb.',imgform]);
-            filename_panel=fullfile(dir_img_ind,[targetfile(1:end-7),...
+            filename_panel=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.invresults.',imgform]);
             
             if  nmod>1 && nmod<nrun*nmaxmod-1
@@ -974,14 +982,14 @@ if calcmod==1
                 drawnow
                 
                 % Save figure
-                filename=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                filename=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                     '.param.',param1,num2str(np1(i)),param2,num2str(np2(j)),'.',imgform]);
                 save_fig(f4,filename,imgform,imgres,1,0);
                 close(f4); clear f4;
                 
-                filename_cbin=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                filename_cbin=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                     '.cbmisin.',imgform]);
-                filename_cbout=fullfile(dir_img_ind,[targetfile(1:end-7),...
+                filename_cbout=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                     '.cbmisout.',imgform]);
                 
                 % Save colorbars
@@ -1020,13 +1028,13 @@ if calcmod==1
         end
         
         if testplot==1
-            filename_paramall=fullfile(dir_img_ind,[targetfile(1:end-7),...
+            filename_paramall=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.param.*.',imgform]);
-            filename_imgtmp=fullfile(dir_img_ind,[targetfile(1:end-7),...
+            filename_imgtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.imgtmp.',imgform]);
             cat_img(filename_paramall,imgform,colnb_tmp,'east',filename_imgtmp,0);
             
-            filename_cbtmp=fullfile(dir_img_ind,[targetfile(1:end-7),...
+            filename_cbtmp=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.cb.',imgform]);
             if (cbpos==1 && colnb_tmp==length(np1)*length(np2)) || (cbpos==2 && colnb_tmp>1)
                 cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
@@ -1058,7 +1066,7 @@ if calcmod==1
                 end
             end
             
-            filename_param=fullfile(dir_img_ind,[targetfile(1:end-7),...
+            filename_param=fullfile(dir_rep_ind,[targetfile(1:end-7),...
                 '.param_',param1,num2str(np1(1)),'_',num2str(np1(end)),...
                 param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
             if cbpos==1 && colnb_tmp==length(np1)*length(np2)

@@ -1,6 +1,6 @@
 function matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.04.14
 % Read dinver report files
 % matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
@@ -11,17 +11,8 @@ else
 end
 
 for j=1:nrun
-%     fprintf(['\nExtracting models for run ',num2str(j),'\n']);
-    %     com1=['gpdcreport ',fullfile(dir_in,['run_0',num2str(j),'.report']),...
-    %         ' -pm -best ',num2str(nmaxmod),' > ',fullfile(dir_in,'best')];
-    %     unix(com1);
-    %     com1=['tail -n ',num2str(nmaxmod),' ',fullfile(dir_in,'best'),' > '...
-    %         ,fullfile(dir_in,['best',num2str(j)])];
-    %     unix(com1);
-    %     com1=['rm -f ',fullfile(dir_in,'best')];
-    %     unix(com1);
+
     for k=1:nmode
-%         fprintf(['Mode ',num2str(k-1),'\n']);
         if exportopt==0 || exportopt==2
             com1=['gpdcreport ',fullfile(dir_in,['run_0',num2str(j),'.report']),...
                 ' -p',wave,' ',num2str(k-1),' -best ',num2str(nmaxmod),' > ',...

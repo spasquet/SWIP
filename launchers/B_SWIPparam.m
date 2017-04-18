@@ -2,10 +2,15 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V16.11.22
-%%% SWIPparam.m creates the parameterization file for surface-wave inversion
-%%% It can create either a global file for all the profile or create
-%%% automatic parameterization for specific Xmid based on a velocity model
+%%% S. Pasquet - V17.04.14
+%%% SWIPparam.m creates the parameterization file required to invert with
+%%% module C the dispersion curves picked in module A
+%%% It can create either a single parameterization file for all the profile
+%%% or create automatic parameterization for each Xmid based on a Vp model
+
+%%% Option paramtype>0 requires to select subproject folder Wmin_max.dWx.dSmin_max.side
+%%% and the input of a 3-column ASCII file with X, Z and Vp of the velocity model
+
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
 
 %%%-------------------------%%%

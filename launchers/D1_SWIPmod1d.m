@@ -2,9 +2,24 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V16.11.22
+%%% S. Pasquet - V17.04.14
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
+
+%%% Option swip=1 plots velocity models and calculates theoretical
+%%% dispersion from SWIP inversion results (module C)
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side
+%%% and an inversion folder located in file.inv
+%%% If usevptomo=1, dispersion is calculated with VP from refraction tomography
+%%% Requires to select a 3-column ASCII file (X, Z, Vp)
+%%% Option tomo=1 plots velocity models and calculates theoretical
+%%% dispersion from refraction tomography files
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side
+%%% and two 3-column ASCII files (X, Z, Vp) and (X, Z, Vs)
+%%% Option user=1 plots velocity models and calculates theoretical
+%%% dispersion from user-defined velocity structure
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side
+
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
 
 %%%-------------------------%%%
@@ -30,7 +45,7 @@ vsuser     = [200,925,925,1250];    % Vs (m/s)
 rhouser    = [1800,1800,1800,1800]; % Rho (kg/m3)
 thkuser    = [0.85,10,25];          % Thickness (m)
 
-%%% Plot settings
+%%% Toggle plots
 plot1dcal  = 1;     % Plot dispersion images with calculated dispersion curves (=1) or not (=0)
 plot1dmod  = 1;     % Plot Vs, Vp, Vp/Vs and Poisson's ratio 1D models (=1) or not (=0)
 showplot   = 0;     % Show plots before saving (=1) or not (=0)
@@ -67,25 +82,25 @@ VphMAX     = [];                    % Max. phase velocity (m/s)
 plot1dstd  = 1;     % Plot error enveloppe (=1) or none (=0)
 errstd     = 0;     % Percentage error on velocity models (in %) (0 for STD from SWIP)
 plotDOI    = 2;     % Plot DOI estimated from wavelength (=1), from VsSTD (=2) or not (=0)
-doifact    = 0.66;  % DOI factor (DOI = Lmax*fact) (used if plotDOI=1)
-stdMAX     = 200;   % Max. STdVs (m/s) (used if plotDOI=2)
+doifact    = 0.66;  % DOI factor (DOI = max_wavelength*doifact) (used if plotDOI=1)
+stdMAX     = 150;   % Max. STdVs (m/s) to determine DOI (used if plotDOI=2)
 plot1dvp   = 0;     % Plot 1D Vp models on same graph with 1D Vs models (=1) or not (=0)
 
-dpMIN      = [];                    % Min. depth (m) 
-dpMAX      = [];                    % Max. depth (m) 
-% dticks     = (dpMIN:10:dpMAX);      % Depth ticks (m) 
-vsMIN      = [];                    % Min. Vs (m/s) 
-vsMAX      = [];                    % Max. Vs (m/s) 
-% vsticks    = (vsMIN:500:vsMAX);     % Vs ticks (m/s) 
-vpMIN      = [];                    % Min. Vp (m/s) 
-vpMAX      = [];                    % Max. Vp (m/s) 
-% vpticks    = (vpMIN:1000:vpMAX);    % Vp ticks (m/s) 
-vpvsMIN    = [];                    % Min. Vp/Vs 
-vpvsMAX    = [];                    % Max. Vp/Vs 
-% vpvsticks  = (vpvsMIN:vpvsMAX);     % Vp/Vs ticks 
-poisMIN    = [];                    % Min. Poisson's ratio 
-poisMAX    = [];                    % Max. Poisson's ratio 
-% poisticks  = (poisMIN:0.1:poisMAX); % Poisson's ratio ticks 
+dpMIN      = [];                    % Min. depth (m)
+dpMAX      = [];                    % Max. depth (m)
+% dticks     = (dpMIN:10:dpMAX);      % Depth ticks (m)
+vsMIN      = [];                    % Min. Vs (m/s)
+vsMAX      = [];                    % Max. Vs (m/s)
+% vsticks    = (vsMIN:500:vsMAX);     % Vs ticks (m/s)
+vpMIN      = [];                    % Min. Vp (m/s)
+vpMAX      = [];                    % Max. Vp (m/s)
+% vpticks    = (vpMIN:1000:vpMAX);    % Vp ticks (m/s)
+vpvsMIN    = [];                    % Min. Vp/Vs
+vpvsMAX    = [];                    % Max. Vp/Vs
+% vpvsticks  = (vpvsMIN:vpvsMAX);     % Vp/Vs ticks
+poisMIN    = [];                    % Min. Poisson's ratio
+poisMAX    = [];                    % Max. Poisson's ratio
+% poisticks  = (poisMIN:0.1:poisMAX); % Poisson's ratio ticks
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%

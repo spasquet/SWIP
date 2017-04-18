@@ -1,12 +1,24 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.02.01
-%%% SWIPinv.m performs surface-wave inversion along the seismic profile
+%%% S. Pasquet - V17.04.17
+%%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
+%%% It allows to plot all generated models and inversion parameters for 
+%%% each Xmid with misfit based colorbars for selected and rejected models
 
-run('SWIP_defaultsettings')
+%%% This module calls the following Geopsy native functions:
+%%% dinver - gpdcreport - gpcurve
+%%% Geopsy functions are called through the following MATLAB functions:
+%%% matdinver - matgpdcreport
+%%% The following Linux codes are also called if correctly installed:
+%%% ImageMagick (convert, montage) - pdfjam - pdfcrop
 
-% Directories settings
+%%%-------------------------%%%
+%%% START OF INITIALIZATION %%%
+
+run('SWIP_defaultsettings') % Read default settings
+
+% Folders settings
 if inversion==1
     dir_all=dir_create(0);
     if dir_all.dir_main==0
@@ -42,6 +54,7 @@ end
 XmidT=xmidparam.XmidT; % Get Xmids
 Xlength=xmidparam.Xlength; % Get Number of Xmids
 xmidformat=stackdisp.xmidformat;
+% Select Xmids
 if exist('Xmidselec','var')~=1 || isempty(Xmidselec)==1
     Xmidselec=1:Xlength;
 end
@@ -50,9 +63,9 @@ if max(Xmidselec)>Xlength
 end
 nshot=xmidparam.nshot;
 
-% Get parameter file and create folders to store inversion results
-if inversion==1
+if inversion==1 % Get parameterization file and create folders to store inversion results
     if paramtype==0
+        % Select user-defined parameterization file
         fprintf('\n  Select parameterization file\n');
         [paramfile,parampath]=uigetfile(fullfile(dir_param,'*.param'),...
             'Select parameterization file');
@@ -63,27 +76,31 @@ if inversion==1
             return
         end
         paramname=fullfile(parampath,paramfile);
+        % Inversion folder named after parameterization file
         dir_rep_inv=fullfile(dir_inv,paramfile(1:end-6));
         dir_img_inv=fullfile(dir_img,paramfile(1:end-6));
     else
+        % Inversion folder named after parameterization type if paramtype>0
         dir_rep_inv=fullfile(dir_inv,['Type',num2str(paramtype),'_param']);
         dir_img_inv=fullfile(dir_img,['Type',num2str(paramtype),'_param']);
     end
+    % Create folders if not existing
     if exist(dir_rep_inv,'dir')~=7
         mkdir(dir_rep_inv);
     end
     if exist(dir_img_inv,'dir')~=7
         mkdir(dir_img_inv);
     end
+    % .mat file to store inversion settings
     matfileinv=fullfile(dir_rep_inv,[sufile,'.invparam.mat']);
-    if exist(matfileinv,'file')==2
+    if exist(matfileinv,'file')==2 % Read .mat file if existing
         load(matfileinv);
         nmodeinv=inv_set.nmodeinv;
         maxmodeinv=inv_set.maxmodeinv;
         nC=inv_set.nC;
         nmod=inv_set.nmod;
         minmis=inv_set.minmis;
-    else
+    else % Store inversion settings to be saved in .mat file later
         dir_inv_img.dir_rep_inv=dir_rep_inv;
         dir_inv_img.dir_img_inv=dir_img_inv;
         inv_set.paramtype=paramtype;
@@ -106,21 +123,21 @@ if inversion==1
     targopt_inv.resampvec=targopt.resampvec;
     targopt_inv.sampling=targopt.sampling;
     targopt_inv.lmaxpick=targopt.lmaxpick;
-else
-    % Read previous inversion settings
+    
+else % Read previous inversion settings
     dir_rep_inv=dir_inv_img.dir_rep_inv;
     dir_img_inv=dir_inv_img.dir_img_inv;
+    % Read .mat file
     matfileinv=fullfile(dir_rep_inv,[sufile,'.invparam.mat']);
     try
         load(matfileinv);
-%         dir_rep_inv=dir_inv_img.dir_rep_inv;
-%         dir_img_inv=dir_inv_img.dir_img_inv;
     catch
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         fprintf('\n   Missing .mat file in inversion folder');
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
         return
     end
+    % Read previous inversion settings
     paramtype=inv_set.paramtype;
     nrun=inv_set.nrun;
     itmax=inv_set.itmax;
@@ -144,12 +161,12 @@ nmaxmod=(inv_set.itmax.*inv_set.ns)+inv_set.ns0;
 % Get previous settings
 xmin=plotopt.xmin;
 xmax=plotopt.xmax;
-
 wave=targopt_inv.wave(1);
 resampvec=targopt_inv.resampvec;
 sampling=targopt_inv.sampling;
 lmaxpick=targopt_inv.lmaxpick;
 
+% Save inversion settings in .mat file
 if inversion==1
     if exist(matfileinv,'file')==2
         save(matfileinv,'-append','targopt_inv');
@@ -157,8 +174,10 @@ if inversion==1
         save(matfileinv,'dir_inv_img','inv_set','targopt_inv');
     end
 end
+
+% Initialize depth vector and topography
 zround=xmidparam.zround; % Get topography
-if isempty(dpMAX)==1
+if isempty(dpMAX)==1 % Get maximum depth from parameterization if not setup in launcher
     if inversion == 0
         dpMAX=zeros(size(Xmidselec));
         for ix=Xmidselec
@@ -203,6 +222,7 @@ if isempty(dpMAX)==1
     end
     dpMIN=0;
 end
+% Create depth vector
 maxdepth=ceil(dpMAX/dz)*dz;
 depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 ZZ=0:dz:maxdepth;
@@ -222,6 +242,7 @@ end
 dir_img_inv_mod=fullfile(dir_img_inv,['models',extens]);
 dir_img_inv_1d=fullfile(dir_img_inv_mod,'1dmodels');
 
+% Final average model type names
 if modeltype==1
     modeltype='best'; avertype='Vms';
 elseif modeltype==2
@@ -239,6 +260,7 @@ else
     fprintf('\n  Weighted smooth model selected by default\n');
 end
 
+% Check if image concatenation functions are installed
 [testimgmgck,~]=unix('which montage');
 [testpdfjam,~]=unix('which pdfjam');
 testplot=((testpdfjam==0 && strcmp(imgform,'pdf')==1) || (testimgmgck==0 && strcmp(imgform,'pdf')==0 && strcmp(imgform,'fig')==0));
@@ -246,6 +268,7 @@ if concat == 0
     testplot = 0;
 end
 
+% Check OS
 if isunix==1
     zipmethod=5;
 else
@@ -255,13 +278,18 @@ end
 fprintf('\n  **********************************************************');
 fprintf('\n  **********************************************************\n');
 
+%%% END OF INITIALIZATION %%%
+%%%-----------------------%%%
+
 %% CALCULATIONS FOR ALL XMIDS
-Tstart=tic;
+
 %%%%%% Loop over all Xmids %%%%%%
 
+Tstart=tic; % Start clock
 for ix=Xmidselec
-    tstart=tic;
+    tstart=tic; % Start single Xmid clock
     
+    % Initialization
     if sum(nshot(ix,:))>=0 && (inversion==1 || calcmod==1 || plotinvres==1 || plotparam==1)
         fprintf(['\n  Xmid',num2str(ix),' = ',num2str(XmidT(ix),xmidformat),' m\n']);
     end
@@ -272,14 +300,15 @@ for ix=Xmidselec
         mkdir(dir_img_ind);
     end
     
-    %%
-    %%%%%% Inversion %%%%%%
+    %% %% %%
     
-    if inversion==1
-        
+    %%%%% Inversion %%%%%
+    
+    if inversion==1 % Run new inversion
         if sum(nshot(ix,:))>=0
             fprintf(['\n  Inversion with "type ',num2str(paramtype),'" parameterization\n']);
         end
+        
         % Get parameter file if autoparam
         if paramtype~=0
             paramname=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.type',...
@@ -301,18 +330,20 @@ for ix=Xmidselec
             continue
         end
         
-        % Create report folder
+        % Create report folder to store inversion results
         if exist(dir_rep_ind,'dir')~=7
             mkdir(dir_rep_ind);
         end
         
-        % Run inversion
+        % Run NA inversion with dinver
         status=matdinver(nametarg,paramname,nrun,itmax,ns0,ns,nr,dir_rep_ind,verbose);
-        if status~=0
+        if status~=0 % Check if inversion ran correctly
             continue
         end
+        % Copy target and param file in report folder
         copyfile(nametarg,dir_rep_ind);
         copyfile(paramname,dir_rep_ind);
+        % Compress inversion results to save disk space
         matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
         
         % Read target file to get picked dispersion curves
@@ -320,8 +351,7 @@ for ix=Xmidselec
         nmodeinv(ix)=length(modes);
         maxmodeinv(ix)=max(modes);
         
-        %%%%%% Save settings %%%%%%
-        
+        % Save inversion settings        
         nmaxmod(ix)=(itmax*ns)+ns0;
         inv_set.nrun(ix)=nrun;
         inv_set.itmax(ix)=itmax;
@@ -335,7 +365,7 @@ for ix=Xmidselec
         end
     end
     
-    % Get maximum wavelength
+    % Get maximum wavelength from target file
     nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
     if exist(nametarg,'file')==2
         % Read target file to get picked dispersion curves
@@ -352,10 +382,12 @@ for ix=Xmidselec
         lmaxpick(ix)=max(lmaxpicktmp);
     end
     
-    %%
-    %%%%%% Extraction of results / Building of average models %%%%%%
+    %% %% %%
+    
+    %%%%% Extraction of inversion results / Building of average models %%%%%
     
     if calcmod==1 || plotinvres==1 || plotparam==1
+        % Check if inversion exists for current Xmid
         if exist(dir_rep_ind,'dir')~=7
             if sum(nshot(ix,:))>=0
                 fprintf('\n  No inversion - Go to next Xmid\n\n');
@@ -368,23 +400,23 @@ for ix=Xmidselec
         % Memory allocation
         OK=[]; KO=[]; misround=[]; ok=[];
         
-        %%
-        %%%%%% Looking for the best models %%%%%%
+        %% %% %%
+        
+        %%%% Looking for the best models %%%%
         
         % Get target file
         nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
-        if sum(nshot(ix,:))>=0 && (exist(nametarg,'file')==2 || exist(nametarg(1:end-3),'file')==2)
-            if exist(nametarg(1:end-3),'file')==2
-                movefile(nametarg(1:end-3),nametarg);
+        if exist(nametarg,'file')~=2
+            if sum(nshot(ix,:))>=0
+                fprintf('\n  No target in inversion folder - Go to next Xmid\n\n');
             end
-        else
-            fprintf('\n  No target - Go to next Xmid\n\n');
             continue
         end
         % Read target file to get picked dispersion curves
         [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
         
-        fprintf('\n  Looking for models within the errorbars\n');
+        fprintf('\n  Looking for best models\n');
+        
         % Export calculated dipsersion curves from binary report files
         if exist(fullfile(dir_rep_ind,'run_01.report'),'file')==2
             matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
@@ -398,19 +430,24 @@ for ix=Xmidselec
         ok=cell(nmodeinv(ix),1);
         bestmis=zeros(inv_set.nrun(ix),nmodeinv(ix));
         misround=zeros(inv_set.nrun(ix)*nmaxmod(ix),nmodeinv(ix));
+        
+        % Loop over propagation modes
         for ip=1:nmodeinv(ix)
             m=modes(ip);
             fprintf(['\n      Mode ',num2str(m),'\n']);
+            % Get min and max velocity envelope from uncertainty range
             minvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)-deltaresamp{m+1}(isnan(vresamp{m+1})==0);
             maxvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)+deltaresamp{m+1}(isnan(vresamp{m+1})==0);
             freqOK=freqresamp{m+1}(isnan(vresamp{m+1})==0);
             D{ip}=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Frequency vs slowness cell array
             dispselec=repmat(struct('modnum',[],'modok',[],...
                 'misround',[],'nfreqsample',[]),1,inv_set.nrun(ix)); % Models structure
-            for n=1:inv_set.nrun(ix) % Loop over all runs
+            % Loop over all runs
+            for n=1:inv_set.nrun(ix)
                 calcdisp=fullfile(dir_rep_ind,['best',num2str(n),'.M',num2str(m),'.txt']);
+                % Read dispersion curves and get the ones fitting the errorbar if nbest=0
                 [D{ip}(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:),dispselec(n)]=...
-                    readdisp(calcdisp,nmaxmod(ix),n,nbest,outpoints,freqOK,minvelOK,maxvelOK); % Read file
+                    readdisp(calcdisp,nmaxmod(ix),n,nbest,outpoints,freqOK,minvelOK,maxvelOK);
                 bestmis(n,ip)=dispselec(n).misround(1); % Get best model misfit
             end
             names=fieldnames(dispselec); % Get field names
@@ -419,54 +456,60 @@ for ix=Xmidselec
             ok{ip}=dispselec.modok; % Get selected models
             misround(:,ip)=dispselec.misround; % Get model misfits
         end
-        delete(fullfile(dir_rep_ind,'best*.txt'));
+        delete(fullfile(dir_rep_ind,'best*.txt')); % Delete temp file
+        
         % Find best models indexes sorted by decreasing misfit
         bestrun=find(bestmis(:,1)==min(bestmis(:,1)),1,'first'); % Get best run nb to get best model
         mis=max(misround,[],2);
         [missort,I]=sortrows(mis,-1);
-        if nbest==0
+        if nbest==0 % Best models within errobars
             test=sum(cell2mat(ok'),2);
             OKsort=test==nmodeinv(ix);
             KOsort=test<nmodeinv(ix);
             OKsort=OKsort(I);
             KOsort=KOsort(I);
-        else
+        else % Arbitrary number of models
             OKsort=false(size(missort));
             OKsort(end-nbest+1:end)=true;
             KOsort=false(size(missort));
             KOsort(1:end-nbest)=true;
         end
+        % Sort by misfit for selected and rejected models
         misin=missort(OKsort);
         misout=missort(KOsort);
-        % Get nb of accepted models and misfit for the current Xmid
+        % Get nb of selected models and misfit for the current Xmid
         nmod(ix)=size(misin,1);
         minmis(ix)=min(mis);
+        
+        % Display info
         fprintf(['\n  Minimum misfit = ',num2str(min(missort)),'\n']);
         if nbest==0
             fprintf(['\n  ',num2str(nmod(ix)),' models fit within the error bars\n']);
         else
             fprintf(['\n  The best ',num2str(nmod(ix)),' models have been selected\n']);
         end
-        if nmod(ix)==0
+        if nmod(ix)==0 % Go to next Xmid if no models selected
             fprintf('\n  **********************************************************');
             fprintf('\n  **********************************************************\n');
             delete(fullfile(dir_rep_ind,'*.report'));
             
-            %%%%%% Save settings %%%%%%
+            % Save settings in .mat file
             inv_set.nmod(ix)=nmod(ix);
             save(matfileinv,'-append','inv_set');
             continue
         end
         
-        %%
-        %%%%%% Extraction of all models %%%%%%
+        %% %% %%
+        
+        %%%% Read all models %%%%
         
         fprintf('\n  Reading all calculated models\n');
         % Export calculated models from binary report files
         matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
         VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
-        VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
-        RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
+        VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
+        RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
+        
         % Loop over all runs
         for n=1:inv_set.nrun(ix)
             fprintf(['\n      Run ',num2str(n),'\n']);
@@ -480,30 +523,31 @@ for ix=Xmidselec
             [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
                 readmodel(rhofile,nmaxmod(ix),n); % Read file
         end
-        delete(fullfile(dir_rep_ind,'*.txt'),fullfile(dir_rep_ind,'*.report'));
+        delete(fullfile(dir_rep_ind,'*.txt'),fullfile(dir_rep_ind,'*.report')); % Delete temp file
+        
         % Read models
         dim=ndims(VSall{1});
-        VS=cat(dim,VSall{:,1});
-        VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1);
+        VS=cat(dim,VSall{:,1}); % All Vs
+        VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
         VS=VS(:,I);
-        VP=cat(dim,VPall{:,1});
-        VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1);
+        VP=cat(dim,VPall{:,1}); % All Vp
+        VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
         VP=VP(:,I);
-        RHO=cat(dim,RHOall{:,1});
-        RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1);
+        RHO=cat(dim,RHOall{:,1}); % All Rho
+        RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
         RHO=RHO(:,I);
-        ZALL=cat(dim,VSall{:,2});
+        ZALL=cat(dim,VSall{:,2}); % All depth
         ZALL(end,:)=maxdepth;
-        Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1);
+        Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
         THbest=diff(Zbest);
-        THbest=round(THbest(1:2:end)*1e6)/1e6;
+        THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
         ZALL=ZALL(:,I);
         THALL=diff(ZALL);
-        THALL=round(THALL(1:2:end,:)*1e6)/1e6;
+        THALL=round(THALL(1:2:end,:)*1e6)/1e6; % All thickness
         
         nC(ix)=length(THALL(:,1)); % nb of layers
         
-        % Get accepted and rejected models
+        % Get selected and rejected models
         VSin=VS(:,OKsort);
         VPin=VP(:,OKsort);
         VPout=VP(:,KOsort);
@@ -514,20 +558,20 @@ for ix=Xmidselec
         VSout=VS(:,KOsort);
         Zout=ZALL(:,KOsort);
         
-        %%%%%% Save settings %%%%%%
-        
+        % Save settings in .mat file
         inv_set.nC(ix)=nC(ix);
         inv_set.nmod(ix)=nmod(ix);
         inv_set.minmis(ix)=minmis(ix);
         save(matfileinv,'-append','inv_set');
         
-        %%
-        %%%%%% Building average models %%%%%%
+        %% %% %%
+        
+        %%%% Building average models %%%%
         
         if calcmod==1
             fprintf('\n  Building average models\n');
             
-            %%%%%% Mean layered model %%%%%%
+            %%% Mean layered model %%%
             
             VSmean=mean(VSin,dim);
             VPmean=mean(VPin,dim);
@@ -555,7 +599,7 @@ for ix=Xmidselec
             end
             Zstd(end)=maxdepth;
             
-            %%%%%% Mean smoothed model %%%%%%
+            %%% Mean smoothed model %%%
             
             % !!!!(to be optimized for constant density)!!!!
             Zi=Zin;
@@ -578,7 +622,7 @@ for ix=Xmidselec
             IVPstd=std(IVp,0,1);
             IRHOstd=std(Irho,0,1);
             
-            %%%%%% Ridge model %%%%%%
+            %%% Ridge model %%%
             
             if ridgecalc==1
                 % Velocity and density vectors for ridge search
@@ -636,7 +680,7 @@ for ix=Xmidselec
                 end
                 NN(NN==0)=NaN;
                 % Plot ridgesearch results
-                if nmod(ix)>1
+                if nmod(ix)>1 && plotinvres==1
                     [f2,~,~,~,c]=plot_img(showplot,velocityS,ZZ,NN,flipud(autumn),...
                         1,1,1,fs,'Vs (m/s)',depthtitle,'Number of models',...
                         [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
@@ -661,7 +705,7 @@ for ix=Xmidselec
                 end
             end
             
-            %%%%%% Gaussian weighting models %%%%%%
+            %%% Gaussian weighting models %%%
             
             if weightcalc==1 && nmod(ix)>1
                 % Gaussian windowing for best model selection
@@ -698,7 +742,7 @@ for ix=Xmidselec
                     end
                 end
                 
-                %%%%%% Weighted layered model %%%%%%
+                %%% Weighted layered model %%%
                 
                 THweight=sum(repmat(COEF,1,size(THin,1)).*THin',1);
                 VSweight=sum(repmat(COEF,1,size(VSin,1)).*VSin',1)';
@@ -713,7 +757,7 @@ for ix=Xmidselec
                 end
                 Zweight(end)=maxdepth;
                 
-                %%%%%% Weighted smoothed model %%%%%%
+                %%% Weighted smoothed model %%%
                 
                 IVSweight=sum(repmat(COEF,1,size(IVs,2)).*IVs,1); % Weighted
                 IVPweight=sum(repmat(COEF,1,size(IVp,2)).*IVp,1); % Weighted
@@ -721,7 +765,7 @@ for ix=Xmidselec
                 
             end
             
-            %%%%%% Save velocity models %%%%%%
+            %%% Save velocity models %%%
             
             % Velocity model filenames
             % Best model
@@ -762,8 +806,8 @@ for ix=Xmidselec
                 dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
             end
             
+            % Plot and save average and weighted 1D models
             if plotinvres==1
-                % Plot and save average and weighted models
                 [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
                     'Vs (m/s)',depthtitle,[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
                     [],[],[],[0 0 24 18],[],0);
@@ -799,11 +843,12 @@ for ix=Xmidselec
                 end
                 set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
                 hold off
+                
                 % Save figure
                 file_mod=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
                 save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
                 close(f3);
-                
+                % Concatenate ridge and average models figures
                 if colnb>1
                     colnb_tmp=2;
                 else
@@ -820,8 +865,9 @@ for ix=Xmidselec
             end
         end
         
-        %%
-        %%%%%% Plot VS 2D pseudo-section %%%%%%
+        %% %% %%
+        
+        %%%% Plot VS 2D pseudo-section %%%%
         
         if plot2dVS==1 && nmod(ix)>0 && calcmod==1 && Xlength>1
             % Get index corresponding to the investigation depth
@@ -848,18 +894,21 @@ for ix=Xmidselec
             drawnow;
         end
         
-        %%
-        %%%%%% Plot and save inversion results %%%%%%
+        %% %% %%
         
+        %%%% Plot and save inversion results %%%%
+        
+        % Check number of colums for concatenation
         if colnb>nmodeinv(ix)+1
             colnb_tmp=nmodeinv(ix)+1;
         else
             colnb_tmp=colnb;
         end
         
+        % Initialization of colormap
         if (plotinvres==1 || plotparam==1) && nmod(ix)>0
-            % Create colormaps for accepted and rejected models
-            % Selected models (color)
+            % Create colormaps for selected and rejected models
+            % Selected models (map2)
             if nmod(ix)==0
                 col=[];
                 youp=[];
@@ -868,7 +917,7 @@ for ix=Xmidselec
             else
                 [col,youp]=createcolormap(misin,map2,Clogscale);
             end
-            % Rejected models (grey)
+            % Rejected models (map3)
             if nmod(ix)==nmaxmod(ix)*inv_set.nrun(ix)
                 colout=[];
                 youpout=[];
@@ -886,35 +935,38 @@ for ix=Xmidselec
             colall=[colout;col];
         end
         
-        %%
+        %% %% %%
         
         if plotinvres==1 && nmod(ix)>0
             
-            %%
-            %%%%%% Plot and save calculated dispersion curves %%%%%%
+            %% %% %%
+            
+            %%% Plot and save calculated dispersion curves %%%
             
             fprintf('\n  Saving calculated dispersion curves\n');
             for ip=1:nmodeinv(ix)
                 m=modes(ip); % Mode number
                 fprintf(['\n      Mode ',num2str(m),'\n']);
                 tmp=D{ip}(I,:); % Read dispersion
-                tmpin=tmp(OKsort,:); % Select accepted models
+                tmpin=tmp(OKsort,:); % Select selected models
                 tmpout=tmp(KOsort,:); % Select rejected models
-                tmpall=[tmpout;tmpin]; % Create matrix with rejected then accepted models
+                tmpall=[tmpout;tmpin]; % Create matrix with rejected then selected models
                 
+                % Colorbar title
                 str1=sprintf([' Accep. models ('...
                     num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
-                
+                % Plot first dispersion curve
                 f1=plot_curv(showplot,tmpall{1,1},1./tmpall{1,2},[],'-',colall(1,:),2,1,1,...
                     cbpos,fs,freqtitle_long,'Phase velocity (m/s)',str1,...
                     [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                     [],[],[0 0 24 18],[],0);
                 hold on
+                % Loop on all dispersion curves
                 for kk=2:inv_set.nrun(ix)*nmaxmod(ix)
                     line(tmpall{kk,1},1./tmpall{kk,2},'color',...
                         colall(kk,:),'linewidth',2);
                 end
-                
+                % Plot picked dispersion with errorbars
                 plot(freqresamp{m+1},vresamp{m+1},'k+','linewidth',1.25,'markersize',4);
                 if str2double(matrelease(1:4))>2014
                     h3=terrorbar(freqresamp{m+1},vresamp{m+1},deltaresamp{m+1},0.75,'units');
@@ -929,7 +981,7 @@ for ix=Xmidselec
                 hold off
                 colormap(map2);
                 sizax=get(gca,'Position');
-                set(cbhandle,'visible','off');
+                set(cbhandle,'visible','off'); % Hide colorbar
                 
                 % Save figure
                 filenamedsp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
@@ -937,15 +989,17 @@ for ix=Xmidselec
                 save_fig(f1,filenamedsp,imgform,imgres,1,1-testplot);
                 close(f1); clear f1;
             end
+            % Get all filenames for all modes in one string
             filename_dspall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                 '.calcdisp.*.',imgform]);
             
-            %%
-            %%%%%% Plot and save calculated Vs models %%%%%%
+            %% %% %%
+            
+            %%% Plot and save corresponding Vs models %%%
             
             % Get the 1D Vs average model to plot
             if plot1dVS==1
-                if calcmod==1
+                if calcmod==1 % Get model calculated in current run
                     if strcmp(modeltype,'best')==1
                         VSplot=VSbest;
                         Zplot=Zbest;
@@ -974,7 +1028,7 @@ for ix=Xmidselec
                         VSplot=VSridge;
                         Zplot=ZZ;
                     end
-                else
+                else % Get model from file saved in previous run (obsolete)
                     % Velocity file name
                     filevel=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
                         avertype,'.',modeltype]);
@@ -1005,17 +1059,19 @@ for ix=Xmidselec
             tmpall=[VSout,VSin];
             zall=[Zout,Zin];
             
+            % Colorbar titles for accepeted and rejected models
             str1=sprintf([' Accep. models ('...
                 num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
             str2=sprintf([' Rejec. models (' num2str((inv_set.nrun(ix)*nmaxmod(ix))-nmod(ix))...
                 ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
-            
+            % Plot first model
             f4=plot_curv(showplot,tmpall,zall,[],[],colall,2,1,1,...
                 cbpos,fs,'Vs (m/s)',depthtitle,str1,...
                 [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],...
                 [],[],[0 0 24 18],sizax,0);
             colormap(map2);
             hold on
+            % Loop over all models
             if plot1dVS==1
                 dashline(VSplot,Zplot,2,2,2,2,'color','k','linewidth',2);
             end
@@ -1033,8 +1089,8 @@ for ix=Xmidselec
             filename_cbout=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                 '.cbmisout.',imgform]);
             
+            % Save colorbars in separate file for nice display
             if nmod(ix)>1
-                % Save colorbars
                 if cbpos==1
                     cbticks=youp(1:3:end);
                 else
@@ -1057,11 +1113,14 @@ for ix=Xmidselec
                 close(f4); clear f4;
             end
             
-            %%
+            %% %% %%
+            
+            %%% Concatenate dispersion curves and Vs models %%%
+            
             if strcmp(imgform,'fig')~=1 && testplot==1
-                fprintf('\n  Saving panel figure\n');
-                % Figure concatenation
-                if strcmp(imgform,'pdf')~=1
+                fprintf('\n  Concatenate figures\n');
+
+                if strcmp(imgform,'pdf')~=1 % Resize raster images
                     if isunix==1
                         [~,sizefig]=unix(['convert ',filename_dspall,' -format "%w,%h" info:']);
                         sizefig=str2num(sizefig); sizefig=sizefig(1,:);
@@ -1079,6 +1138,7 @@ for ix=Xmidselec
                     end
                 end
                 
+                % Concatenate dispersion and 1D models
                 filename_imgtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
                 cat_img([filename_dspall,' ',filename_modall],imgform,colnb_tmp,'east',filename_imgtmp,0);
@@ -1088,14 +1148,14 @@ for ix=Xmidselec
                     '.cb.',imgform]);
                 filename_panel=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.invresults.',imgform]);
-                
                 if  nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
+                    % Concatenate colorbars
                     if (cbpos==1 && colnb_tmp==nmodeinv(ix)+1) || (cbpos==2 && colnb_tmp>1)
                         cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
                     elseif (cbpos==1 && colnb_tmp<nmodeinv(ix)+1) || (cbpos==2 && colnb_tmp==1)
                         cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
                     end
-                    
+                    % Resize raster
                     if cbpos==2 && strcmp(imgform,'pdf')~=1
                         if isunix==1
                             [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
@@ -1125,6 +1185,7 @@ for ix=Xmidselec
                     movefile(filename_cbin,filename_cbtmp)
                 end
                 
+                % Concatenate all
                 if cbpos==1 && colnb_tmp==nmodeinv(ix)+1
                     cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'south',filename_panel);
                 elseif cbpos==1 && colnb_tmp<nmodeinv(ix)+1
@@ -1134,7 +1195,7 @@ for ix=Xmidselec
                 else
                     cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_panel);
                 end
-                if concat==1
+                if concat==1 % Delete single image files
                     if nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
                         delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_modall,filename_dspall);
                     elseif nmod(ix)==1
@@ -1146,8 +1207,9 @@ for ix=Xmidselec
             end
         end
         
-        %%
-        %%%%%% Plot and save inversion parameters %%%%%%
+        %% %% %%
+        
+        %%%% Plot and save inversion parameters %%%%
         
         % Get selected parameters settings
         if plotparam==1 && nmod(ix)>0
@@ -1212,16 +1274,18 @@ for ix=Xmidselec
                     if exist('sizax','var')==0
                         sizax=[];
                     end
+                    % Colorbar titles
                     str1=sprintf([' Accep. models ('...
                         num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
                     str2=sprintf([' Rejec. models (' num2str((inv_set.nrun(ix)*nmaxmod(ix))-nmod(ix))...
                         ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
-                    
+                    % Plot first model parameter
                     f4=plot_curv(showplot,p1(np1(i),:),p2(np2(j),:),[],'.','k',2,1,1,...
                         cbpos,fs,[axtit1,' [layer ',num2str(np1(i)),']'],[axtit2,' [layer ',num2str(np2(j)),']'],...
                         str1,[XMIN XMAX],[YMIN YMAX],[],vsticks,dticks,[],...
                         [],[],[0 0 24 18],sizax,0);
                     hold on
+                    % Loop over all models
                     for ii=1:length(p1(np1(i),:))
                         line(p1(np1(i),ii),p2(np2(j),ii),'color',colall(ii,:),'markerfacecolor',colall(ii,:),...
                             'markersize',5,'marker','o','linestyle','none');
@@ -1272,19 +1336,23 @@ for ix=Xmidselec
                 end
             end
             
+            % Check number of column for concatenation
             if colnb>length(np1)*length(np2)
                 colnb_tmp=length(np1)*length(np2);
             else
                 colnb_tmp=colnb;
             end
             
+            % Concatenation
             if testplot==1
+                % Concatenate parameter plots
                 filename_paramall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.param.*.',imgform]);
                 filename_imgtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
                 cat_img(filename_paramall,imgform,colnb_tmp,'east',filename_imgtmp,0);
                 
+                % Concatenate colorbars
                 filename_cbtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.cb.',imgform]);
                 if (cbpos==1 && colnb_tmp==length(np1)*length(np2)) || (cbpos==2 && colnb_tmp>1)
@@ -1293,6 +1361,7 @@ for ix=Xmidselec
                     cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
                 end
                 
+                % Resize rasters
                 if cbpos==2 && strcmp(imgform,'pdf')~=1
                     if isunix==1
                         [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
@@ -1317,6 +1386,7 @@ for ix=Xmidselec
                     end
                 end
                 
+                % Concatenate all
                 filename_param=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
                     '.param_',param1,num2str(np1(1)),'_',num2str(np1(end)),...
                     param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
@@ -1329,12 +1399,13 @@ for ix=Xmidselec
                 else
                     cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_param);
                 end
-                if concat==1
+                if concat==1 % Delete single image files
                     delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);
                 end
             end
         end
     end
+    % End clock for single Xmid
     tend=toc(tstart);
     [time_string]=secs2hms(tend);
     if inversion==1 || calcmod==1 || plotinvres==1 || plotparam==1
@@ -1344,8 +1415,9 @@ for ix=Xmidselec
     end
 end
 
-%%
-%%%%%% Plot and save inversion settings %%%%%%
+%% %% %%
+
+%%%%%% Plot and save post-inversion settings %%%%%%
 
 if sum(isnan(nmodeinv))<Xlength && sum(isnan(nC))<Xlength
     fprintf('\n  Saving inversion QC\n');

@@ -36,6 +36,14 @@ end
 aa=load(fullfile(dir_asc,ascstruct(1).name));
 ngeo=min(size(aa));
 nsamp=max(size(aa));
+% keyboard
+if nsamp>65535 && nsamp==size(aa,1)
+    aa=aa(1:65535,:);
+    fprintf('\n   Too many samples - Reducing number of samples to 65535\n');
+    movefile(fullfile(dir_asc,ascstruct(1).name),fullfile(dir_asc,[ascstruct(1).name,'.old']));
+    dlmwrite(fullfile(dir_asc,ascstruct(1).name),aa,'delimiter',' ','precision','%10.5e');
+end
+
 linetest=size(aa,2)==max(size(aa));
 if linetest==1
     n1=ngeo;
@@ -73,7 +81,7 @@ for i=1:nasc
     else
         com1=sprintf('suaddhead ns=%d < %s | sushw key=dt,gx,sx,tracf,gdel,fldr,scalco,scalel a=%d,%d,%d,%d,%d,%d,%d,%d b=0,%d,0,%d,0,0,0,0 > %s',...
             n2,fullfile(dir_asc,'tmp.bin'),Dtime*1000,GX0*xsca,SX0*xsca+(i-1)*DSX*xsca,1,DGX*xsca,1000+i,xsca,xsca,DGX*xsca,1,fullfile(dir_asc,[num2str(1000+i),'.su']));
-        [~,~]=unix(com1);
+        unix(com1);
     end
     [~,~]=unix(sprintf('segyhdrs < %s',fullfile(dir_asc,[num2str(1000+i),'.su'])));
     [~,~]=unix(sprintf('segywrite < %s tape=%s endian=0',fullfile(dir_asc,[num2str(1000+i),'.su']),fullfile(dir_asc,[num2str(1000+i),'.sgy'])));

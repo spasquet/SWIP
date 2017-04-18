@@ -2,27 +2,36 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V17.01.18
+%%% S. Pasquet - V17.04.14
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
-%%% It allows to pick dispersion curves and save dispersion, spectrogram and seismograms
-%%% Comment line to use default settings (cf SWIP_defaultsettings.m)
+%%% It allows to pick dispersion curves and save figures of dispersion, 
+%%% spectrograms and shot gathers
 
-%%% Option calc=1 requires one SU file containing all shot gathers
+%%% Option calc=1 reads seismic data and extract dispersion images along the line
+%%% Requires SU file containing all shot gathers
+%%% SU files can be created with seg2su or ascii2su (in SWIP/tools)
 %%% Mandatory SU headers: fldr, tracf, gx, sx, ns, dt
 %%% Recommended SU headers: gelev, selev, scalco, scalel, gdel
+%%% Option calc=2 imports previously picked dispersion curves
+%%% Requires to select a folder containing dispersion curves in 3-column
+%%% ASCII files with frequency, phase velocity and phase velocity uncertainty
+%%% Option calc=0 works with previously created subproject
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side 
+
+%%% Comment line to use default settings (cf SWIP_defaultsettings.m)
 
 %%%-------------------------%%%
 %%% START OF INITIALIZATION %%%
 
 %%% Main settings
 Xmidselec   = [];         % Select Xmids (comment or [] to select all)
-calc        = 1;          % SWIP subproject: new (=1), existing (=0) or import disp. curves (=2)
+calc        = 1;          % Existing subproject (=0), new from seismic data (=1) or new from disp. curves (=2)
 
 %%% Windowing and stacking settings (used if calc=1)
-nWvec       = 31;         % Vector of window sizes (nb of traces)
-dW          = 1;          % Shift between two successive windows (nb of traces)
-dSmin       = 0;          % Min. offset between window and shot (nb of traces)
-dSmax       = 20;         % Max. offset between window and shot (nb of traces)
+nWvec       = 31;         % Vector of window sizes (no. of traces)
+dW          = 1;          % Shift between two successive windows (no. of traces)
+dSmin       = 0;          % Min. offset between window and shot (no. of traces)
+dSmax       = 20;         % Max. offset between window and shot (no. of traces)
 side        = 'B';        % Sources side (B=both, L=left, R=right)
 
 %%% P-omega transform settings (used if calc=1)
@@ -43,8 +52,8 @@ tmin2       = 0;          % Mute before tmin2 at largest offset (s) (used if mut
 tmax1       = 1;          % Mute after tmax1 at shortest offset (s) (used if mute=1)
 tmax2       = 1;          % Mute after tmax2 at largest offset (s) (used if mute=1)
 
-%%% Dispersion picking settings
-pick        = 0;          % Pick dispersion: manual (=1), auto (=2) or not (=0)
+%%% Dispersion picking settings (used if pick=1 or pick=2)
+pick        = 0;          % Pick dispersion: manual (=1), auto (experimental) (=2) or not (=0)
 mappick     = parula(39); % Colormap for picked dispersion image
 mappicklog  = 0;          % Pseudo-log colorscale for dispersion (=1) or linear (=0)
 dvmin       = 2;          % Min. phase velocity sampling (m/s)
@@ -52,23 +61,23 @@ modeinit    = 0;          % First picked propagation mode (0 = fundamental)
 pickstyle   = 1;          % Semi-automatic picking (=1) or manual (=0)
 smoothpick  = 1;          % Smooth picking (=1) or not (=0)
 
-%%% Dispersion curves sampling settings
-target      = 0;          % Convert picks to dinver target (=1) or not (=0)
+%%% Dispersion curves sampling settings (used if target=1)
+target      = 1;          % Convert picks to dinver target (=1) or not (=0)
 wave        = 'R';        % Surface-wave type ('R' => Rayleigh or 'L' => Love)
 maxmodeinv  = [];         % Max. mode number in target file for inversion (empty to include all picked modes)
 sampling    = 1;          % Sampling in wavelength (1) or frequency (0)
 resampvec   = (1:1:50);   % Resampling vector (wavelength [m] or frequency [Hz])
 freqlim     = 1;          % Min. frequency defined with amplitude threshold (=1) or not (=0)
-specampmin  = 0.01;       % Amplitude threshold (between 0 and 1) (used if freqlim=1)
+specampmin  = 0.025;      % Amplitude threshold (between 0 and 1) (used if freqlim=1)
 
-%%% Error settings (used if target=1)
-err         = 1;          % No error (=0), Lorentz error (=1) or percentage error (=2)
-nWfac       = 1;          % Adapt Lorentz error with nW=nWfac*mean([nWmin,nWmax]) (used if err=1)
-minerrvel   = 15;         % Min. vel. error for Lorentz (m/s) (used if err=1)
-maxerrrat   = 0.5;        % Max. vel. error ratio for Lorentz (used if err=1)
-sigma       = 15;         % Standard deviation error (%) (used if err=2)
+%%% Uncertainty settings (used if target=1)
+err         = 1;          % No uncertainty (=0), Lorentz uncertainty (=1) or percentage uncertainty (=2)
+nWfac       = 1;          % Adapt Lorentz uncertainty with nW=nWfac*mean([nWmin,nWmax]) (used if err=1)
+minerrvel   = 15;         % Min. vel. uncertainty for Lorentz (m/s) (used if err=1)
+maxerrrat   = 0.5;        % Max. vel. uncertainty ratio for Lorentz (used if err=1)
+sigma       = 15;         % Percentage uncertainty (%) (used if err=2)
 
-%%% Plot settings
+%%% Toggle plots
 plotdisp    = 1;          % Save stacked dispersion images (=1) or not (=0)
 plotpckdisp = 1;          % Save stacked dispersion images with picked curves (=1) or not (=0)
 % plotspec    = 1;          % Save spectrograms (=1) or not (=0)
@@ -77,7 +86,7 @@ plotpckdisp = 1;          % Save stacked dispersion images with picked curves (=
 % plotstkdisp = 1;          % Save intermediate stacked dispersion images (=1) or not (=0)
 % plot1dobs   = 1;          % Plot picked dispersion on 1D single graph (=1) or not (=0)
 plot2dobs   = 1;          % Plot picked dispersion on 2D pseudo-section (=1) or not (=0)
-showplot    = 0;          % Show plots before saving (=1) or not (=0)
+showplot    = 0;          % Display plots before saving (=1) or not (=0)
 
 %%% Figure display and output settings
 imgform     = 'png';      % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
@@ -85,7 +94,7 @@ imgres      = 500;        % Fig. resolution (dpi) when saving as raster
 fs          = 20;         % Fig. font size
 cbpos       = 1;          % Colorbar on the right (=1) or at the bottom (=2)
 
-%%% Dispersion, spectrograms and seismograms settings
+%%% Plot settings for dispersion, spectrograms and shot gathers 
 Dlogscale   = 0;          % Pseudo-log colorscale for dispersion (=1) or linear (=0)
 Flogscale   = 0;          % Logscale frequency axis (=1) or linear (=0)
 axetop      = 0;          % Plot Xaxis on top (=1) or bottom (=0)
@@ -108,7 +117,7 @@ tMIN        = [];                   % Min. time to display (ms)
 tMAX        = [];                   % Max. time to display (ms)
 % tticks      = (tMIN:100:tMAX);      % Time ticks (ms)
 
-%%% Phase velocity pseudo-section settings
+%%% Plot settings for phase velocity pseudo-section
 map1        = haxby(32);            % Colormap for phase velocity
 xMIN        = [];                   % Min. X (m)
 xMAX        = [];                   % Max. X (m)

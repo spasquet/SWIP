@@ -2,9 +2,23 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V17.01.20
+%%% S. Pasquet - V17.04.14
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
+
+%%% Option input_vel=1 plots velocity models and calculates theoretical
+%%% dispersion from SWIP inversion results (module C)
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side
+%%% and an inversion folder located in file.inv
+%%% If usevptomo=1, dispersion is calculated with VP from refraction tomography
+%%% Requires to select a 3-column ASCII file (X, Z, Vp)
+%%% Option input_vel=2 plots velocity models and calculates theoretical
+%%% dispersion from refraction tomography files
+%%% Requires to select a subproject folder Wmin_max.dWx.dSmin_max.side
+%%% and two 3-column ASCII files (X, Z, Vp) and (X, Z, Vs - optional)
+%%% Option input_aux=1 plots auxiliary data
+%%% Requires to select a 3-column ASCII files (X, Z, auxdata)
+
 %%% Comment line to use default settings (cf SWIP_defaultsettings.m)
 
 %%%-------------------------%%%
@@ -23,7 +37,7 @@ outpoints  = 0;     % No. of points allowed out of the error bars
 usevptomo  = 0;     % Forward calc. with Vp from tomo. (=1) or from SW inversion (=0)
 dz         = 0.2;   % Sampling in depth (m)
 
-%%% Plot and save settings
+%%% Toggle plots and data save
 plot2dcal  = 1;     % Plot Vphase and residuals 2D sections (=1) or not (=0)
 plot2dmod  = 1;     % Plot models 2D sections (=1) or not (=0)
 showplot   = 0;     % Show plot before saving (=1) or not (=0)
@@ -39,7 +53,7 @@ axetop     = 1;     % Plot Xaxis on top (=1) or bottom (=0)
 
 %%% Phase velocity and residuals pseudo-section settings (used if plot2dcal=1)
 map1       = haxby(32);              % Colormap for phase velocity
-map4       = haxby(32);              % Colormap for phase velocity residuals
+map4       = polarmap(32);           % Colormap for phase velocity residuals
 lamMIN     = [];                     % Min. wavelength (m)
 lamMAX     = [];                     % Max. wavelength (m)
 % lticks     = (lamMIN:20:lamMAX);     % Wavelength ticks (m)
@@ -47,12 +61,12 @@ vphMIN     = [];                     % Min. phase velocity (m/s)
 vphMAX     = [];                     % Max. phase velocity (m/s)
 % vphticks   = (vphMIN:200:vphMAX);    % Phase velocity ticks (m/s)
 vphISO     = [];                     % Phase velocity isocontours (m/s)
-residMIN   = [];                     % Min. residual (m/s)
-residMAX   = [];                     % Max. residual (m/s)
-% residticks = (residMIN:20:residMAX); % Residual ticks (m/s)
+residMIN   = [];                     % Min. residual (%)
+residMAX   = [];                     % Max. residual (%)
+% residticks = (residMIN:15:residMAX); % Residual ticks (%)
 
 %%% 2D models settings (used if plot2dmod=1)
-blocky     = 0;     % Blocky (=0), smooth interp (=1) or smooth contour (=2) images
+blocky     = 2;     % Blocky (=0), smooth interp (=1) or smooth contour (=2) images
 vertex     = 1;     % Vertical exageration
 plottopo   = 1;     % Plot topo profile on 2D sections (=1) or not (=0)
 plotDOI    = 0;     % Plot DOI estimated from wavelength (=1), from VsSTD (=2) or not (=0)
@@ -67,32 +81,32 @@ map5       = haxby(32);              % Colormap for Vp and Vs
 map6       = haxby(32);              % Colormap for Vp/Vs and Poisson's ratio
 map7       = haxby(32);              % Colormap for auxiliary data
 
-xMIN       = [];                     % Min. X (m) 
-xMAX       = [];                     % Max. X (m) 
-% xticks     = (xMIN:40:xMAX);         % X ticks (m) 
-zMIN       = [];                     % Min. altitude (m) 
-zMAX       = [];                     % Max. altitude (m) 
-% zticks     = (zMIN:20:zMAX);         % Altitude ticks (m) 
-vsMIN      = [];                     % Min. Vs (m/s) 
-vsMAX      = [];                     % Max. Vs (m/s) 
-% vsticks    = (vsMIN:200:vsMAX);      % Vs ticks (m/s) 
+xMIN       = [];                     % Min. X (m)
+xMAX       = [];                     % Max. X (m)
+% xticks     = (xMIN:40:xMAX);         % X ticks (m)
+zMIN       = [];                     % Min. altitude (m)
+zMAX       = [];                     % Max. altitude (m)
+% zticks     = (zMIN:20:zMAX);         % Altitude ticks (m)
+vsMIN      = [];                     % Min. Vs (m/s)
+vsMAX      = [];                     % Max. Vs (m/s)
+% vsticks    = (vsMIN:200:vsMAX);      % Vs ticks (m/s)
 vsISO      = [];                     % Vs isocontours (m/s)
-vpMIN      = [];                     % Min. Vp (m/s) 
-vpMAX      = [];                     % Max. Vp (m/s) 
-% vpticks    = (vpMIN:500:vpMAX);     % Vp ticks (m/s) 
+vpMIN      = [];                     % Min. Vp (m/s)
+vpMAX      = [];                     % Max. Vp (m/s)
+% vpticks    = (vpMIN:500:vpMAX);     % Vp ticks (m/s)
 vpISO      = [];                     % Vp isocontours (m/s)
 vpmask     = 0;                      % Mask Vp with SWIP mask (=1) or not (=0)
-stdMIN     = [];                     % Min. StdVs (m/s) 
-stdMAX     = [];                     % Max. STdVs (m/s) 
-% stdticks   = (stdMIN:50:stdMAX);     % Vs STD ticks (m/s) 
+stdMIN     = [];                     % Min. StdVs (m/s)
+stdMAX     = [];                     % Max. STdVs (m/s)
+% stdticks   = (stdMIN:50:stdMAX);     % Vs STD ticks (m/s)
 stdISO     = [];                     % STdVs isocontours (m/s)
-vpvsMIN    = [];                     % Min. Vp/Vs 
-vpvsMAX    = [];                     % Max. Vp/Vs 
-% vpvsticks  = (vpvsMIN:1:vpvsMAX);    % Vp/Vs ticks 
+vpvsMIN    = [];                     % Min. Vp/Vs
+vpvsMAX    = [];                     % Max. Vp/Vs
+% vpvsticks  = (vpvsMIN:1:vpvsMAX);    % Vp/Vs ticks
 vpvsISO    = [];                     % Vp/Vs isocontours
-poisMIN    = [];                     % Min. Poisson's ratio 
-poisMAX    = [];                     % Max. Poisson's ratio 
-% poisticks  = (poisMIN:0.1:poisMAX);  % Poisson's ratio ticks 
+poisMIN    = [];                     % Min. Poisson's ratio
+poisMAX    = [];                     % Max. Poisson's ratio
+% poisticks  = (poisMIN:0.1:poisMAX);  % Poisson's ratio ticks
 poisISO    = [];                     % Poisson's ratio isocontours
 auxMIN     = [];                     % Min. auxiliary data
 auxMAX     = [];                     % Max. auxiliary data

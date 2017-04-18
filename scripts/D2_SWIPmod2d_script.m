@@ -1,30 +1,42 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V17.01.25
+%%% S. Pasquet - V17.04.17
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
+%%% This module calls the following Geopsy native function:
+%%% gpdc
+%%% Geopsy function are called through the following MATLAB function:
+%%% matgpdc
+%%% The following Linux codes are also called if correctly installed:
+%%% ImageMagick (convert, montage) - pdfjam - pdfcrop
+
+%%%-------------------------%%%
+%%% START OF INITIALIZATION %%%
+
 dpMIN=0; % Min depth (m)
 
-run('SWIP_defaultsettings')
+run('SWIP_defaultsettings') % Read default settings
 
+% Check user input
 if input_vel==0 || input_vel>2
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    fprintf('\n    Select at least one model');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    fprintf('\n      Select at least one model');
     fprintf('\n   Set either "input_vel" to 1 or 2');
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     return
 end
 
 if plot2dcal==0 && plot2dmod==0 && plothisto==0 && savexzv==0
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-    fprintf('\n           Select at least one plot/save option');
-    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    fprintf('\n   Select at least one plot/save option');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     return
 end
 
 % Initialization (same for D1 and D2)
 if input_vel==1
+    % Get SWIP subproject and inversion folders
     [dir_all,dir_inv_img]=dir_create(2);
     if dir_all.dir_main==0
         return
@@ -35,7 +47,7 @@ if input_vel==1
     % Read previous inversion settings
     dir_rep_inv=dir_inv_img.dir_rep_inv;
     dir_img_inv=dir_inv_img.dir_img_inv;
-    dir_xzv_inv=dir_inv_img.dir_xzv_inv;
+    dir_xzv_inv=dir_inv_img.dir_xzv_inv; % Only for D2
     matstruct=dir(fullfile(dir_rep_inv,'*.invparam.mat'));
     matfileinv=fullfile(dir_rep_inv,matstruct.name);
     try
@@ -54,6 +66,7 @@ if input_vel==1
     end
     paramtype=inv_set.paramtype;
 else
+    % Get SWIP suproject folder
     dir_all=dir_create(0);
     if dir_all.dir_main==0
         return
@@ -66,7 +79,6 @@ dir_pick=dir_all.dir_pick;
 dir_param=dir_all.dir_param;
 dir_targ=dir_all.dir_targ;
 dir_inv=dir_all.dir_inv;
-dir_xzv=dir_all.dir_xzv;
 matstruct=dir(fullfile(dir_dat,'*.param.mat'));
 matfile=fullfile(dir_dat,matstruct.name);
 try
@@ -83,8 +95,10 @@ nWmin=stackdisp.nWmin;
 nWmax=stackdisp.nWmax;
 xsca=pomega.xsca;
 XmidT=xmidparam.XmidT; % Get Xmids
-Xlength=length(XmidT); % Get Xmids
+Xlength=length(XmidT); % Number of Xmids
 xmidformat=stackdisp.xmidformat;
+
+% Select Xmids
 if exist('Xmidselec','var')~=1 || isempty(Xmidselec)==1
     Xmidselec=1:Xlength;
 end
@@ -107,10 +121,12 @@ else
     sampling=targopt_inv.sampling;
     lmaxpick=targopt_inv.lmaxpick;
 end
+
+% Initialize depth vector and topography
 zround=xmidparam.zround; % Get topography
-if isempty(dpMAX)==1
+if isempty(dpMAX)==1 % Get maximum depth from parameterization if not setup in launcher
     if input_vel==1
-        fprintf('\n  Looking for maximum HSD...\n');
+        fprintf('\n  Looking for maximum DOI...\n');
         dpMAX=zeros(size(Xmidselec));
         for ix=Xmidselec
             dir_rep_ind=fullfile(dir_rep_inv,[num2str(XmidT(ix),xmidformat),'_reports']);
@@ -152,6 +168,7 @@ if isempty(dpMAX)==1
     end
     dpMIN=0;
 end
+% Create depth vector
 maxdepth=ceil(dpMAX/dz)*dz;
 depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 ZZ=0:dz:maxdepth;
@@ -179,6 +196,7 @@ end
 if exist(dir_xzv_inv_mod,'dir')~=7
     mkdir(dir_xzv_inv_mod);
 end
+% Final average model types
 if modeltype==1
     modeltype='best'; avertype='Vms';
 elseif modeltype==2
@@ -195,11 +213,11 @@ else
     modeltype='smooth'; avertype='Vws';
     fprintf('\n  Weighted smooth model selected by default\n');
 end
-
 XmidT_vp=XmidT; depth_vp=depth;
 
-% Select velocity and STD models
-if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1 || savexzv==1)
+% Select refraction velocity models from file
+if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothisto==1 || plot2dmod==1 || savexzv>0)
+    % Select VP
     fprintf('\n  Select Vp model file\n');
     [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vp model');
     Vpfile=fullfile(pathvel,filevel); % File with velocity (3 columns X,Z,Vp)
@@ -228,6 +246,7 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
                 depth=flipud(unique(Zi));
                 Xlength=length(XmidT);
                 Xmidselec=1:Xlength;
+                XmidT_vp=XmidT; depth_vp=depth;
             end
         catch
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -239,17 +258,9 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
             end
         end
     end
-    %     if plot1dstd==1
-    %         [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vp STD model');
-    %         if pathvelvelstd==0
-    %             VpIstd=[]; VpIstdtomo=[];
-    %         else
-    %             Vpstdfile=fullfile(pathvelstd,filevelstd); % File with velocity STD (3 columns X,Z,VpSTD)
-    %             VpIstd=readtomo(Vpstdfile,0,XmidT,depth,xsca,vpaver,mean([nWmin,nWmax]),dx); % Read Vp STD tomo file
-    %             VpIstdtomo=readtomo(Vpstdfile,0,XmidT,depth,xsca); % Read Vp STD tomo file
-    %         end
-    %     end
+
     if input_vel==2 && isempty(VpItomo)==0
+        % Select VS
         fprintf('\n  Select Vs model file (cancel if no Vs model available)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
@@ -270,17 +281,6 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
                 VsItomo=[]; VpItomo=[];
             end
         end
-        %         if plot1dstd==1
-        %             [filevelstd,pathvelvelstd]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs STD model');
-        %             if pathvelvelstd==0
-        %                 VsIstdtomo=[];
-        %             else
-        %                 Vsstdfile=fullfile(pathvelstd,filevelstd); % File with velocity STD (3 columns X,Z,VsSTD)
-        %                 VsIstdtomo=readtomo(Vsstdfile,0,XmidT,depth,xsca); % Read Vs STD tomo file
-        %                 VpIstdtomo(isnan(VsIstdtomo)==1)=NaN;
-        %                 VsIstdtomo(isnan(VpIstdtomo)==1)=NaN;
-        %             end
-        %         end
     end
 else
     zinc=0:dz:maxdepth;
@@ -290,6 +290,7 @@ end
 indf=zeros(Xlength,1);
 indi=indf; DOI=indf*NaN;
 
+% Select auxiliary data models from file
 if input_aux==1
     fprintf('\n  Select auxiliary data file\n');
     [fileaux,pathaux]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select auxiliary data file');
@@ -345,7 +346,7 @@ if isempty(maxmodeinv)==1
     end
 end
 
-% Initialization of velocity matrices
+% Initialization of phase velocity matrices
 vph2dobs=cell(max(maxmodeinv)+1,1);
 for ip=1:max(maxmodeinv)+1
     vph2dobs{ip}=zeros(length(resampvec),Xlength)*NaN;
@@ -359,17 +360,15 @@ if plot2dcal==1 || plothisto==1
     vph2dcalALL=[];
 end
 
+% Initialization of velocity matrices
 vpmat=zeros(length(depth),Xlength).*NaN;
-vpmatok=vpmat;
-vsmat=vpmat;
-vpvsmat=vpmat;
-vptvsmat=vpmat;
-poismat=vpmat;
-rhomat=vpmat;
-vsstdmat=vpmat;
-maskmat=vpmat;
+vpmatok=vpmat; vsmat=vpmat;
+vpvsmat=vpmat; vptvsmat=vpmat;
+poismat=vpmat; rhomat=vpmat;
+vsstdmat=vpmat; maskmat=vpmat;
 maskmatvp=vpmat;
 
+% Check if image concatenation functions are installed
 [testimgmgck,~]=unix('which montage');
 [testpdfjam,~]=unix('which pdfjam');
 testplot=((testpdfjam==0 && strcmp(imgform,'pdf')==1) || (testimgmgck==0 && strcmp(imgform,'pdf')==0 && strcmp(imgform,'fig')==0));
@@ -377,6 +376,7 @@ if concat == 0
     testplot = 0;
 end
 
+% Check length of selected Xmid
 if Xlength==1
     fprintf('\n  Only one Xmid - cannot plot 2D sections\n');
     return
@@ -385,15 +385,19 @@ end
 fprintf('\n  **********************************************************');
 fprintf('\n  **********************************************************\n');
 
-%%
+%%% END OF INITIALIZATION %%%
+%%%-----------------------%%%
+
+%% CALCULATIONS FOR ALL XMIDS
+
+%%%%%% Loop over all Xmids %%%%%%
+
+Tstart=tic; % Start clock
 modexist=zeros(1,Xlength);
 fprintf('\n  Reading models...\n');
 for ix=Xmidselec
-    if plot2dcal==0 && plot2dmod==0 && plothisto==0 && savexzv==0
-        break
-    end
     
-    % Initialisation
+    % Initialization
     vph2dobsall=[]; delta2dobsall=[]; vph2dcalall=[];
     if input_vel==1
         dir_rep_ind=[dir_rep_inv,'/',num2str(XmidT(ix),xmidformat),'_reports'];
@@ -404,48 +408,17 @@ for ix=Xmidselec
         end
     end
     
-    % Get picked dispersion curves
+    %% %% %%
+    
+    %%%%% Read picked dispersion curves %%%%%
+    
     if plot2dcal==1 || plothisto==1
         if input_vel~=1
             nametarg=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.target']);
         else
             nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
-            if exist(nametarg,'file')~=2 && sum(nshot(ix,:))>=0
-                if exist(nametarg(1:end-3),'file')==2
-                    movefile(nametarg(1:end-3),nametarg);
-                else
-                    fprintf(['\n  No dispersion picked for Xmid',num2str(ix),' = ',...
-                        num2str(XmidT(ix),xmidformat),' m\n']);
-                end
-            end
         end
-        if exist(nametarg,'file')~=2
-            if input_vel==1
-                npvc=0;
-            else
-                pvcstruct=dir(fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),'.*.pvc']));
-                npvc=length(pvcstruct);
-                modes=zeros(npvc,1)*NaN;
-                freqresamp=cell(npvc,1);
-                vresamp=freqresamp; deltaresamp=freqresamp;
-                for ip=1:npvc
-                    pvcfile=pvcstruct(ip).name;
-                    modes(ip)=str2double(pvcfile(end-4)); % Mode number
-                    if modes(ip)>maxmodeinv(ix)
-                        break
-                    end
-                    Vprev=load(fullfile(dir_pick,pvcfile));
-                    % Resample in lambda or frequency
-                    [freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1}]=...
-                        resampvel(Vprev(:,1),Vprev(:,2),Vprev(:,3),resampvec,sampling,1);
-                end
-                if npvc==0
-                    npvc=maxmodeinv(ix)+1; modes=0:npvc-1;
-                    freqresamp=cell(npvc,1);
-                    vresamp=freqresamp; deltaresamp=freqresamp;
-                end
-            end
-        else
+        if exist(nametarg,'file')==2
             % Read target file to get picked dispersion curves
             [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
             npvc=length(modes);
@@ -458,10 +431,21 @@ for ix=Xmidselec
                 lmaxpicktmp(ip)=max(vresamp{modes(ip)+1}./freqresamp{modes(ip)+1});
             end
             lmaxpick(ix)=max(lmaxpicktmp);
+        else
+            if input_vel==1 && sum(nshot(ix,:))>=0
+                fprintf(['\n  No dispersion picked for Xmid',num2str(ix),' = ',...
+                    num2str(XmidT(ix),xmidformat),' m\n']);
+            end
+            npvc=0;
         end
     end
     
-    % Read velocity models
+    %% %% %%
+    
+    %%%%% Read velocity models %%%%%
+    
+    %%%% From SWIP inversion results %%%%
+    
     if input_vel==1
         % Velocity file name
         filevel=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
@@ -478,6 +462,9 @@ for ix=Xmidselec
                 'VmsStd.smooth']);
         end
         
+        %%%% Create velocity file in gpdc format %%%%
+            
+        % Read velocity file
         if exist(filevel,'file')==0
             if exist(dir_rep_ind,'dir')==7 && sum(nshot(ix,:))>=0
                 fprintf(['\n  No SWIP model for Xmid',num2str(ix),' = ',...
@@ -492,7 +479,6 @@ for ix=Xmidselec
             
             if maxdepth>moddepth(end)
                 moddepth(end)=maxdepth;
-                %                 maxdepth=moddepth(end);
                 zinc=0:dz:maxdepth;
             else
                 modvel=modvel(moddepth<maxdepth,:);
@@ -510,6 +496,8 @@ for ix=Xmidselec
             vsstd=modstd(:,3);
             rhostd=modstd(:,4);
             
+            %%% Replace VP from SWIP with VP from tomo file if required %%%
+            
             if usevptomo==1
                 filevel=[filevel,'_vptomo'];
                 filedisp=[filevel,'.disp'];
@@ -519,7 +507,7 @@ for ix=Xmidselec
                     ztmp=dz.*ones(1,size(VpI(VpI(:,ix)>0,ix),1));
                     zinc=[0,cumsum(ztmp)];
                     if max(zinc)>maxdepth && abs(max(zinc)-maxdepth)>1e-10
-%                         zinc=0:dz:max(zinc);
+                        zinc=0:dz:maxdepth;
                         vptomo=vptomo(1:length(zinc)+1);
                     elseif max(zinc)<maxdepth && abs(max(zinc)-maxdepth)>1e-10
                         zinc=0:dz:maxdepth;
@@ -537,6 +525,8 @@ for ix=Xmidselec
                 filedisp=[filevel,'.disp'];
             end
         end
+        
+        %%%% From refraction tomography models (Vp and Vs) %%%%
         
     elseif input_vel==2
         filevel=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.tomo']);
@@ -565,7 +555,6 @@ for ix=Xmidselec
                 end
             end
         end
-        
         if isempty(vptomo)~=1
             if isempty(vstomo)~=1
                 for ll=1:nlay
@@ -586,11 +575,16 @@ for ix=Xmidselec
         filevel=[];
     end
     
+    %% %% %%
+    
+    %%%%% Compute theoretical dispersion %%%%%
+    
     D=[];
     if (input_vel==1 && isempty(modvel)==0) || (input_vel==2 && isempty(vptomo)~=1)
         modexist(ix)=1;
         
         if plot2dcal==1 || plothisto==1
+            % Save in gpdc format to run forward model
             if input_vel==1 && usevptomo==1 && isempty(vptomo)~=1
                 dinsave(filevel,thick,vpsw,vssw,rhosw);
             elseif input_vel==2 && isempty(vptomo)~=1 && isempty(vstomo)~=1
@@ -606,11 +600,12 @@ for ix=Xmidselec
                 end
             end
             
+            % Run forward modeling
             nftest=nf;
             while nftest>10
                 matgpdc(filevel,maxmodeinv(ix)+1,wave,nftest-1,fmin+(fmax-fmin)/nftest,fmax,sampling,filedisp);
                 D=readdisp(filedisp,maxmodeinv(ix)+1);
-                if isempty(D)==1
+                if isempty(D)==1 % Check if it worked, otherwise try with less frequency samples
                     if nftest==nf
                         if input_vel==1
                             fprintf(['\n  Re-run forward calculation with less frequency samples for Xmid',...
@@ -626,6 +621,7 @@ for ix=Xmidselec
                 end
             end
             
+            % Delete temp files
             if usevptomo==1 && input_vel==1
                 delete(filevel);
             elseif input_vel==2
@@ -634,17 +630,19 @@ for ix=Xmidselec
             delete(filedisp);
         end
         
-        if plot2dmod==1 || savexzv==1
+        %%%%% Get Depth Of Investigation (DOI) %%%%%
+        
+        if plot2dmod==1 || savexzv>0
             if (plotDOI==0 || maskDOI==0) && input_vel==1
                 DOI(ix)=zround(ix)-maxdepth;
                 indf(ix)=round(maxdepth/dz);
             end
-            % Get DOI (Lmax*doifact)
+            % Empirical DOI (Lmax*doifact)
             if (plotDOI==1 || maskDOI==1) && input_vel==1
                 DOI(ix)=zround(ix)-lmaxpick(ix)*doifact;
                 indf(ix)=round((lmaxpick(ix)*doifact)/dz);
             end
-            % Get DOI with standard deviation
+            % DOI from VS standard deviation threshold
             if (plotDOI==2 || maskDOI==2) && input_vel==1
                 if exist('vsstd','var')==1 && isempty(vsstd)==0
                     flipmoddepth=flipud(moddepth);
@@ -687,6 +685,7 @@ for ix=Xmidselec
                     end
                 end
             end
+            % DOI from VS standard deviation threshold (alternative option)
             if (plotDOI==3 || maskDOI==3) && input_vel==1
                 flipmoddepth=flipud(moddepth);
                 flipvsstd=flipud([vsstd;vsstd(end)]);
@@ -710,6 +709,7 @@ for ix=Xmidselec
             crit=abs(zround(ix)-depth);
             indi(ix)=find(crit==min(crit),1);
             
+            % Fill matrices with velocities
             if input_vel==1
                 vp0=velresamp(moddepth,[vpsw;vpsw(end)],zinc);
                 vs0=velresamp(moddepth,[vssw;vssw(end)],zinc);
@@ -741,6 +741,11 @@ for ix=Xmidselec
             end
         end
     end
+    
+    %% %% %%
+    
+    %%%%% Compute dispersion residuals %%%%%
+    
     if plot2dcal==1 || plothisto==1
         for ip=1:npvc
             if exist('vresamp','var')==1 && isempty(vresamp{modes(ip)+1})==0
@@ -755,8 +760,7 @@ for ix=Xmidselec
                 vcal=1./D{modes(ip)+1,2}; % Velocity
                 if isnan(freqcal)==0
                     % Resample in lambda or frequency
-                    [~,vresamp{modes(ip)+1}]=resampvel(freqcal,vcal,...
-                        vcal,resampvec,sampling,1);
+                    [~,vresamp{modes(ip)+1}]=resampvel(freqcal,vcal,vcal,resampvec,sampling,1);
                     vph2dcal{modes(ip)+1}(:,ix)=vresamp{modes(ip)+1};
                 else
                     vph2dcal{modes(ip)+1}(:,ix)=NaN;
@@ -775,8 +779,8 @@ for ix=Xmidselec
             end
         end
         if sum(isnan(vph2dcalall))~=length(vph2dcalall)
-            misfitall(ix)=sqrt(sum(((vph2dcalall(vph2dobsall>0)...
-                -vph2dobsall(vph2dobsall>0)).^2./...
+            % Single Xmid misfit
+            misfitall(ix)=sqrt(sum(((vph2dcalall(vph2dobsall>0)-vph2dobsall(vph2dobsall>0)).^2./...
                 (length(vph2dobsall)*(delta2dobsall(vph2dobsall>0).^2)))));
             vph2dcalALL=[vph2dcalALL;vph2dcalall];
             vph2dobsALL=[vph2dobsALL;vph2dobsall];
@@ -787,7 +791,7 @@ for ix=Xmidselec
     end
 end
 
-if sum(modexist)==0 && (plot2dcal==1 || plot2dmod==1 || plothisto==1 || savexzv==1)
+if sum(modexist)==0 && (plot2dcal==1 || plot2dmod==1 || plothisto==1 || savexzv>0)
     fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     fprintf('\n                No model existing with these settings');
     fprintf('\n         Check settings => "modeltype", "nbest" and "outpoints"');
@@ -797,6 +801,11 @@ end
 fprintf('\n  **********************************************************');
 fprintf('\n  **********************************************************\n');
 
+%% %% %%
+
+%%%%% Plot 2D models %%%%%
+
+% Initialization
 if usevptomo==1 && input_vel==1
     avertype=[avertype,'_Vptomo'];
     if vpmask==0
@@ -814,17 +823,24 @@ elseif input_vel==2
         vpvsmat=vpmat./vsmat;
         poismat=poisson(vpmat,vsmat);
     else
-        vsmat=vpmat;
+        vsmat=vpmatok;
     end
     avertype='user';
     modeltype='tomo';
 end
 
-%%
 if sum(modexist)>0
+    
+    %% %% %%
+
+    %%%%% Plot phase velocity pseudo-sections and residuals %%%%%
+    
     if plot2dcal==1 || plothisto==1
         fprintf('\n  Saving observed, calculated and residual phase velocity sections\n');
         nmodeinv=0;
+        res_tot = [];
+        
+        %%%% Loop over all existing modes %%%%
         for ip=1:max(maxmodeinv)+1
             fprintf(['\n      Mode ',num2str(ip-1),'\n']);
             if sum(sum(isnan(vph2dcal{ip})))==numel(vph2dcal{ip})
@@ -833,14 +849,16 @@ if sum(modexist)>0
             nmodeinv=nmodeinv+1;
             if plot2dcal==1
                 if input_vel==1
-                    % Observed phase velocity
+                    
+                    %%% Plot observed phase velocity pseudo-section %%%
+                    
                     if sampling==0
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,0,cbpos,fs,'X (m)',...
-                            freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+                            freqtitle_short,'Vph_{obs} (m/s)',[xMIN xMAX],[0 max(resampvec)],...
                             [Vphmin Vphmax],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                     else
                         f1=plot_img(showplot,XmidT,resampvec,vph2dobs{ip},map1,axetop,1,cbpos,fs,'X (m)',...
-                            lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                            lamtitle,'Vph_{obs} (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                             [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                     end
                     sizeax=get(gca,'position');
@@ -854,14 +872,15 @@ if sum(modexist)>0
                     end
                 end
                 
-                % Calculated phase velocity
+                %%% Plot calculated phase velocity pseudo-section %%%
+                
                 if sampling==0
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,0,cbpos,fs,'X (m)',...
-                        freqtitle_short,'Vphase (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+                        freqtitle_short,'Vph_{calc} (m/s)',[xMIN xMAX],[0 max(resampvec)],...
                         [Vphmin Vphmax],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                 else
                     f1=plot_img(showplot,XmidT,resampvec,vph2dcal{ip},map1,axetop,1,cbpos,fs,'X (m)',...
-                        lamtitle,'Vphase (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                        lamtitle,'Vph_{calc} (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                         [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[12 0 24 12],[],1,0);
                 end
                 filecal=fullfile(dir_img_inv_2d,['Vphcalc','.M',num2str(ip-1),'.',avertype,...
@@ -875,16 +894,18 @@ if sum(modexist)>0
             end
             
             if input_vel==1
-                % Residuals
-                vph2dres{ip}=(vph2dobs{ip}-vph2dcal{ip});
+                
+                %%% Plot phase velocity residuals pseudo-section %%%
+                
+                vph2dres{ip}=100*(vph2dobs{ip}-vph2dcal{ip})./vph2dobs{ip}; % Residuals in percent
                 if plot2dcal==1
                     if sampling==0
-                        f1=plot_img(showplot,XmidT,resampvec,abs(vph2dres{ip}),map4,axetop,0,cbpos,fs,'X (m)',...
-                            freqtitle_short,'Residuals (m/s)',[xMIN xMAX],[0 max(resampvec)],...
-                            [Vphmin Vphmax],xticks,lticks,residticks,[],[],[],[12 8.5 24 12],[],1,0);
+                        f1=plot_img(showplot,XmidT,resampvec,vph2dres{ip},map4,axetop,0,cbpos,fs,'X (m)',...
+                            freqtitle_short,'Residuals (%)',[xMIN xMAX],[0 max(resampvec)],...
+                            [residMIN residMAX],xticks,lticks,residticks,[],[],[],[12 8.5 24 12],[],1,0);
                     else
-                        f1=plot_img(showplot,XmidT,resampvec,abs(vph2dres{ip}),map4,axetop,1,cbpos,fs,'X (m)',...
-                            lamtitle,'Residuals (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+                        f1=plot_img(showplot,XmidT,resampvec,vph2dres{ip},map4,axetop,1,cbpos,fs,'X (m)',...
+                            lamtitle,'Residuals (%)',[xMIN xMAX],[lamMIN lamMAX],...
                             [residMIN residMAX],xticks,lticks,residticks,[],[],[],[12 8.5 24 12],[],1,0);
                     end
                     fileaux=fullfile(dir_img_inv_2d,['Vphres','.M',num2str(ip-1),'.',avertype,...
@@ -897,19 +918,23 @@ if sum(modexist)>0
                     end
                 end
                 
+                % Compute RMS
+                res=reshape(vph2dres{ip},size(vph2dres{ip},1)*size(vph2dres{ip},2),1);
+                res=res(isnan(res)==0);
+                res_tot=[res_tot;res];
+                stdRMS=std(res);
+                meanRMS=mean(res);
+                goodRMS=res(res<meanRMS+2*stdRMS(end) & res>meanRMS-2*stdRMS(end));
+                percent=fix(1000*length(goodRMS)/length(res))/10;
+                
+                % Gaussian curve
+                edges=2*max(abs(min(goodRMS)),max(goodRMS));
+                xgaus=linspace(-edges,edges,50); % Plotting range
+                ygaus=0.5*length(res)*exp(-0.5*((xgaus-mean(res))/std(res)).^ 2)/(std(res)*sqrt(2*pi));
+                
+                %%% Plot residual histograms %%%
+                
                 if plothisto==1
-                    % Histograms
-                    res=reshape(vph2dres{ip},size(vph2dres{ip},1)*size(vph2dres{ip},2),1);
-                    res=res(isnan(res)==0);
-                    stdRMS=std(res);
-                    meanRMS=mean(res);
-                    goodRMS=res(res<meanRMS+2*stdRMS(end) & res>meanRMS-2*stdRMS(end));
-                    percent=fix(1000*length(goodRMS)/length(res))/10;
-                    % Gaussian curve
-                    edges=2*max(abs(min(goodRMS)),max(goodRMS));
-                    xgaus=linspace(-edges,edges,100); % Plotting range
-                    ygaus=0.5*length(res)*exp(-0.5*((xgaus-mean(res))/std(res)).^ 2)/(std(res)*sqrt(2*pi));
-                    
                     if showplot==0
                         f2=figure(1);
                         set(f2,'visible','off')
@@ -920,21 +945,20 @@ if sum(modexist)>0
                     hist(res(abs(res)<edges),xgaus,'linewidth',3);
                     hi=findobj(gca,'Type','patch');
                     set(hi,'FaceColor','r','EdgeColor','k');
-                    xlabel('Residuals (m/s)'); ylabel('Nb of samples');
+                    xlabel('Residuals (%)'); ylabel('Nb of samples');
                     h=get(gca,'xlabel'); set(h,'FontSize',fs*2.5);
                     h=get(gca,'ylabel'); set(h,'FontSize',fs*2.5);
                     sizetick=get(gca,'ticklength');
                     set(gca,'TickDir','out','linewidth',3,'XMinorTick','on','YMinorTick','on',...
                         'ticklength',[sizetick(1)*3 sizetick(2)]);
                     h=findall(gcf,'Type','Axes'); set(h,'FontSize',fs*2.5);
+                    xlim([-edges edges]);
                     set(f2,'Units','centimeters');
                     set(gcf,'Position',[25 0 18 18]);
                     hold on;
-                    %                     plot(xgaus,ygaus*mean(N)/mean(ygaus),'k','linewidth',3);
                     axis square
-                    titr=sprintf(['mu = ',num2str(round(meanRMS*10)/10),...
-                        ' m/s  |  sigma = ',num2str(round(stdRMS*10)/10),...
-                        ' m/s  \n ',num2str(percent),' %% of the samples < 2*sigma']);
+                    titr=sprintf(['mu = ',num2str(round(meanRMS*10)/10),' %%  |  sigma = ',num2str(round(stdRMS*10)/10),...
+                        ' %%\n',num2str(length(goodRMS)),' / ',num2str(length(res)),' samples (',num2str(percent),' %%) < 2*sigma']);
                     title(titr,'fontsize',16);
                     file1=fullfile(dir_img_inv_2d,['HistRes','.M',num2str(ip-1),'.',avertype,...
                         '.',modeltype,'.',imgform]);
@@ -946,13 +970,19 @@ if sum(modexist)>0
                     end
                 end
             end
+            
+            %%% Concatenate figures %%%
+            
             if testplot==1 && plot2dcal==1 && input_vel~=2
                 panel1=fullfile(dir_img_inv_2d,['Vph_Obs_Cal_Res','.M',num2str(ip-1),'.',avertype,...
                     '.',modeltype,'.',imgform]);
                 cat_img([fileobs,' ',filecal,' ',fileaux],imgform,1,[],panel1,1);
                 delete(fileobs,filecal,fileaux);
             end
-            if savexzv==1
+            
+            %%% Save phase velocities in .xzv files %%%
+            
+            if savexzv>0
                 if input_vel==1
                     save_xzv(fullfile(dir_xzv_inv_mod,['Vphobs','.M',num2str(ip-1),'.',avertype,'.',modeltype,'.xzv']),...
                         XmidT,resampvec,vph2dobs{ip});
@@ -961,6 +991,8 @@ if sum(modexist)>0
                     XmidT,resampvec,vph2dcal{ip});
             end
         end
+        
+        %%%% Save residual histograms figure %%%%
         
         if testplot==1 && plothisto==1 && input_vel~=2
             fprintf('\n  Saving residual histograms\n');
@@ -976,7 +1008,17 @@ if sum(modexist)>0
                 '.',modeltype,'.',imgform]));
         end
         
+        %%%% Save and display inversion QC %%%%
+        
         if input_vel==1 && plot2dcal==1
+            stdRMS=std(res_tot);
+            meanRMS=mean(res_tot);
+            goodRMS=res_tot(res_tot<meanRMS+2*stdRMS(end) & res_tot>meanRMS-2*stdRMS(end));
+            percent=fix(1000*length(goodRMS)/length(res_tot))/10;
+            fprintf('\n  Residual statistics (all modes included)\n');
+            fprintf(['\n      mu = ',num2str(round(meanRMS*10)/10),' %%  |  sigma = ',num2str(round(stdRMS*10)/10),' %%']);
+            fprintf(['\n      ',num2str(length(goodRMS)),' / ',num2str(length(res_tot)),' samples (',num2str(percent),' %%) < 2*sigma\n']);
+            
             fprintf('\n  Saving inversion misfit graph\n');
             % Plot QC figure
             vph2dobsALL=vph2dobsALL(isnan(vph2dobsALL)==0);
@@ -987,15 +1029,14 @@ if sum(modexist)>0
             f4=plot_curv(showplot,XmidT,misfitall,[],'.-',[0 0 0],[],axetop,0,0,fs,'X (m)',...
                 'Misfit',[],[xMIN xMAX],[0 max(misfitall)+0.05],[],xticks,[],[],[],[],...
                 [26 0 24 12],[],[]);
-            
             sizeax2=get(gca,'position');
             set(findobj(f4,'Type','Axes'),'ActivePositionProperty','Position');
             set(findobj(f4,'Type','Axes'),'position',...
                 [sizeax2(1),sizeax2(2),sizeax(3),sizeax2(4)/3]);
-            
             xlabh=get(get(gca,'XLabel'),'extent');
             text(sizeax(1)+5,xlabh(2)/1.5,['Final RMS = ',...
                 num2str(round(mean(RMSfinal)*10)/10),' m/s'],'FontSize',fs);
+            
             % Save figure
             file1=fullfile(dir_img_inv_2d,['Misfit.',avertype,'.',modeltype,'.',imgform]);
             save_fig(f4,file1,imgform,imgres,1);
@@ -1007,10 +1048,14 @@ if sum(modexist)>0
         end
     end
     
-    %%
+    %% %% %%
+    
+    %%%%% Plot 2D models (Vs, Vp, VsSTD, Vp/Vs, Poisson, auxiliary) %%%%%
+    
     if plot2dmod==1
         fprintf('\n  Saving 2D sections\n');
         
+        % Initialization
         if plotiso==1
             specmat=vpmat;
         elseif plotiso==2
@@ -1030,7 +1075,8 @@ if sum(modexist)>0
             specmat=flipud(specmat);
         end
         
-        % Saving Vs section
+        %%%% Saving Vs section %%%%
+        
         if isempty(zMIN) || isempty(zMAX)
             zMIN=floor(min(min(depth))/10)*10;
             zMAX=ceil(max(max(depth))/10)*10;
@@ -1072,7 +1118,8 @@ if sum(modexist)>0
             showplot=showplot+1;
         end
         
-        % Saving Vp section
+        %%%% Saving Vp section %%%%
+        
         f1=plot_img(showplot,XmidT_vp,depth_vp,vpmatok.*maskmatvp,map5,axetop,0,cbpos,fs,'X (m)',...
             'Altitude (m)','Vp (m/s)',[xMIN xMAX],[zMIN zMAX],...
             [vpMIN vpMAX],xticks,zticks,vpticks,[],[],vpISO,[12 8.5 24 12],sizeax,vertex,blocky);
@@ -1104,8 +1151,9 @@ if sum(modexist)>0
             showplot=showplot+1;
         end
         
+        %%%% Saving VsStd section %%%%
+        
         if input_vel==1
-            % Saving VsStd section
             f1=plot_img(showplot,XmidT,depth,vsstdmat,map5,axetop,0,cbpos,fs,'X (m)',...
                 'Altitude (m)','Vs STD (m/s)',[xMIN xMAX],[zMIN zMAX],...
                 [stdMIN stdMAX],xticks,zticks,stdticks,[],[],stdISO,[25 0 24 12],sizeax,vertex,blocky);
@@ -1149,8 +1197,9 @@ if sum(modexist)>0
             end
         end
         
+        %%%% Saving Vp/Vs section %%%%
+        
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
-            % Saving Vp/Vs section
             f1=plot_img(showplot,XmidT,depth,vpvsmat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
                 'Altitude (m)','Vp/Vs',[xMIN xMAX],[zMIN zMAX],...
                 [vpvsMIN vpvsMAX],xticks,zticks,vpvsticks,[],[],vpvsISO,[25 8.5 24 12],sizeax,vertex,blocky);
@@ -1183,44 +1232,11 @@ if sum(modexist)>0
             end
         end
         
-        %         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
-        %             fprintf('\n  Saving Vp.Vs section\n');
-        %             f1=plot_img_log(showplot,XmidT,depth,vptvsmat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
-        %                 'Altitude (m)','Vp.Vs',[xMIN xMAX],[zMIN zMAX],...
-        %                 [],xticks,zticks,[],[],[],[],[25 8.5 24 12],sizeax,vertex,blocky);
-        %             if plotiso>0 && isempty(specISO)==0
-        %                 hold on;
-        %                 if length(specISO)==1
-        %                     isoline=[specISO specISO];
-        %                 else
-        %                     isoline=specISO;
-        %                 end
-        %                 [cs,hc]=contour(XmidT,depth,specmat,isoline,'color',[0 0 0],'linewidth',1);
-        %                 clabel(cs, hc,'Color', 'k', 'Rotation', 0,'fontsize',12,'labelspacing', 500);
-        %                 hold off;
-        %             end
-        %             if plottopo==1
-        %                 hold on
-        %                 plot(topo(:,1),topo(:,2),'k-','linewidth',2);
-        %             end
-        %             if plotDOI>0 && input_vel==1
-        %                 hold on
-        %                 dashline(XmidT,DOI,2,2,2,2,'color','k','linewidth',1.5);
-        %             end
-        %             file1=fullfile(dir_img_inv_2d,['VPtVS.',avertype,...
-        %                 '.',modeltype,'.',imgform]);
-        %             save_fig(f1,file1,imgform,imgres,1);
-        %             if showplot==0
-        %                 close(f1);
-        %             else
-        %                 showplot=showplot+1;
-        %             end
-        %         end
+        %%%% Saving Poisson's ratio section %%%%
         
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
-            % Saving Poisson's ratio section
             f1=plot_img(showplot,XmidT,depth,poismat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
-                'Altitude (m)','Poisson',[xMIN xMAX],[zMIN zMAX],...
+                'Altitude (m)','Poisson''s ratio',[xMIN xMAX],[zMIN zMAX],...
                 [poisMIN poisMAX],xticks,zticks,poisticks,[],[],poisISO,[25 16 24 12],sizeax,vertex,blocky);
             if plotiso>0 && isempty(specISO)==0
                 hold on;
@@ -1250,6 +1266,9 @@ if sum(modexist)>0
                 showplot=showplot+1;
             end
         end
+        
+        %%%% Concatenate figures %%%%
+        
         if testplot==1
             if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
                 if input_aux==1 && exist('AuxI','var')==1
@@ -1269,6 +1288,10 @@ if sum(modexist)>0
         end
     end
 end
+
+%% %% %%
+
+%%%%% Saving auxiliary data section %%%%%
 
 if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==0
     if input_vel==2
@@ -1320,6 +1343,8 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
         end
     end
     
+    %%%% Concatenate figures %%%%
+    
     if testplot==1
         if (input_vel==1 && sum(modexist)>0) || (input_vel==2 && isempty(VsItomo)==0)
             panel6=fullfile(dir_img_inv_2d,['VP_VS_Pois_Aux.',avertype,'.',modeltype,'.',imgform]);
@@ -1338,6 +1363,8 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
         
     end
 end
+
+%%%% Delete temp files %%%%
 
 if testplot==1 && plot2dmod==1 && concat==1
     if exist('filevp','var')==1 && exist(filevp,'file')==2
@@ -1365,14 +1392,37 @@ if testplot==1 && plot2dmod==1 && concat==1
     end
 end
 
-if savexzv==1 && input_vel==1
-    save_xzv(fullfile(dir_xzv_inv_mod,['VS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsmat.*maskmat);
-    save_xzv(fullfile(dir_xzv_inv_mod,['VP.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpmat.*maskmat);
-    save_xzv(fullfile(dir_xzv_inv_mod,['VPVS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpvsmat.*maskmat);
-    save_xzv(fullfile(dir_xzv_inv_mod,['Poisson.',avertype,'.',modeltype,'.xzv']),XmidT,depth,poismat.*maskmat);
-    save_xzv(fullfile(dir_xzv_inv_mod,['VSstd.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsstdmat.*maskmat);
-    if input_aux==1 && auxmask==1
-        auxmat(isnan(auxmat)==1 & isnan(vpmat)==0)=min(auxmat(isnan(auxmat)==0));
-        save_xzv(fullfile(dir_xzv_inv_mod,['Aux.',avertype,'.',modeltype,'.xzv']),XmidT,depth,auxmat.*maskmat);
+%% %% %%
+
+%%%% Save models in .xzv files %%%%
+
+if savexzv>0 && input_vel==1
+    if savexzv==1
+        save_xzv(fullfile(dir_xzv_inv_mod,['VS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsmat.*maskmat);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VP.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpmat.*maskmat);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VPVS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpvsmat.*maskmat);
+        save_xzv(fullfile(dir_xzv_inv_mod,['Poisson.',avertype,'.',modeltype,'.xzv']),XmidT,depth,poismat.*maskmat);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VSstd.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsstdmat.*maskmat);
+        if input_aux==1 && auxmask==1
+            auxmat(isnan(auxmat)==1 & isnan(vpmat)==0)=min(auxmat(isnan(auxmat)==0));
+            save_xzv(fullfile(dir_xzv_inv_mod,['Aux.',avertype,'.',modeltype,'.xzv']),XmidT,depth,auxmat.*maskmat);
+        end
+    elseif savexzv==2
+        save_xzv(fullfile(dir_xzv_inv_mod,['VS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsmat.*maskmat,0);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VP.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpmat.*maskmat,0);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VPVS.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vpvsmat.*maskmat,0);
+        save_xzv(fullfile(dir_xzv_inv_mod,['Poisson.',avertype,'.',modeltype,'.xzv']),XmidT,depth,poismat.*maskmat,0);
+        save_xzv(fullfile(dir_xzv_inv_mod,['VSstd.',avertype,'.',modeltype,'.xzv']),XmidT,depth,vsstdmat.*maskmat,0);
+        if input_aux==1 && auxmask==1
+            auxmat(isnan(auxmat)==1 & isnan(vpmat)==0)=min(auxmat(isnan(auxmat)==0));
+            save_xzv(fullfile(dir_xzv_inv_mod,['Aux.',avertype,'.',modeltype,'.xzv']),XmidT,depth,auxmat.*maskmat,0);
+        end
     end
 end
+
+%% %% %%
+
+% Check elapsed time
+Tend=toc(Tstart);
+[time_string]=secs2hms(Tend);
+fprintf(['\n  Total elapsed time: ',time_string,'\n']);

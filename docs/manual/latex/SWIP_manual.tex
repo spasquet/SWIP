@@ -17,10 +17,10 @@
 \def\MATLAB{\textbf{MATLAB}}
 \def\Cygwin{\textbf{Cygwin}}
 
-\title{\Huge{\textbf{SWIP User's Manual}}}
+\title{\Huge{\textbf{SWIP User's Guide}}}
 \author{\Large{Sylvain Pasquet} (\url{pasquet.syl@gmail.com})}
 
-\date{\LARGE{Version 1.4: January 2017}\\[2ex]
+\date{\LARGE{Version 1.5: April 2017}\\[2ex]
 \large\url{https://github.com/SWIPdev/SWIP/releases}\\
 \vspace{2.5cm}
 \large{The Surface-Wave dispersion Inversion and Profiling software is supported by:\\
@@ -72,19 +72,19 @@ If you have experience on how to install and compile codes under a Linux environ
 Here is a quick tutorial to run SWIP and reproduce the figures presented in a paper submitted to Geophysics in December 2016.
 \begin{enumerate}[leftmargin=*]
 \setlength\itemsep{2ex}
-\item In \verb|your_working_directory|, extract the content of the \verb|yellowstone.tar.gz| file located in \verb|SWIP/docs/example|.
+\item In \verb|your_working_folder|, extract the content of the \verb|yellowstone.tar.gz| file located in \verb|SWIP/docs/example|.
 
-\item Download the raw seismic data at \url{http://wycehg.wygisc.org/sharedData/poleMtnGeophysics/Yellowstone/OPTA_072016_1/Seismic.zip} and extract the content of the archive in \verb|your_working_directory/yellowstone|.
+\item Download the raw seismic data at \url{http://wycehg.wygisc.org/sharedData/poleMtnGeophysics/Yellowstone/OPTA_072016_1/Seismic.zip} and extract the content of the archive in \verb|your_working_folder/yellowstone|.
 
-\item In {\MATLAB}, go in the extracted folder \verb|your_working_directory/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|swip_profile.su.ok| provided in the archive.
+\item In {\MATLAB}, go in the extracted folder \verb|your_working_folder/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|yellowstone.su| file provided in the archive (once you've checked that, keep only one {\SU} file in the \verb|your_working_folder/yellowstone| folder). If you are using {\SWIP} in {\Cygwin}, the \verb|yellowstone.su| file provided in the archive will not work, so you will have to use the one created with \verb|seg2su|.
 
-\item Open the script launcher \verb|A_SWIPdisp.m| in {\MATLAB} and run it without changing any parameter (it might take about 45 min to run through the whole line). It will compute dispersion along the acquisition line, with a 31-trace window and shots located on both sides of the window with offset ranging between 0 and 20 traces.It will also resample in wavelength the dispersion curves located in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.pick| and save target files required for the inversion in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|. Finally, it will plot and save 1D data figures (windowed seismogram, corresponding spectrogram, stacked dispersion image with and without picks) in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data|. The 2D pseudo-section of picked phase velocity will also be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/|.
+\item Open the script launcher \verb|A_SWIPdisp.m| in {\MATLAB} and run it without changing any parameter (it might take about 45 min to run through the whole line). It will compute dispersion along the acquisition line, with a 31-trace window and shots located on both sides of the window with offset ranging between 0 and 20 traces. It will also resample in wavelength the dispersion curves located in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.pick| and save target files required for the inversion in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|. Finally, it will plot and save 1D data figures (windowed shot gather, composite spectrogram and stacked dispersion image with and without picks) in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data|. The 2D pseudo-section of picked phase velocity will also be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/|.
 
-\item Run \verb|A_SWIPdisp.m| with \verb|Xmidselec = [16 96]|, \verb|calc = 0|, \verb|plotdisp = 1|, \verb|plotspec = 1|, \verb|plotseismo = 1|, \verb|plotsingle = 1|, \verb|plotstkdisp = 1| (set other plot settings to 0). Select the folder \verb|W31_31.dW1.dS0_20.B| when asked. It will plot individual windowed seismograms along with the corresponding spectrograms and dispersion images for $Xmid = 30$~m and $Xmid = 110$~m. It will also plot intermediate stacked dispersion images.
+\item Run \verb|A_SWIPdisp.m| with \verb|Xmidselec = [16 96]|, \verb|calc = 0|, \verb|plotdisp = 1|, \verb|plotspec = 1|, \verb|plotseismo = 1|, \verb|plotsingle = 1|, \verb|plotstkdisp = 1| (set other plot toggle settings to 0 or comment the corresponding line). Select the folder \verb|W31_31.dW1.dS0_20.B| when asked. It will plot individual windowed shot gathers along with the corresponding spectrograms and dispersion images for $Xmid = 30$~m and $Xmid = 110$~m. It will also plot intermediate stacked dispersion images. These images will be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data/|.
 
-\item Run \verb|A_SWIPdisp.m| with \verb|calc = 0|, \verb|pick = 1| and \verb|plotpckdisp = 1| to repick and plot dispersion curves.
+\item (Optional) Run \verb|A_SWIPdisp.m| with \verb|calc = 0|, \verb|pick = 1| and \verb|plotpckdisp = 1| to repick and plot dispersion curves.
 
-\item Open the script launcher \verb|B_SWIPparam.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B|, then select the velocity file \verb|yellowstone_vp.txt|. It will then create a semi-automatic parameterization for each $Xmid$ position based on the provided $V_P$ model. These parameterization files, required for the inversion, are stored along with the target files in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|.
+\item Open the script launcher \verb|B_SWIPparam.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B| when asked, then select the velocity file \verb|yellowstone_vp.txt|. It will then create a semi-automatic parameterization for each $Xmid$ position based on the provided $V_P$ model. These parameterization files, required for the inversion, are stored along with the target files in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|.
 
 \item Open the script launcher \verb|C_SWIPinv.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B| when asked. It will run the inversion for each $Xmid$ position and build a rough pseudo-2D $V_S$ section (the process can take several hours depending on your CPU speed). Inversion results for each $Xmid$ are stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.inv/Type1_param|.
 
@@ -112,7 +112,7 @@ To download an older version, you need to create a Mathworks account (\url{http:
 
 Once {\MATLAB} is installed, you will need to extract the content of the {\SWIP} archive file in your {\MATLAB} path (refered later as \verb|/your/MATLAB/path|) and give {\MATLAB} access to the contents of this folder. To decompress the gzipped tarfile, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux or Mac, or use a software like 7zip if you are under Windows. In {\MATLAB}, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.
 
-Examples of \verb|/your/MATLAB/path| directory:
+Examples of \verb|/your/MATLAB/path| folder:
 
 \verb|/home/yourusername/Documents/MATLAB| under GNU/Linux distributions\\
 \verb|/Users/yourusername/Documents/MATLAB| under Mac OS X distributions\\
@@ -141,15 +141,15 @@ The following instructions are mainly copied from the {\SeismicUnix} \verb|Insta
 
 Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes} (older versions might not be compatible).
 
-Create a directory that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This directory should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
+Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
 
-Examples of \verb|/your/SU/path| directory:
+Examples of \verb|/your/SU/path| folder:
 
 \verb|/usr/local/SU|\\
 \verb|/home/yourusername/SU|\\
 \verb|/opt/SU|
 
-Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the directory \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
+Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the folder \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
 
 In order to set the necessary environment variable and the binaries path, open the file \verb|.profile| located in \verb|/home/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and add the following lines at the end of the file:
 
@@ -174,11 +174,11 @@ If you have to recompile along the way, type:
 Finally, type the command \verb|sukeyword -o| to check if {\SU} is correctly installed.
 
 \subsubsection{SU extra binaries}
-Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a seismogram in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
+Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a shot gather in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
 
 To install these codes, follow these steps in the terminal:
 
-Go in the \verb|SWIP/src| directory by typing: \verb|cd /your/MATLAB/path/SWIP/src|
+Go in the \verb|SWIP/src| folder by typing: \verb|cd /your/MATLAB/path/SWIP/src|
 
 Assign "execute" permission to the \verb|configure| file by typing: \verb|chmod +x configure|
 
@@ -193,14 +193,14 @@ For more information about installing {\Geopsy} under Linux, please refer to the
 
 Download the latest stable Linux version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
 
-Create a directory that will contain all the {\Geopsy} codes (refered later as \verb|/your/Geopsy/path|). This directory should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 30 Mb available.\\[1ex]
-Examples of \verb|/your/Geopsy/path| directory:
+Create a folder that will contain all the {\Geopsy} codes (refered later as \verb|/your/Geopsy/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 30 Mb available.\\[1ex]
+Examples of \verb|/your/Geopsy/path| folder:
 
 \verb|/usr/local/Geopsy.org| (default)\\
 \verb|/home/yourusername/Geopsy.org|\\
 \verb|/opt/Geopsy.org|
 
-Decompress the gzipped tarfile \verb|geopsypack-nnitems-src-xx.tgz| ("nn" is the number of items and "xx" is the current release number) in \verb|/your/Geopsy/path|, the directory \verb|/your/SU/path/geopsypack-nnitems-src-xx| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf geopsypack-nnitems-src-xx.tgz| in the terminal.
+Decompress the gzipped tarfile \verb|geopsypack-nnitems-src-xx.tgz| ("nn" is the number of items and "xx" is the current release number) in \verb|/your/Geopsy/path|, the folder \verb|/your/SU/path/geopsypack-nnitems-src-xx| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf geopsypack-nnitems-src-xx.tgz| in the terminal.
 
 Set the binaries path in the file \verb|.profile| located in \verb|/home/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and extend the \verb|PATH| line (see {\SU} installation) with \verb|:/your/Geopsy/path/bin| such as:
 
@@ -208,13 +208,13 @@ Set the binaries path in the file \verb|.profile| located in \verb|/home/youruse
 
 Run \verb|source .profile| in the terminal and check if the path is correctly set by typing \verb|echo $PATH| in the terminal.
 
-In the terminal, go in the \verb|/your/SU/path/geopsypack-nnitems-src-xx| directory by typing \verb|cd /your/SU/path/geopsypack-nnitems-src-xx|.
+In the terminal, go in the \verb|/your/SU/path/geopsypack-nnitems-src-xx| folder by typing \verb|cd /your/SU/path/geopsypack-nnitems-src-xx|.
 
-To configure the installation in the default \verb|/your/Geopsy/path| directory, type:
+To configure the installation in the default \verb|/your/Geopsy/path| folder, type:
 
 \verb|./configure|
 
-To configure the installation in a custom \verb|/your/Geopsy/path| directory, type:
+To configure the installation in a custom \verb|/your/Geopsy/path| folder, type:
 
 \verb|./configure -prefix /your/Geopsy/path|
 
@@ -268,13 +268,13 @@ The following instructions are mainly copied from the {\SeismicUnix} \verb|Insta
 
 Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes}
 
-Create a directory that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This directory should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
+Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
 
-Examples of \verb|/your/SU/path| directory:
+Examples of \verb|/your/SU/path| folder:
 
 \verb|/Users/yourusername/SU|
 
-Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the directory \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
+Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the folder \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
 
 In order to set the necessary environment variable and the binaries path, open the file \verb|.bash_profile| located in \verb|/Users/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and add the following lines at the end of the file (if it doesn't exist, create it by typing \verb|touch .bash_profile|):
 
@@ -299,11 +299,11 @@ If you have to recompile along the way, type:
 Finally, type the command \verb|sukeyword -o| to check if {\SU} is correctly installed.
 
 \subsubsection{SU extra binaries}
-Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a seismogram in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
+Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a shot gather in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
 
 To install these codes, follow these steps in the terminal:
 
-Go in the \verb|SWIP/src| directory by typing: \verb|cd /your/MATLAB/path/SWIP/src|
+Go in the \verb|SWIP/src| folder by typing: \verb|cd /your/MATLAB/path/SWIP/src|
 
 Assign "execute" permission to the \verb|configure| file by typing: \verb|chmod +x configure|
 
@@ -328,7 +328,7 @@ Run \verb|source .bash_profile| in the terminal and check if the path is correct
 \subsubsection{Additionnal packages}
 Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
 
-First of all you need to become the owner of the \verb|/usr/local| directory by running the following command:
+First of all you need to become the owner of the \verb|/usr/local| folder by running the following command:
 
 \verb|sudo chown -R username /usr/local|
 
@@ -338,7 +338,7 @@ Then to install {\ImageMagick}, run:
 \verb|brew install imagemagick|
 
 \subsubsection{Known problems}
-{\MATLAB}'s bash PATH is different from the Unix PATH, so it will not find the PATH defined in the \verb|.bash_profile| file. A workaround consists in modifying the script that launches {\MATLAB}. Go in the directory where {\MATLAB} is installed (usually \verb|/Applications/MATLAB_R*****.app/bin|). In that folder, you need to open the \verb|matlab| file with a text editor and add the following line after \verb|#!/bin/sh|:
+{\MATLAB}'s bash PATH is different from the Unix PATH, so it will not find the PATH defined in the \verb|.bash_profile| file. A workaround consists in modifying the script that launches {\MATLAB}. Go in the folder where {\MATLAB} is installed (usually \verb|/Applications/MATLAB_R*****.app/bin|). In that folder, you need to open the \verb|matlab| file with a text editor and add the following line after \verb|#!/bin/sh|:
 
 \verb|export PATH:$PATH|
 
@@ -354,8 +354,8 @@ Microsoft has just announced that Windows 10 will soon be able to run Bash and c
 \label{sec:cygwin}
 Download the 32 bits version of {\Cygwin} available at \url{http://www.cygwin.com/setup-x86.exe} (I could not install {\SU} with the 64 bits version, but if you want to give it a try, be my guest and let me know).
 
-Run \verb|setup-x86.exe|. When asked, choose \textit{Install from Internet}. Select the root directory to install {\Cygwin} (refered later as \verb|\your\cygwin\path|). Make sure it is located in a partition with at least 1 Gb available. Finally, select any of the proposed mirrors to download the data.
-Examples of \verb|\your\cygwin\path| directory:
+Run \verb|setup-x86.exe|. When asked, choose \textit{Install from Internet}. Select the root folder to install {\Cygwin} (refered later as \verb|\your\cygwin\path|). Make sure it is located in a partition with at least 1 Gb available. Finally, select any of the proposed mirrors to download the data.
+Examples of \verb|\your\cygwin\path| folder:
 
 \verb|C:\cygwin| (default)\\
 \verb|C:\Program Files\cygwin|
@@ -376,21 +376,21 @@ The following instructions are mainly copied from the {\SeismicUnix} \verb|Insta
 
 Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes}
 
-Create a directory that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This directory should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available. I recommend that you create \verb|/your/SU/path| in the root folder of {\Cygwin} \verb|\your\cygwin\path|.
+Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available. I recommend that you create \verb|/your/SU/path| in the root folder of {\Cygwin} \verb|\your\cygwin\path|.
 
-Examples of \verb|/your/SU/path| directory (assuming that you create it from the terminal in the root folder of {\Cygwin}):
+Examples of \verb|/your/SU/path| folder (assuming that you create it from the terminal in the root folder of {\Cygwin}):
 
 \verb|/home/yourusername/SU|\\
 \verb|/usr/local/SU|\\
 \verb|/opt/SU|
 
-In the Windows Explorer, this directory will look like:
+In the Windows Explorer, this folder will look like:
 
 \verb|C:\cygwin\home\yourusername\SU|\\
 \verb|C:\cygwin\usr\local\SU|\\
 \verb|C:\cygwin\opt\SU|
 
-Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the directory \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the {\Cygwin} terminal.
+Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the folder \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the {\Cygwin} terminal.
 
 In order to set the necessary environment variable and the binaries path, open the file \verb|.bash_profile| located in \verb|\your\cygwin\path\home\yourusername| with a text editor and add the following lines at the end of the file (!! you need to use the {\Cygwin} path with \verb|/| to define \verb|CWPROOT| and \verb|PATH| in the file !!):
 
@@ -400,7 +400,7 @@ In order to set the necessary environment variable and the binaries path, open t
 
 Run \verb|source .bash_profile| in the terminal and check if these variables are correctly set by typing \verb|echo $CWPROOT| and \verb|echo $PATH|.
 
-In the \verb|/your/SU/path/src/configs| directory, select the file \verb|Makefile.config_Cygwin_32|, rename it \verb|Makefile.config| and copy it in \verb|/your/SU/path/src| to replace the existing \verb|Makefile.config|. Then, go in \verb|/your/SU/path/src| by typing \verb|cd /your/SU/path/src| in the terminal. You will compile the codes by typing:
+In the \verb|/your/SU/path/src/configs| folder, select the file \verb|Makefile.config_Cygwin_32|, rename it \verb|Makefile.config| and copy it in \verb|/your/SU/path/src| to replace the existing \verb|Makefile.config|. Then, go in \verb|/your/SU/path/src| by typing \verb|cd /your/SU/path/src| in the terminal. You will compile the codes by typing:
 
 \verb|make install| => install the basic {\SU} codes\\
 \verb|make xtinstall| => install the X windows codes (not necessary for {\SWIP})\\
@@ -415,11 +415,11 @@ If you have to recompile along the way, type:
 Finally, type the command \verb|sukeyword -o| to check if {\SU} is correctly installed.
 
 \subsubsection{SU extra binaries}
-Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a seismogram in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
+Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a shot gather in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
 
 To install these codes, follow these steps in the {\Cygwin} terminal:
 
-Go in the \verb|SWIP/src| directory by typing: 
+Go in the \verb|SWIP/src| folder by typing: 
 
 \verb|cd /cygdrive/c/Users/yourusername/Documents/MATLAB/SWIP/src| (if your {\MATLAB} path in Windows is \verb|C:\Users\yourusername\Documents\MATLAB|)
 
@@ -436,7 +436,7 @@ Download the Windows version of {\Geopsy} at \url{http://www.geopsy.org/download
 
 Execute the file \verb|geopsypack-nnitems-src-xx.exe| ("nn" is the number of items and "xx" is the current release number) and follow the instructions to install {\Geopsy} in \verb|/your/Geopsy/path|.
 
-Example of \verb|/your/Geopsy/path| directory:
+Example of \verb|/your/Geopsy/path| folder:
 
 \verb|C:\Program Files (x86)\Geopsy.org| (default)
 
@@ -481,7 +481,7 @@ Some additionnal packages can be installed to concatenate figure results and pro
 
 Go in the Windows \textit{Start} menu and search for \textit{cmd} (or go in \textit{Accessories -> Command Prompt})\\
 Right click on \textit{cmd} or \textit{Command Prompt} and select \textit{Run as administrator}\\
-In the DOS command prompt, type (assuming that the \verb|\your\cygwin\path| directory is \verb|C:\cygwin|):
+In the DOS command prompt, type (assuming that the \verb|\your\cygwin\path| folder is \verb|C:\cygwin|):
 
 \verb|mklink "C:\cygwin\bin\img_convert.exe" "C:\cygwin\bin\convert.exe"|
 
@@ -498,7 +498,7 @@ Download the \textbf{TeX Live} Windows installer at \url{http://mirror.ctan.org/
 \textit{LaTeX recommended packages}\\
 \textit{Windows support programs}
 
-You can also modify the installation directory (refered later as \verb|your\tex\path|) by changing the \textit{TEXDIR (principal TeX directory)} option. Start the installation by clicking on \textit{Install TeX Live}
+You can also modify the installation folder (refered later as \verb|your\tex\path|) by changing the \textit{TEXDIR (principal TeX folder)} option. Start the installation by clicking on \textit{Install TeX Live}
 
 \subsubsection{Known problems}
 \begin{itemize}
@@ -513,8 +513,8 @@ You can also modify the installation directory (refered later as \verb|your\tex\
 
 %%%%%
 \subsection{Project creation}
-\subsubsection{Creating your project directory}
-Before starting, you need to create a project directory (referred later as \verb|projdir|) in which seismic data will be processed with {\SWIP}. You need to copy the 5 module launchers of {\SWIP} located in \verb|/your/MATLAB/path/SWIP/launchers| into your project directory.
+\subsubsection{Creating your project folder}
+Before starting, you need to create a project folder (referred later as \verb|projdir|) in which seismic data will be processed with {\SWIP}. You need to copy the 5 module launchers of {\SWIP} located in \verb|/your/MATLAB/path/SWIP/launchers| into your project folder.
 
 !! Don't create \verb|projdir| in your {\MATLAB} path !!
 
@@ -528,7 +528,7 @@ For users non familiar with the use of {\SeismicUnix}, the tool \verb|seg2su.m| 
 
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
-\item Regroup all your SEG2 or SEGY files (e.g. \verb|.dat|, \verb|.sg2|, \verb|.sgy|) in a single folder (referred as \verb|rawdatadir|) located in your \verb|projdir| directory. Individual SEG2 files should be named with increasing numbers (e.g. 1001.dat, 1002.dat,...). If your field data are contained in a single SEGY file, just add this file in the folder instead of the SEG2 files. If you have topography along the line, add a two-column ASCII file (referred as \verb|topofile|) containing the distance and the elevation (X,Z).
+\item Regroup all your SEG2 or SEGY files (e.g. \verb|.dat|, \verb|.sg2|, \verb|.sgy|) in a single folder (referred as \verb|rawdatadir|) located in your \verb|projdir| folder. Individual SEG2 files should be named with increasing numbers (e.g. 1001.dat, 1002.dat,...). If your field data are contained in a single SEGY file, just add this file in the folder instead of the SEG2 files. If you have topography along the line, add a two-column ASCII file (referred as \verb|topofile|) containing the distance and the elevation (X,Z).
 \item In {\MATLAB}, go in \verb|projdir| and execute the command \verb|seg2su| in the command window.
 \item Select the folder \verb|rawdatadir| when asked for the folder containing SEG2 or SEGY files.
 \item Then, define the scaling factor. This factor is used to convert your X and Z coordinates in full integers since {\SU} cannot read decimals. The scaling factor has to be set according to the desired coordinates precision (e.g. a scaling factor of 100 is required if you want a precision of 0.01~m in your geophone X or Z coordinate; coordinates will thus be stored in centimeters).
@@ -537,30 +537,36 @@ For users non familiar with the use of {\SeismicUnix}, the tool \verb|seg2su.m| 
 \item To import topography, click \textit{Yes} when asked, then select the \verb|topofile| in \verb|rawdatadir|. 
 \end{itemize}
 
-
-
 !! \verb|.su| files created on Windows with {\Cygwin} won't be compatible with other platforms !!
 
 \subsubsection{Importing dispersion curves}
 \label{sec:import}
-If you have your own software to pick dispersion curves, or if you want to invert dispersion curves picked in a previous project (e.g. to merge dispersion curves obtained from separate profiles), you don't need a \verb|.su| file to use {\SWIP}. In that case, you need to add a folder containing your dispersion curves (3-column ASCII file with frequency, phase velocity and phase velocity error) inside your \verb|projdir| directory. To automatically retrieve the corresponding mode and the position of the dispersion curve along a profile, you can rename your dispersion curves according to the following format: \verb|Xmid.Mmode.pvc|, where \verb|Xmid| is the position along the line and \verb|mode| is the mode number (0 for fundamental, 1 for first higher mode,...). If you want to keep the original file names, you will be able to specify the position and the mode number when importing the dispersion curves (cf \ref{sec:moduleA} - Main settings). You will also need to provide the window size \verb|nW|used to extract dispersion curves and the mean geophone spacing. {\SWIP} will finally create a directory named "W\verb|nW|\_\verb|nW|.dW1.dS1\_1.imported" (hereafter refered as subproject directory or \verb|subprojdir|).
+If you have your own software to pick dispersion curves, or if you want to invert dispersion curves picked in a previous project (e.g. to merge dispersion curves obtained from separate profiles), you don't need a \verb|.su| file to use {\SWIP}. In that case, you need to add a folder containing your dispersion curves (3-column ASCII file with frequency, phase velocity and phase velocity error) inside your \verb|projdir| folder.
 
-\clearpage
+To automatically retrieve the corresponding mode and the position of the dispersion curve along a profile, you can rename your dispersion curves according to the following format: \verb|Xmid.Mmode.pvc|, where \verb|Xmid| is the position along the line and \verb|mode| is the mode number (0 for fundamental, 1 for first higher mode,...). If you want to keep the original file names, you will be able to specify the position and the mode number when importing the dispersion curves (cf \ref{sec:moduleA} - Main settings). You will also need to provide the window size \verb|nW|used to extract dispersion curves and the mean geophone spacing. {\SWIP} will finally create a folder named "W\verb|nW|\_\verb|nW|.dW1.dS1\_1.imported" (hereafter refered as subproject folder or \verb|subprojdir|).
+
 \subsection{SWIP main modules}
 For each parameter, you can use the default/automatic settings by commenting the corresponding line in the launcher. {\SWIP} will then read the default setting in the script \verb|SWIP_defaultsettings| located in \verb|/your/MATLAB/path/SWIP/scripts|.
-
 
 %%%%%
 \subsubsection{Module A\_SWIPdisp}
 \label{sec:moduleA}
-The first module \verb|A_SWIPdisp.m| takes advantage of multi-shot acquisition set-ups to retrieve the lateral variations of surface-wave dispersion using shot gather windowing and dispersion stacking. A range of acceptable window sizes and shot offsets is first defined to extract the data and compute dispersion images using a slant stack in the frequency domain ($p-\omega$ stack). The windows are then shifted along the acquisition profile to obtain a set of dispersion images associated with their corresponding spread mid-point ($Xmid$). Dispersion images associated with an identical $Xmid$ are finally stacked to improve signal-to-noise ratio and enhance the maxima. The shift between two successive extraction windows can range from one receiver spacing to several window lengths. On each stacked dispersion image, the coherent maxima associated with the different propagation modes are identified, picked and extracted with an estimated standard error in phase velocity depending on the frequency and the spread length (the dispersion curves can also be imported from another picking software). The dispersion curves are finally resampled either in wavelength or in frequency, with several criterions limiting their frequency range into reasonable boundaries (e.g. minimum frequency defined according to the spectral amplitude, maximum wavelength defined according to the extraction window length...), and saved in the data format required for the inversion software.
+The first module \verb|A_SWIPdisp.m| takes advantage of multi-shot acquisition set-ups to retrieve the lateral variations of surface-wave dispersion using shot gather windowing and dispersion stacking. A range of acceptable window sizes and shot offsets is first defined to extract the data and compute dispersion images using a slant stack in the frequency domain ($p-\omega$ stack). The windows are then shifted along the acquisition profile to obtain a set of dispersion images associated with their corresponding spread mid-point ($Xmid$). Dispersion images associated with an identical $Xmid$ are finally stacked to improve signal-to-noise ratio and enhance the maxima. The shift between two successive extraction windows can range from one receiver spacing to several window lengths.
+
+On each stacked dispersion image, the coherent maxima associated with the different propagation modes are identified, picked and extracted with an estimated standard error in phase velocity depending on the frequency and the spread length (the dispersion curves can also be imported from another picking software). The dispersion curves are finally resampled either in wavelength or in frequency, with several criterions limiting their frequency range into reasonable boundaries (e.g. minimum frequency defined according to the spectral amplitude, maximum wavelength defined according to the extraction window length...), and saved in the data format required for the inversion software. The dispersion extraction procedure is illustrated by the flowchart in Figure~\ref{fig:flowchart_extraction}.
+
+\begin{figure*}
+\centerline{\includegraphics[width=0.65\linewidth]{figures/flowchart_extraction.png}}
+\caption{Flowchart of the dispersion extraction procedure.}
+\label{fig:flowchart_extraction}
+\end{figure*}
 
 \paragraph{Main settings}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item \verb|Xmidselec| allows to select all or some of the possible $Xmid$. To select all, keep \verb|Xmidselec| empty or commented. To select one or several $Xmid$, input a list of their number (not position) in the list. The total number of $Xmid$ is contained in the variable \verb|Xlength|, while the $Xmid$ positions are contained in the variable \verb|XmidT|.
 
-\item Set \verb|calc = 1| to compute dispersion images from the \verb|.su| file (cf \ref{sec:seg2su}) or \verb|calc = 2| to import dispersion curves (cf \ref{sec:import}). Once the computation or the importation has been done, you can work with \verb|calc = 0| (for instance to pick/repick dispersion, plot/replot figures, or resample dispersion curves and create inversion target files). When running the code with \verb|calc = 0|, you will be asked to select a subproject directory (cf \ref{sec:moduleA} - Windowing and stacking settings).
+\item Set \verb|calc = 1| to compute dispersion images from the \verb|.su| file (cf \ref{sec:seg2su}) or \verb|calc = 2| to import dispersion curves (cf \ref{sec:import}). Once the computation or the importation has been done, you can work with \verb|calc = 0| (for instance to pick/repick dispersion, plot/replot figures, or resample dispersion curves and create inversion target files). When running the code with \verb|calc = 0|, you will be asked to select a subproject folder (cf \ref{sec:moduleA} - Windowing and stacking settings).
 \end{itemize}
 
 \paragraph{Windowing and stacking settings (used if calc = 1)}
@@ -575,7 +581,7 @@ The first module \verb|A_SWIPdisp.m| takes advantage of multi-shot acquisition s
 \item \verb|side| defines if the dispersion is extracted and stacked from shots located on the left ('L'), on the right ('R') or on both sides ('B') of the window.
 \end{itemize}
 
-If these parameters are used for the first time, {\SWIP} will create a directory named "W\verb|nWmin|\_\verb|nWmax|.dW\verb|dW|.dS\verb|dSmin|\_\verb|dSmax|.\verb|side|" (hereafter refered as subproject directory or \verb|subprojdir|). If the subproject directory already exists, {\SWIP} will overwrite the existing data for the selected $Xmid$. The data  are stored in the \verb|file.dat| folder, created in \verb|projdir/subprojdir|. It contains 3 different {\SU} files for each $Xmid$ position (example of windowed seismogram \verb|Xmid.sum.su|, spectrogram of the example of windowed seismogram \verb|Xmid.sum.spec| and stacked dispersion image \verb|Xmid.sum.dsp|). It also contains a \verb|project.param.mat| file with the main subproject parameters (!! do not delete that file !!).
+If these parameters are used for the first time, {\SWIP} will create a folder named "W\verb|nWmin|\_\verb|nWmax|.dW\verb|dW|.dS\verb|dSmin|\_\verb|dSmax|.\verb|side|" (hereafter refered as subproject folder or \verb|subprojdir|). If the subproject folder already exists, {\SWIP} will overwrite the existing data for the selected $Xmid$. The data  are stored in the \verb|file.dat| folder, created in \verb|projdir/subprojdir|. It contains 3 different {\SU} files for each $Xmid$ position (example of windowed shot gather \verb|Xmid.sum.su|, spectrogram of the example of windowed shot gather \verb|Xmid.sum.spec| and stacked dispersion image \verb|Xmid.sum.dsp|). It also contains a \verb|project.param.mat| file with the main subproject parameters (!! do not delete that file !!).
 
 \begin{figure}[h!]
 \centerline{\includegraphics[width=0.75\linewidth]{figures/stack_wind.png}}
@@ -602,7 +608,7 @@ If these parameters are used for the first time, {\SWIP} will create a directory
 
 \item \verb|taper| defines the width of the taper window (in Hz).
 
-\item Set \verb|mute = 1| to apply a mute\footnote{The mute consists in zeroing samples before and/or after a specific time.} to the seismic data before the $p-\omega$ stack, or \verb|mute = 0| otherwise. The mute is applied to each windowed seismogram, and is linear between the shortest offset trace (trace 1) and the largest offset trace (trace 2)
+\item Set \verb|mute = 1| to apply a mute\footnote{The mute consists in zeroing samples before and/or after a specific time.} to the seismic data before the $p-\omega$ stack, or \verb|mute = 0| otherwise. The mute is applied to each windowed shot gather, and is linear between the shortest offset trace (trace 1) and the largest offset trace (trace 2)
 
 \item \verb|tmin1| and \verb|tmin2| define the first and last trace upper mute limits (in s).
 
@@ -671,23 +677,23 @@ If the picking freezes, close the window to go to the next $Xmid$ (this will sav
 \item \verb|specampmin| is the minimum amplitude of the spectrogram (in normalized units) used to determine the automatic cutoff frequency.\\[1ex]
 \end{itemize}
 
-Target files are stored in \verb|subprojdir/file.targ| and contain all modes selected for inversion (cf option \verb|maxmodeinv|). They are named according to their $Xmid$ position (\verb|Xmid.target|). If a target file already exists for the selected $Xmid$ when using \verb|target = 1|, it will be overwritten. Run the script with \verb|calc = 0| and \verb|pick = 0| to change only the targets parameter (sampling, number of included modes, error type,...).
+Target files are stored in \verb|subprojdir/file.targ| and contain all modes selected for inversion (cf option \verb|maxmodeinv|). They are named according to their $Xmid$ position (\verb|Xmid.target|). If a target file already exists for the selected $Xmid$ when using \verb|target = 1|, it will be overwritten. Run the script with \verb|calc = 0| and \verb|pick = 0| to change only the targets parameter (sampling, number of included modes, uncertainty type,...).
 
-\paragraph{Error settings (used if target = 1)}
+\paragraph{Uncertainty settings (used if target = 1)}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
-\item Set \verb|err = 1| to define an empirical phase velocity error depending on the frequency and the window size (Lorentz error), \verb|err = 2| to define a percentage phase velocity error, or \verb|err = 0| for no error.
+\item Set \verb|err = 1| to define an empirical phase velocity uncertainty depending on the frequency and the window size (Lorentz error), \verb|err = 2| to define a percentage phase velocity uncertainty, or \verb|err = 0| for no uncertainty.
 
-\item \verb|nWfac| allows to tweak the Lorentz error in order to increase (\verb|nWfac < 1|) or reduce (\verb|nWfac > 1|) the size of the error bars by calculating the error as if the mean window size $nW$ was actually $nW*nWfac$. It is used only if \verb|err = 1|.
+\item \verb|nWfac| allows to tweak the Lorentz error in order to increase (\verb|nWfac < 1|) or reduce (\verb|nWfac > 1|) the size of the error bars by calculating the uncertainty as if the mean window size $nW$ was actually $nW*nWfac$. It is used only if \verb|err = 1|.
 
-\item \verb|minerrvel| is the minimum velocity error (in m/s) allowed when \verb|err = 1|. It prevents from having too small error bars at high frequency in which no theoretical model could fit.
+\item \verb|minerrvel| is the minimum velocity uncertainty (in m/s) allowed when \verb|err = 1|. It prevents from having too small error bars at high frequency in which no theoretical model could fit.
 
-\item \verb|maxerrrat| is the maximum velocity error ratio allowed when \verb|err = 1|. It prevents from having too large error bars at low frequency in which all theoretical models could fit.
+\item \verb|maxerrrat| is the maximum velocity uncertainty ratio allowed when \verb|err = 1|. It prevents from having too large error bars at low frequency in which all theoretical models could fit.
 
-\item \verb|sigma| is the percentage of the velocity used to define the error when \verb|err = 2|.
+\item \verb|sigma| is the percentage of the velocity used to define the uncertainty when \verb|err = 2|.
 \end{itemize}
 
-\paragraph{Plot settings}
+\paragraph{Toggle plots}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Set \verb|plotdisp = 1| to plot and save dispersion images in \verb|subprojdir/file.img/1D_data/disp| (\verb|plotdisp = 0| for no plot).
@@ -696,9 +702,9 @@ Target files are stored in \verb|subprojdir/file.targ| and contain all modes sel
 
 \item Set \verb|plotspec = 1| to plot and save spectrograms in \verb|subprojdir/file.img/1D_data/spectro| (\verb|plotspec = 0| for no plot).
 
-\item Set \verb|plotseismo = 1| to plot and save seismograms in \verb|subprojdir/file.img/1D_data/seismo| (\verb|plotseismo = 0| for no plot).
+\item Set \verb|plotseismo = 1| to plot and save shot gathers in \verb|subprojdir/file.img/1D_data/seismo| (\verb|plotseismo = 0| for no plot).
 
-\item Set \verb|plotsingle = 1| to plot and save prestack single seismogram (if \verb|plotseismo = 1|), spectrograms (if \verb|plotspec = 1|) and dispersion images (if \verb|plotdisp = 1|) in \verb|subprojdir/file.img/1D_data/prestack/Xmid_xmid| (\verb|plotsingle = 0| for no plot).
+\item Set \verb|plotsingle = 1| to plot and save prestack single shot gather (if \verb|plotseismo = 1|), spectrograms (if \verb|plotspec = 1|) and dispersion images (if \verb|plotdisp = 1|) in \verb|subprojdir/file.img/1D_data/prestack/Xmid_xmid| (\verb|plotsingle = 0| for no plot).
 
 \item Set \verb|plotstkdisp = 1| to plot and save intermediate stacked dispersion images in \verb|subprojdir/file.img/1D_data/synstack/Xmid_xmid| (\verb|plotstkdisp = 0| for no plot).
 
@@ -721,7 +727,7 @@ Target files are stored in \verb|subprojdir/file.targ| and contain all modes sel
 \item \verb|cbpos| defines the position of colorbars (=1, colorbar on the right; =2, colorbar at the bottom).
 \end{itemize}
 
-\paragraph{Dispersion, spectrograms and seismograms settings}
+\paragraph{Dispersion, spectrograms and shot gathers settings}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Set \verb|Dlogscale = 1| to use a "pseudo-logarithmic" colorscale in the saved dispersion images (\verb|Dlogscale = 0| for linear colorscale).
@@ -748,7 +754,7 @@ Target files are stored in \verb|subprojdir/file.targ| and contain all modes sel
 
 \item \verb|VphMIN|, \verb|VphMAX| and \verb|Vphticks| control the display of phase velocity limits and ticks on dispersion images (in m/s).
 
-\item \verb|tMIN|, \verb|tMAX| and \verb|tticks| control the display of time limits and ticks on seismograms (in ms).
+\item \verb|tMIN|, \verb|tMAX| and \verb|tticks| control the display of time limits and ticks on shot gathers (in ms).
 \end{itemize}
 
 \paragraph{Phase velocity pseudo-section settings}
@@ -781,7 +787,7 @@ Set \verb|paramtype = 1| to create a parameterization with varying thicknesses a
 Set \verb|paramtype = 2| to create a parameterization with varying thicknesses and a fixed $V_P$ defined from a P-wave tomography model.\\[1ex]
 Set \verb|paramtype = 3| to create a parameterization with fixed thicknesses and a reduced range of $V_P$ defined from a P-wave tomography model.\\[1ex]
 Set \verb|paramtype = 4| to create a parameterization with fixed thicknesses and fixed $V_P$ defined from a P-wave tomography model.\\[1ex]
-For \verb|paramtype > 0|, a specific \verb|Xmid.param| file will be stored for each $Xmid$ along with the \verb|Xmid.target| files in the \verb|subprojdir/file.targ| directory. The input of a three column ($X,Z,V_P$) ASCII file is required (if using Excel for Mac OS, you need to save the velocity model as a \textit{Windows Formatted Text} file).
+For \verb|paramtype > 0|, a specific \verb|Xmid.param| file will be stored for each $Xmid$ along with the \verb|Xmid.target| files in the \verb|subprojdir/file.targ| folder. The input of a three column ($X,Z,V_P$) ASCII file is required (if using Excel for Mac OS, you need to save the velocity model as a \textit{Windows Formatted Text} file).
 \end{itemize}
 
 \paragraph{Parameter space settings}
@@ -840,7 +846,13 @@ Set \verb|shape = 5| force a power law increase with depth.\\[2ex]
 
 \subsubsection{Module C\_SWIPinv}
 \label{sec:moduleC}
-The third module \verb|C_SWIPinv.m| allows to perform the Monte Carlo inversion for each $Xmid$ using the Neighborhood Algorithm (NA). For each inversion, several options are proposed to build the final 1D $V_S$ model: (i) using the model with the lowest misfit; (ii) using an average of the n models with the lowest misfits; (iii) or using an average of all models whose calculated dispersion curves fit the observed data within the error bars. In the two latter cases, the final average model can be constructed either by taking the actual mean value of each parameter, or by weighting the different parameters according to each model’s misfit.
+The third module \verb|C_SWIPinv.m| allows to perform the Monte Carlo inversion for each $Xmid$ using the Neighborhood Algorithm (NA). For each inversion, several options are proposed to build the final 1D $V_S$ model: (i) using the model with the lowest misfit; (ii) using an average of the n models with the lowest misfits; (iii) or using an average of all models whose calculated dispersion curves fit the observed data within the error bars. In the two latter cases, the final average model can be constructed either by taking the actual mean value of each parameter, or by weighting the different parameters according to each model’s misfit. The dispersion inversion procedure is illustrated by the flowchart in Figure~\ref{fig:flowchart_inversion}.
+
+\begin{figure*}
+\centerline{\includegraphics[width=0.65\linewidth]{figures/flowchart_inversion.png}}
+\caption{Flowchart of the dispersion inversion procedure.}
+\label{fig:flowchart_inversion}
+\end{figure*}
 
 \paragraph{Main settings}
 \begin{itemize}[leftmargin=*]
@@ -924,7 +936,7 @@ thickness	$V_P$	$V_S$	density (layer 2)\\
 ...\\
 thickness	$V_P$	$V_S$	density (layer n)
 
-\paragraph{Plot settings}
+\paragraph{Toggle plots}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Set \verb|plotinvres = 1| to plot and save inversion results images (\verb|plotinvres = 0| for no plot). To speed up the inversion, it is recommended to use \verb|plotinvres = 0| first, then run the code with \verb|plotinvres = 1| for specific $Xmid$.
@@ -1043,7 +1055,7 @@ Set \verb|modeltype = 6| to plot the ridge model.
 \item \verb|thkuser| is a vector defining the thickness in each layer of the arbitrary model (no thickness for the last layer corresponding to the half space).
 \end{itemize}
 
-\paragraph{Plot settings}
+\paragraph{Toggle plots}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Set \verb|plot1dcal = 1| to plot and save dispersion images (if \verb|swip = 1|) and observed and calculated dispersion curves (\verb|plot1dcal = 0| for no plot).
@@ -1162,7 +1174,7 @@ Set \verb|modeltype = 6| to plot the ridge model.
 \item \verb|dz| controls the sampling in depth of smooth velocity models (in m).
 \end{itemize}
 
-\paragraph{Plot and save settings}
+\paragraph{Toggle plots and data save}
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Set \verb|plot2dcal = 1| to plot and save observed and calculated phase velocity pseudo-section along with the corresponding absolute residual pseudo-section (\verb|plot2dcal = 0| for no plot).
@@ -1208,7 +1220,7 @@ If \verb|input_vel = 2|, images are stored in:\\
 
 \item \verb|vphISO| defines the isocontours of phase velocity to plot over the pseudo-section.
 
-\item \verb|residMIN|, \verb|residMAX| and \verb|residticks| control the display of phase velocity residuals limits and ticks on the pseudo-section (in m/s).
+\item \verb|residMIN|, \verb|residMAX| and \verb|residticks| control the display of phase velocity residuals limits and ticks on the pseudo-section (in \%).
 \end{itemize}
 
 \paragraph{2D models settings (used if plot2dmod = 1)}
@@ -1286,21 +1298,31 @@ Set \verb|plotiso = 6| to plot auxiliary data isocontours.
 
 \clearpage
 \subsection{Extra tools}
-Some additionnal tools to perform separate steps of the SWIP workflow are available in \verb|/your/MATLAB/path/SWIP/tools|.
-\paragraph{seg2su}
-Convert SEG2 or SEGY files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
+Some additionnal tools are provided in \verb|/your/MATLAB/path/SWIP/tools| in order to perform separate steps of the SWIP workflow.
 
 \paragraph{ascii2su}
 Convert ASCII files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
 
 \paragraph{calc\_disp}
-Quick extraction of dispersion image from seismogram. Need to provide at least a \verb|.su| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+Quick extraction of dispersion image from shot gather. Need to provide at least a \verb|.su| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+
+\paragraph{convert\_targ}
+Convert \verb|.target| files in \verb|.pvc| files and plot extracted dispersion curves. Need to select a folder containing the \verb|.target| files to convert.
+
+\paragraph{datablank}
+Blank X,Z,V ASCII file and save resulting blanked file. Need to provide at least a \verb|.xzv| and a \verb|.bln| file.
+
+\paragraph{pick\_disp}
+Work in progress.
+
+\paragraph{plot\_1dmod\_multi}
+Quick plot of 1D velocity models. Need to provide at least a folder containing ASCII files in gpdc format. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
 \paragraph{plot\_disp}
 Quick plot of dispersion image and curves. Need to provide at least a \verb|.dsp| file. You can also plot picked dispersion curve by selecting a \verb|.target| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
 \paragraph{plot\_seismo}
-Quick plot of seismogram. Need to provide at least a \verb|.su| file. If the file contains more than one shot, all shots will be plotted separately. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+Quick plot of shot gather. Need to provide at least a \verb|.su| file. If the file contains more than one shot, all shots will be plotted separately. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
 \paragraph{plot\_spec}
 Quick plot of spectrogram. Need to provide at least a \verb|.spec| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
@@ -1311,19 +1333,13 @@ Quick plot of a single dispersion curve. Need to provide at least a \verb|.targe
 \paragraph{plot\_targ\_multi}
 Quick plot of multiple dispersion curves. Need to provide at least a folder containing \verb|.target| files. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
-\paragraph{pick\_disp}
-Work in progress.
-
-\paragraph{convert\_targ}
-Convert \verb|.target| files in \verb|.pvc| files and plot extracted dispersion curves. Need to select a folder containing the \verb|.target| files to convert.
+\paragraph{plot\_xzv}
+Quick plot of 2D models from X,Z,V ASCII file. Need to provide at least a \verb|.xzv| ASCII file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
 \paragraph{quick\_invert}
 Quick inversion of dispersion data. Need to provide at least a \verb|.target| and a \verb|.param| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
-\paragraph{datablank}
-Blank X,Z,V ASCII file and save resulting blanked file. Need to provide at least a \verb|.xzv| and a \verb|.bln| file.
-
-\paragraph{plot\_xzv}
-Quick plot of 2D models from X,Z,V ASCII file. Need to provide at least a \verb|.xzv| ASCII file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
+\paragraph{seg2su}
+Convert SEG2 or SEGY files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
 
 \end{document}
