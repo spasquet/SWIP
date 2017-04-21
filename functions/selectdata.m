@@ -392,7 +392,7 @@ while selectionflag
       selecthandle = [];
       
       % wait until the mouse button was released
-      uiwait
+%       uiwait
       
       % ....
       

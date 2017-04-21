@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V17.04.17
+%%% S. Pasquet - V17.04.18
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -232,7 +232,7 @@ if usevptomo==1 || tomo==1
     
     if tomo==1 && isempty(VpItomo)==0
         % Select VS
-        fprintf('\n  Select Vs model file\n');
+        fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model');
         if pathvel==0
             VsItomo=[]; VpItomo=[];

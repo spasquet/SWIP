@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V17.04.17
+%%% S. Pasquet - V17.04.19
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -79,6 +79,7 @@ dir_pick=dir_all.dir_pick;
 dir_param=dir_all.dir_param;
 dir_targ=dir_all.dir_targ;
 dir_inv=dir_all.dir_inv;
+dir_xzv=dir_all.dir_xzv;
 matstruct=dir(fullfile(dir_dat,'*.param.mat'));
 matfile=fullfile(dir_dat,matstruct.name);
 try
@@ -258,10 +259,10 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
             end
         end
     end
-
+    
     if input_vel==2 && isempty(VpItomo)==0
         % Select VS
-        fprintf('\n  Select Vs model file (cancel if no Vs model available)\n');
+        fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
             VsItomo=[]; plot2dcal=0; plothisto=0;
@@ -344,6 +345,11 @@ if isempty(maxmodeinv)==1
     else
         maxmodeinv=zeros(1,Xlength);
     end
+    npvc=length(M);
+    modes=M;
+else
+    npvc=nmodemax;
+    modes=(0:npvc-1);
 end
 
 % Initialization of phase velocity matrices
@@ -413,30 +419,27 @@ for ix=Xmidselec
     %%%%% Read picked dispersion curves %%%%%
     
     if plot2dcal==1 || plothisto==1
-        if input_vel~=1
-            nametarg=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.target']);
-        else
+        if input_vel==1
             nametarg=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),'.target']);
-        end
-        if exist(nametarg,'file')==2
-            % Read target file to get picked dispersion curves
-            [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
-            npvc=length(modes);
-            lmaxpicktmp=zeros(npvc,1);
-            for ip=1:npvc
-                % Resample in lambda or frequency
-                [freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1}]=...
-                    resampvel(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},...
-                    deltaresamp{modes(ip)+1},resampvec,sampling,1);
-                lmaxpicktmp(ip)=max(vresamp{modes(ip)+1}./freqresamp{modes(ip)+1});
+            if exist(nametarg,'file')==2
+                % Read target file to get picked dispersion curves
+                [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
+                npvc=length(modes);
+                lmaxpicktmp=zeros(npvc,1);
+                for ip=1:npvc
+                    % Resample in lambda or frequency
+                    [freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1}]=...
+                        resampvel(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},...
+                        deltaresamp{modes(ip)+1},resampvec,sampling,1);
+                    lmaxpicktmp(ip)=max(vresamp{modes(ip)+1}./freqresamp{modes(ip)+1});
+                end
+                lmaxpick(ix)=max(lmaxpicktmp);
+            else
+                if sum(nshot(ix,:))>=0
+                    fprintf(['\n  No dispersion picked for Xmid',num2str(ix),' = ',...
+                        num2str(XmidT(ix),xmidformat),' m\n']);
+                end
             end
-            lmaxpick(ix)=max(lmaxpicktmp);
-        else
-            if input_vel==1 && sum(nshot(ix,:))>=0
-                fprintf(['\n  No dispersion picked for Xmid',num2str(ix),' = ',...
-                    num2str(XmidT(ix),xmidformat),' m\n']);
-            end
-            npvc=0;
         end
     end
     
@@ -745,15 +748,16 @@ for ix=Xmidselec
     %% %% %%
     
     %%%%% Compute dispersion residuals %%%%%
-    
     if plot2dcal==1 || plothisto==1
         for ip=1:npvc
-            if exist('vresamp','var')==1 && isempty(vresamp{modes(ip)+1})==0
-                vph2dobs{modes(ip)+1}(:,ix)=vresamp{modes(ip)+1}';
-                delta2dobs{modes(ip)+1}(:,ix)=deltaresamp{modes(ip)+1}';
-            else
-                vph2dobs{modes(ip)+1}(:,ix)=NaN;
-                delta2dobs{modes(ip)+1}(:,ix)=NaN;
+            if input_vel==1
+                if exist(nametarg,'file')==2 && exist('vresamp','var')==1 && isempty(vresamp{modes(ip)+1})==0
+                    vph2dobs{modes(ip)+1}(:,ix)=vresamp{modes(ip)+1}';
+                    delta2dobs{modes(ip)+1}(:,ix)=deltaresamp{modes(ip)+1}';
+                else
+                    vph2dobs{modes(ip)+1}(:,ix)=NaN;
+                    delta2dobs{modes(ip)+1}(:,ix)=NaN;
+                end
             end
             if isempty(D)==0
                 freqcal=D{modes(ip)+1,1}; % Frequency
@@ -820,10 +824,10 @@ elseif input_vel==2
     maskmatvp=ones(size(maskmatvp));
     if isempty(VsItomo)==0
         vsmat=VsItomo;
-        vpvsmat=vpmat./vsmat;
-        poismat=poisson(vpmat,vsmat);
+        vpvsmat=vpmatok./vsmat;
+        poismat=poisson(vpmatok,vsmat);
     else
-        vsmat=vpmatok;
+        vsmat=vpmatok*NaN;
     end
     avertype='user';
     modeltype='tomo';
@@ -1295,9 +1299,9 @@ end
 
 if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==0
     if input_vel==2
-        fileAUX=fullfile(dir_img_inv_2d,['AUX.user.tomo.',imgform]);
+        fileAUX=fullfile(dir_img_inv_2d,['AUXI.user.tomo.',imgform]);
     else
-        fileAUX=fullfile(dir_img_inv_2d,['AUX.',avertype,'.',modeltype,'.',imgform]);
+        fileAUX=fullfile(dir_img_inv_2d,['AUXI.',avertype,'.',modeltype,'.',imgform]);
         if maskDOI>0 && auxmask==1
             auxmat(isnan(maskmat)==1)=NaN;
         end
@@ -1360,7 +1364,6 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
             panel9=fullfile(dir_img_inv_2d,['Aux_VP_VS.',avertype,'.',modeltype,'.',imgform]);
             cat_img([fileAUX,' ',filevp,' ',filevs],imgform,1,[],panel9,1);
         end
-        
     end
 end
 

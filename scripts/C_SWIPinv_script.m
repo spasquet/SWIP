@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.04.17
+%%% S. Pasquet - V17.04.19
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for 
@@ -418,45 +418,59 @@ for ix=Xmidselec
         fprintf('\n  Looking for best models\n');
         
         % Export calculated dipsersion curves from binary report files
-        if exist(fullfile(dir_rep_ind,'run_01.report'),'file')==2
+        if exist(fullfile(dir_rep_ind,'run_01.report'),'file')==2 % Compress if not previously zipped
             matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
         end
-        matzip(0,fullfile(dir_rep_ind,'*.report.gz'),zipmethod,0);
-        matgpdcreport(dir_rep_ind,0,inv_set.nrun(ix),maxmodeinv(ix)+1,nmaxmod(ix),wave);
-        if nbest>nmaxmod(ix)
-            nbest=nmaxmod(ix);
-        end
-        D=cell(nmodeinv(ix),1);
-        ok=cell(nmodeinv(ix),1);
-        bestmis=zeros(inv_set.nrun(ix),nmodeinv(ix));
-        misround=zeros(inv_set.nrun(ix)*nmaxmod(ix),nmodeinv(ix));
+        matzip(0,fullfile(dir_rep_ind,'*.report.gz'),zipmethod,0); % Uncompress report
         
-        % Loop over propagation modes
-        for ip=1:nmodeinv(ix)
-            m=modes(ip);
-            fprintf(['\n      Mode ',num2str(m),'\n']);
-            % Get min and max velocity envelope from uncertainty range
-            minvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)-deltaresamp{m+1}(isnan(vresamp{m+1})==0);
-            maxvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)+deltaresamp{m+1}(isnan(vresamp{m+1})==0);
-            freqOK=freqresamp{m+1}(isnan(vresamp{m+1})==0);
-            D{ip}=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Frequency vs slowness cell array
-            dispselec=repmat(struct('modnum',[],'modok',[],...
-                'misround',[],'nfreqsample',[]),1,inv_set.nrun(ix)); % Models structure
-            % Loop over all runs
-            for n=1:inv_set.nrun(ix)
-                calcdisp=fullfile(dir_rep_ind,['best',num2str(n),'.M',num2str(m),'.txt']);
-                % Read dispersion curves and get the ones fitting the errorbar if nbest=0
-                [D{ip}(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:),dispselec(n)]=...
-                    readdisp(calcdisp,nmaxmod(ix),n,nbest,outpoints,freqOK,minvelOK,maxvelOK);
-                bestmis(n,ip)=dispselec(n).misround(1); % Get best model misfit
+        export_gpdc=0;
+        while export_gpdc<5
+            try % Try reading reports (random crash probably due to memory lag)
+                matgpdcreport(dir_rep_ind,0,inv_set.nrun(ix),maxmodeinv(ix)+1,nmaxmod(ix),wave);
+                if nbest>nmaxmod(ix)
+                    nbest=nmaxmod(ix);
+                end
+                D=cell(nmodeinv(ix),1);
+                ok=cell(nmodeinv(ix),1);
+                bestmis=zeros(inv_set.nrun(ix),nmodeinv(ix));
+                misround=zeros(inv_set.nrun(ix)*nmaxmod(ix),nmodeinv(ix));
+                
+                % Loop over propagation modes
+                for ip=1:nmodeinv(ix)
+                    m=modes(ip);
+                    fprintf(['\n      Mode ',num2str(m),'\n']);
+                    % Get min and max velocity envelope from uncertainty range
+                    minvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)-deltaresamp{m+1}(isnan(vresamp{m+1})==0);
+                    maxvelOK=vresamp{m+1}(isnan(vresamp{m+1})==0)+deltaresamp{m+1}(isnan(vresamp{m+1})==0);
+                    freqOK=freqresamp{m+1}(isnan(vresamp{m+1})==0);
+                    D{ip}=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Frequency vs slowness cell array
+                    dispselec=repmat(struct('modnum',[],'modok',[],...
+                        'misround',[],'nfreqsample',[]),1,inv_set.nrun(ix)); % Models structure
+                    % Loop over all runs
+                    for n=1:inv_set.nrun(ix)
+                        calcdisp=fullfile(dir_rep_ind,['best',num2str(n),'.M',num2str(m),'.txt']);
+                        % Read dispersion curves and get the ones fitting the errorbar if nbest=0
+                        [D{ip}(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:),dispselec(n)]=...
+                            readdisp(calcdisp,nmaxmod(ix),n,nbest,outpoints,freqOK,minvelOK,maxvelOK);
+                        bestmis(n,ip)=dispselec(n).misround(1); % Get best model misfit
+                    end
+                    names=fieldnames(dispselec); % Get field names
+                    cellData=cellfun(@(f){vertcat(dispselec.(f))},names); % Collect field data into a cell array
+                    dispselec=cell2struct(cellData,names); % Convert the cell array into a structure
+                    ok{ip}=dispselec.modok; % Get selected models
+                    misround(:,ip)=dispselec.misround; % Get model misfits
+                end
+                export_gpdc=10; % Success !
+            catch
+                export_gpdc=export_gpdc+1; % Try again
             end
-            names=fieldnames(dispselec); % Get field names
-            cellData=cellfun(@(f){vertcat(dispselec.(f))},names); % Collect field data into a cell array
-            dispselec=cell2struct(cellData,names); % Convert the cell array into a structure
-            ok{ip}=dispselec.modok; % Get selected models
-            misround(:,ip)=dispselec.misround; % Get model misfits
+            delete(fullfile(dir_rep_ind,'best*.txt')); % Delete temp file
         end
-        delete(fullfile(dir_rep_ind,'best*.txt')); % Delete temp file
+        if export_gpdc==5 % Only 5 tries, after that go to next Xmid
+            fprintf('\n  Unable to read reports after 5 attempts - Go to next Xmid\n\n');
+            delete(fullfile(dir_rep_ind,'*.report')); % Delete temp file
+            continue
+        end
         
         % Find best models indexes sorted by decreasing misfit
         bestrun=find(bestmis(:,1)==min(bestmis(:,1)),1,'first'); % Get best run nb to get best model
