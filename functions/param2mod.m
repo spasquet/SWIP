@@ -1,6 +1,6 @@
 function [dpMIN,dpMAX]=param2mod(nameparam)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.05.03
 % Read .param dinver file
 % [dpMIN,dpMAX]=param2mod(nameparam)
 
@@ -46,6 +46,6 @@ dpMAX = sum(dhMax(1:end-1));
 
 fclose(fid0);
 
-unix(['rm -rf ',fullfile(dir_param,'contents.xml')]);
+delete(fullfile(dir_param,'contents.xml'));
 
 end

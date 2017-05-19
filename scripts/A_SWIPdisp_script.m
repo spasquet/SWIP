@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V17.04.17
+%%% S. Pasquet - V17.05.10
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save figures of dispersion, 
 %%% spectrograms and shot gathers
@@ -113,7 +113,7 @@ end
 % Check if targets already exist when dispersion curves plots are active
 if (plotpckdisp==1 || plot1dobs==1 || plot2dobs==1) && target==0
     targstruct=dir(fullfile(dir_targ,'*.target'));
-    if isempty(targstruct)==0
+    if isempty(targstruct)==1
         fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
         fprintf('\n       No target files in file.targ');
         fprintf('\n   No dispersion curves will be plotted');
@@ -847,7 +847,10 @@ while i<length(Xmidselec)
         % Read dispersion .dsp file
         if pick>0 || plotdisp==1 || plotpckdisp==1
             if exist(dspfile_sum,'file')==2
-                [dspmat,f,v]=dsp2dat(dspfile_sum,flip,0);
+                dspmat=[];
+                while isempty(dspmat)==1
+                    [dspmat,f,v]=dsp2dat(dspfile_sum,flip,0);
+                end
                 if pick==1 || pick==2
                     % Downsample dispersion image to dvmin m/s in velocity to speed up display when picking
                     % (also decrease min. resolution in velocity of dispersion curve)

@@ -7,7 +7,7 @@ clear all; clc; close all;
 % START OF INITIALIZATION
 
 profilename='swip_profile'; % Name of the profile
-% newrectime=1; % New recording length (add zeros at the end of each trace)
+newrectime=0.8; % New recording length (add zeros at the end of each trace)
 
 % END OF INITIALIZATION
 %-----------------------%
@@ -44,6 +44,13 @@ end
 xsca=1; xshift=0; zshift=0;
 rawsufile=fullfile(dir_start,[profilename,'.raw.su']);
 sufile=fullfile(dir_start,[profilename,'.su']);
+
+if exist(sufile,'file')==2
+    answer1=inputdlg({'New file name'},'File already exists',1,{profilename});
+    profilename=answer1{1};
+    rawsufile=fullfile(dir_start,[profilename,'.raw.su']);
+    sufile=fullfile(dir_start,[profilename,'.su']);
+end
 
 cd(dir_seg);
 if nseg2>0
@@ -85,7 +92,6 @@ else
     delete('*.su');
 end
 cd(dir_start);
-
 fprintf('\n   Extract original acquisition settings from SEG2(Y) file(s)\n');
 % Get acquisition settings
 [~,hdrs]=unix(['sugethw < ',rawsufile,' key=fldr,delrt,dt,ns,sx,gx,tracf output=geom']);
@@ -94,6 +100,12 @@ fldrall=hdrs(:,1);
 fldr_raw=unique(fldrall);
 if length(fldr_raw)==nfile
     fldr=fldr_raw;
+else
+    fldr_pb = fldrall(find(ismember(fldrall,fldr),1,'last'));
+    fprintf(['\n   Acquisition parameters changed at shot #' num2str(fldr_pb)]);
+    fprintf('\n   Run seg2su separately for shots recorded with identical parameters\n');
+    fprintf('\n   Run sumerge to merge SU files\n');
+    return
 end
 NSX=length(fldr);
 sxall=hdrs(:,5);
@@ -154,8 +166,14 @@ if length(fldr_raw)==nfile
             if nroll==1
                 if i==NSX
                     nsx(nroll)=i;
+                    ngx(nroll)=length(gx{i});
+                    gx1(nroll)=gx{i}(1);
+                    dgx(nroll)=median(diff(gx{i-1}));
                 else
                     nsx(nroll)=i-1;
+                    ngx(nroll)=length(gx{i-1});
+                    gx1(nroll)=gx{i-1}(1);
+                    dgx(nroll)=median(diff(gx{i-1}));
                 end
                 sx1(nroll)=sx(1);
                 dsx(nroll)=median(diff(sx(1:nsx(nroll))));
@@ -171,9 +189,6 @@ if length(fldr_raw)==nfile
             fprintf(['\n   ',num2str(nsx(nroll)),' shot(s)']);
             fprintf(['\n   First shot at ',num2str(sx1(nroll)),' m']);
             fprintf(['\n   dsx = ',num2str(dsx(nroll)),' m']);
-            ngx(nroll)=length(gx{i-1});
-            gx1(nroll)=gx{i-1}(1);
-            dgx(nroll)=median(diff(gx{i-1}));
             fprintf(['\n   ',num2str(ngx(nroll)),' trace(s)']);
             fprintf(['\n   First trace at ',num2str(gx1(nroll)),' m']);
             fprintf(['\n   dgx = ',num2str(dgx(nroll)),' m\n']);
@@ -291,7 +306,7 @@ end
 
 % Import topography
 choice = questdlg('Import topography?', ...
-    '', 'No','Yes','No');
+    '', 'Yes','No','Yes');
 % Handle response
 switch choice
     case 'No'

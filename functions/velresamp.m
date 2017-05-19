@@ -1,6 +1,6 @@
 function [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
-%%% S. Pasquet - V17.01.24
+%%% S. Pasquet - V17.05.10
 % Resample velocity model according to another one
 % [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
@@ -22,9 +22,15 @@ if nlay<length(zin)
     vpoutmin=vpout;
     vpoutmax=vpout;
     for ll=1:nlay
-        vpout(ll)=mean(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
-        vpoutmin(ll)=min(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
-        vpoutmax(ll)=max(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
+        if isempty(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)))==1 && ll>1
+            vpout(ll)=vpout(ll-1);
+            vpoutmin(ll)=vpoutmin(ll-1);
+            vpoutmax(ll)=vpoutmax(ll-1);
+        else
+            vpout(ll)=mean(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
+            vpoutmin(ll)=min(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
+            vpoutmax(ll)=max(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
+        end
         if isnan(vpout(ll))==1
             vpout(ll)=vpout(ll-1);
             vpoutmin(ll)=vpoutmin(ll-1);

@@ -1,6 +1,6 @@
 function lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V17.05.09
 % Convert .pvc ASCII file in .target dinver file
 % lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
@@ -42,6 +42,7 @@ for ip=1:nmode
     m=str2double(pvcfile(end-4)); % Mode number
     Vprev=load(fullfile(dir_pick,pvcfile));
     % Resample in lambda or frequency
+    Vprev(Vprev(:,1)==0,:)=[];
     [freqresamp,vresamp,deltaresamp]=resampvel(Vprev(:,1),Vprev(:,2),...
         Vprev(:,3),resampvec,sampling);
     vresamp=vresamp(freqresamp>flim);

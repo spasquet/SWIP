@@ -1,7 +1,7 @@
 function [fig,han1,han2,han3,c]=plot_img(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 
-%%% S. Pasquet - V17.04.03
+%%% S. Pasquet - V17.05.15
 %
 % plot_img(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,...
 %    xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
@@ -64,7 +64,11 @@ if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==1
 elseif exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==2
     han1=contourf(X,Y,Z,isolevels,'edgecolor','none');
 else
-    han1=imagescnan(X,Y,Z);
+    if isempty(Z(isnan(Z)))==1
+        han1=imagesc(X,Y,Z);
+    else
+        han1=imagescnan(X,Y,Z);
+    end
 end
 hold on
 grid off; view(0,90);
