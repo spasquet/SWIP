@@ -130,7 +130,7 @@ end
 if exist('zlimit','var')==1 && isempty(zlimit)~=1
     caxis(zlimit);
 else
-    caxis([min(min(Z)) max(max(Z))]);
+    caxis([min(Z(:)) max(Z(:))]);
 end
 
 % Plot colorbar

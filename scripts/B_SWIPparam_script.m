@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V17.05.25
 %%% SWIPparam.m creates the parameterization file required to invert with
 %%% module C the dispersion curves picked in module A
 %%% It can create either a single parameterization file for all the profile
@@ -43,8 +43,6 @@ else % Semi-automatic parameterization
     nWmin=stackdisp.nWmin;
     nWmax=stackdisp.nWmax;
     xsca=pomega.xsca;
-    xmin=plotopt.xmin;
-    xmax=plotopt.xmax;
     XmidT=xmidparam.XmidT; % Xmid positions
     Xlength=xmidparam.Xlength; % Number of Xmids
     xmidformat=stackdisp.xmidformat; % Format Xmid with correct number of decimals
@@ -82,7 +80,7 @@ else % Semi-automatic parameterization
     % Plot refraction model resampled along Xmids
     if plot2dVP==1
         f1=plot_img(1,XI,ZI,VpI,haxby(32),1,0,1,14,'X (m)',...
-            'Altitude (m)','Vp (m/s)',[xmin xmax],[floor(min(depth)/10)*10 ...
+            'Altitude (m)','Vp (m/s)',[],[floor(min(depth)/10)*10 ...
             ceil(max(depth)/10)*10],[],[],[],[],[],[],[],[0 0 24 12],[],1);
     end
     
@@ -183,7 +181,7 @@ else % Semi-automatic parameterization
     % Plot refraction model resampled along Xmids and parameterization
     if plot2dVP==1
         f2=plot_img(2,XmidT,depth2,vpmat,haxby(32),1,0,1,14,'X (m)',...
-            'Altitude (m)','Vp (m/s)',[xmin xmax],[floor(min(depth)/10)*10 ...
+            'Altitude (m)','Vp (m/s)',[],[floor(min(depth)/10)*10 ...
             ceil(max(depth)/10)*10],[],[],[],[],[],[],[],[25 0 24 12],[],1);
     end
 end

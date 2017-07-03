@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V17.06.26
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save figures of dispersion, 
 %%% spectrograms and shot gathers
@@ -54,11 +54,11 @@ tmax2       = 1;          % Mute after tmax2 at largest offset (s) (used if mute
 
 %%% Dispersion picking settings (used if pick=1 or pick=2)
 pick        = 0;          % Pick dispersion: manual (=1), auto (experimental) (=2) or not (=0)
-mappick     = parula(39); % Colormap for picked dispersion image
-mappicklog  = 0;          % Pseudo-log colorscale for dispersion (=1) or linear (=0)
+mappick     = polarmap(39); % Colormap for picked dispersion image
+mappicksat  = 0.75;       % Colormap saturation for picked dispersion image
 dvmin       = 2;          % Min. phase velocity sampling (m/s)
 modeinit    = 0;          % First picked propagation mode (0 = fundamental)
-pickstyle   = 1;          % Semi-automatic picking (=1) or manual (=0)
+pickstyle   = 1;          % Assisted picking (=1) or manual (=0)
 smoothpick  = 1;          % Smooth picking (=1) or not (=0)
 
 %%% Dispersion curves sampling settings (used if target=1)
@@ -68,11 +68,11 @@ maxmodeinv  = [];         % Max. mode number in target file for inversion (empty
 sampling    = 1;          % Sampling in wavelength (1) or frequency (0)
 resampvec   = (1:1:50);   % Resampling vector (wavelength [m] or frequency [Hz])
 freqlim     = 1;          % Min. frequency defined with amplitude threshold (=1) or not (=0)
-specampmin  = 0.025;      % Amplitude threshold (between 0 and 1) (used if freqlim=1)
+specampmin  = 0.01;       % Amplitude threshold (between 0 and 1) (used if freqlim=1)
 
 %%% Uncertainty settings (used if target=1)
 err         = 1;          % No uncertainty (=0), Lorentz uncertainty (=1) or percentage uncertainty (=2)
-nWfac       = 1;          % Adapt Lorentz uncertainty with nW=nWfac*mean([nWmin,nWmax]) (used if err=1)
+nWfac       = [];          % Adapt Lorentz uncertainty with nW=nWfac*mean([nWmin,nWmax]) (used if err=1)
 minerrvel   = 15;         % Min. vel. uncertainty for Lorentz (m/s) (used if err=1)
 maxerrrat   = 0.5;        % Max. vel. uncertainty ratio for Lorentz (used if err=1)
 sigma       = 15;         % Percentage uncertainty (%) (used if err=2)
@@ -85,7 +85,8 @@ plotpckdisp = 1;          % Save stacked dispersion images with picked curves (=
 % plotsingle  = 1;          % Save single images (=1) or not (=0)
 % plotstkdisp = 1;          % Save intermediate stacked dispersion images (=1) or not (=0)
 % plot1dobs   = 1;          % Plot picked dispersion on 1D single graph (=1) or not (=0)
-plot2dobs   = 1;          % Plot picked dispersion on 2D pseudo-section (=1) or not (=0)
+plot2dobs   = 1;          % Plot 2D pseudo-section of picked dispersion (=1) or not (=0)
+% plot2demp   = 1;          % Plot empirical 2D Vs section (=1) or not (=0)
 showplot    = 0;          % Display plots before saving (=1) or not (=0)
 
 %%% Figure display and output settings
@@ -95,7 +96,8 @@ fs          = 20;         % Fig. font size
 cbpos       = 1;          % Colorbar on the right (=1) or at the bottom (=2)
 
 %%% Plot settings for dispersion, spectrograms and shot gathers 
-Dlogscale   = 0;          % Pseudo-log colorscale for dispersion (=1) or linear (=0)
+map0        = bone(39);   % Colormap for dispersion images and spectrograms
+map0sat     = 0.5;        % Colormap saturation for dispersion image
 Flogscale   = 0;          % Logscale frequency axis (=1) or linear (=0)
 axetop      = 0;          % Plot Xaxis on top (=1) or bottom (=0)
 axerev      = 0;          % Yaxis pointing down (=1) or up (=0)
@@ -106,7 +108,6 @@ eb          = 1;          % Plot dispersion curves with errorbars (=1) or not (=
 pickcol1    = 'w';        % Picks color for even (0, 2,...) modes number (cf ColorSpec)
 pickcol2    = 'w';        % Picks color for odd (1, 3,...) modes number (cf ColorSpec)
 
-map0        = bone(39);             % Colormap for dispersion images and spectrograms
 fMIN        = 0;                    % Min. frequency to display (Hz)
 fMAX        = fmax;                 % Max. frequency to display (Hz)
 % fticks      = (fMIN:20:fMAX);       % Frequency ticks (Hz)
@@ -117,7 +118,7 @@ tMIN        = [];                   % Min. time to display (ms)
 tMAX        = [];                   % Max. time to display (ms)
 % tticks      = (tMIN:100:tMAX);      % Time ticks (ms)
 
-%%% Plot settings for phase velocity pseudo-section
+%%% Plot settings for phase velocity pseudo-section (used if plot2dobs=1)
 map1        = haxby(32);            % Colormap for phase velocity
 xMIN        = [];                   % Min. X (m)
 xMAX        = [];                   % Max. X (m)
@@ -129,6 +130,19 @@ vphMIN      = [];                   % Min. phase velocity (m/s)
 vphMAX      = [];                   % Max. phase velocity (m/s)
 % vphticks    = (vphMIN:200:vphMAX);  % Phase velocity ticks (m/s)
 vphISO      = [];                   % Phase velocity isocontours (m/s)
+
+%%% Empirical 2D Vs section settings (used if plot2demp=1)
+depth_fac   = 2;                    % Depth conversion factor (wavelength/depth_fac)
+vel_fac     = 0.9;                  % Velocity conversion factor (phase velocity/vel_fac)
+vertex      = 1;                    % Vertical exageration
+map5        = haxby(32);            % Colormap for Vs
+zMIN        = [];                   % Min. altitude (m) 
+zMAX        = [];                   % Max. altitude (m) 
+% zticks      = (zMIN:20:zMAX);       % Altitude ticks (m) 
+vsMIN       = [];                   % Min. Vs (m/s) 
+vsMAX       = [];                   % Max. Vs (m/s) 
+% vsticks     = (vsMIN:250:vsMAX);    % Vs ticks (m/s) 
+vsISO       = [];                   % Vs isocontours (m/s)
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%

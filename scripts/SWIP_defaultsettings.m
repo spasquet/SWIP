@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% Default settings
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V17.06.12
 
 matrelease=version('-release'); % Get matlab release
 
@@ -120,7 +120,11 @@ if exist('pick','var')==0 || isempty(pick)==1
 end
 % Colormap for picked dispersion image
 if exist('mappick','var')==0 || isempty(mappick)==1
-    mappick=parula(39);
+    mappick=polarmap(39);
+end
+% Colormap saturation for picked dispersion image
+if exist('mappicksat','var')==0 || isempty(mappicksat)==1
+    mappicksat=0.75;
 end
 % Log colorscale for dispersion (=1) or linear (=0)
 if exist('mappicklog','var')==0 || isempty(mappicklog)==1
@@ -162,7 +166,7 @@ if exist('sampling','var')==0 || isempty(sampling)==1
 end
 % Resampling vector (wavelength [m] or frequency [Hz])
 if exist('resampvec','var')==0 || isempty(resampvec)==1
-    resampvec=(1:1:50);
+    resampvec=[];
 end
 % Freq. low cut: user defined (=0) or amplitude threshold (=1)
 if exist('freqlim','var')==0 || isempty(freqlim)==1
@@ -174,7 +178,7 @@ if exist('fminpick','var')==0 || isempty(fminpick)==1
 end
 % Amplitude threshold (between 0 and 1) (used if freqlim=1)
 if exist('specampmin','var')==0 || isempty(specampmin)==1
-    specampmin=0.025;
+    specampmin=0.01;
 end
 
 % Error settings (used if target=1)
@@ -184,7 +188,7 @@ if exist('err','var')==0 || isempty(err)==1
 end
 % Adapt Lorentz error such as nW=nWfac*mean([nWmin,nWmax]) (used if err=1)
 if exist('nWfac','var')==0 || isempty(nWfac)==1
-    nWfac=1;
+    nWfac=[];
 end
 % Min. vel. error for Lorentz (m/s) (used if err=1)
 if exist('minerrvel','var')==0 || isempty(minerrvel)==1
@@ -232,6 +236,10 @@ end
 if exist('plot2dobs','var')==0 || isempty(plot2dobs)==1
     plot2dobs=0;
 end
+% Plot empirical 2D Vs section (=1) or not (=0)
+if exist('plot2demp','var')==0 || isempty(plot2demp)==1
+    plot2demp=0;
+end
 % Show images before saving (=1) or not (=0)
 if exist('showplot','var')==0 || isempty(showplot)==1
     showplot=0;
@@ -271,7 +279,6 @@ end
 if exist('depthtitle','var')==0 || isempty(depthtitle)==1
     depthtitle='Depth (m)';
 end
-
 
 %%% Dispersion image, spectrogram and seismogram settings
 % Log colorscale for dispersion (=1) or linear (=0)
@@ -319,6 +326,10 @@ end
 % Colormap for saved dispersion images and spectrograms
 if exist('map0','var')==0 || isempty(map0)==1
     map0=bone(39);
+end
+% Colormap saturation for dispersion image
+if exist('map0sat','var')==0 || isempty(map0sat)==1
+    map0sat=0.5;
 end
 % Min. frequency to display (Hz)
 if (exist('fMIN','var')==0 || isempty(fMIN)==1) || (exist('fMAX','var')==0 || isempty(fMAX)==1)
@@ -401,6 +412,16 @@ end
 % Phase velocity isocontours (m/s)
 if exist('vphISO','var')==0 || isempty(vphISO)==1
     vphISO=[];
+end
+
+% Empirical 2D Vs section settings
+% Depth conversion factor (wavelength/depth_fac)
+if exist('depth_fac','var')==0 || isempty(depth_fac)==1
+    depth_fac   = 2;
+end
+% Velocity conversion factor (phase velocity/vel_fac)
+if exist('vel_fac','var')==0 || isempty(vel_fac)==1
+    vel_fac   = 0.9;
 end
 
 %% B_SWIPparam settings

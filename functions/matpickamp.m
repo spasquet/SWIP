@@ -1,7 +1,7 @@
 function [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,pickstyle,modeinit,...
     err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
 
-%%% S. Pasquet - V17.01.16
+%%% S. Pasquet - V17.05.31
 % Pick amplitudes of dispersion image
 % [fsave,Vsave,deltacsave,modenext,closefig,xmidprev]=matpickamp(dspmat,f,v,filepick,...
 %    pickstyle,modeinit,err,smoothpick,nW,dx,fac,maxerr,minvelerr,sigma)
@@ -18,14 +18,17 @@ if exist(filepick,'file')==2
     Vprev=load(filepick);
     Vi=interp1qr(Vprev(:,1),Vprev(:,2),f')';
     deltac=interp1qr(Vprev(:,1),Vprev(:,3),f')';
-%     vmaxamp=Vi(isnan(Vi)==0);
-%     fmaxamp=f(isnan(Vi)==0);
+
     fmaxamp=Vprev(:,1);
     vmaxamp=Vprev(:,2);
     deltacamp=Vprev(:,3);
     i=length(Vi);
     hold on;
-    h0=plot(fmaxamp,vmaxamp,'w.');
+    if length(vmaxamp)>1 && pickstyle==1
+        h0=plot(f,Vi,'w.');
+    else
+        h0=plot(fmaxamp,vmaxamp,'w.');
+    end
 else
     Vi=[]; deltac=[];  fmaxamp=[]; vmaxamp=[]; deltacamp=[];
 end
@@ -40,11 +43,10 @@ fprintf('\n  Z : Discard current picks and go to previous Xmid (keep previous pi
 fprintf('\n  N : Discard current picks and go to next (higher) mode (keep previous picks)');
 fprintf('\n  P : Discard current picks and go to previous (lower) mode (keep previous picks)');
 fprintf('\n  X : Discard current picks and stop script (keep previous picks)');
-fprintf('\n  M : Switch between manual and semi-automatic picking');
+fprintf('\n  M : Switch between manual and assisted picking');
 fprintf('\n  S : Switch between smooth and regular picking');
 fprintf('\n  D : Delete one or several points');
 fprintf('\n  R : Reset all picks');
-fprintf('\n  E : Change error style (no error, percentage or lorentz)');
 fprintf('\n  C : Open colormap editor\n');
 
 while button==1
@@ -233,6 +235,10 @@ while button==1
             if isempty(indselec)==0
                 if pickstyle==1
                     Vi(indselec)=NaN;
+                    indmaxamp=ismember(fmaxamp,f(isnan(Vi)==0))==0;
+                    vmaxamp(indmaxamp)=[];
+                    deltacamp(indmaxamp)=[];
+                    fmaxamp(indmaxamp)=[];
                 else
                     vmaxamp(indselec)=NaN;
                     fmaxamp(indselec)=NaN;
@@ -244,13 +250,6 @@ while button==1
             end
         end
         button=1; fprintf('\n  Back to picking\n');
-%         if isempty(f(isnan(Vi)~=1))==0 && length(f(isnan(Vi)~=1))>1
-%             vmaxamp=interp1(f(isnan(Vi)~=1),Vi(isnan(Vi)~=1),fmaxamp,'linear');
-%         else
-%             vmaxamp=fmaxamp*NaN;
-%         end
-%         vmaxamp=vmaxamp(isnan(vmaxamp)~=1);
-%         fmaxamp=fmaxamp(isnan(vmaxamp)~=1);
         continue
     elseif button==114 % Press R to reset picks
         fprintf('\n  Reset all picks\n');
@@ -274,6 +273,10 @@ while button==1
         wl=1;
     end
     if i>1
+        if Fpick>max(f) || Fpick<min(f)
+            i=i-1; button=1;
+            continue
+        end
         [vmaxamp(end+1),fmaxamp(end+1)]=findpeak(dspmat,f,v,Fpick,Vpick,wl);
         if ismember(fmaxamp(end),fmaxamp(1:end-1))==1
             vmaxamp(fmaxamp==fmaxamp(end))=vmaxamp(end);

@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V17.05.10
+%%% S. Pasquet - V17.06.26
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save figures of dispersion, 
 %%% spectrograms and shot gathers
@@ -219,8 +219,8 @@ if calc~=2 % From SU file or existing subproject
     if calc==1 % From SU file
         xmin=min(Gxsing); % Get starting X coordinate (m)
         xmax=max(Gxsing); % Get ending X coordinate (m)
-        winsize=nWvec; % Window sizes
-        maxwinsize=(winsize-1)*dx; % Max. window size
+        winsize=nWvec; % Window sizes (no. of geophones)
+        maxwinsize=(winsize-1)*dx; % Max. window size (m)
         nwin=length(winsize); % Number of windows
         if mod(nWmin,2)==1 % Uneven number of traces
             XmidT=Gxsing(1+(nWmin-1)/2:dW:end-(nWmin-1)/2);
@@ -404,6 +404,16 @@ end
 % Initialization of the maximum number of modes
 if isempty(maxmodeinv)==1
     maxmodeinv=10;
+end
+
+% Default resampling vector (power law depending on window size)
+if isempty(resampvec)==1
+   resampvec = (1:1:max(maxwinsize)*10.^(1./sqrt(0.5*max(maxwinsize))));
+end
+
+% Default error scaling factor (power law depending on window size)
+if isempty(nWfac)==1
+   nWfac = 10.^(1./sqrt(max(maxwinsize)));
 end
 
 % Initialization of phase velocity pseudo-section
@@ -639,7 +649,7 @@ while i<length(Xmidselec)
                                     [fMIN fMAX],[VphMIN VphMAX],[1 length(map0)],fticks,Vphticks,...
                                     [],[],flimsing,[],[0 0 24 18],[]);
                             end
-                            hold on
+                            hold on; cm_saturation(map0sat);
                             if Flogscale==1
                                 set(gca,'xscale','log');
                             end
@@ -740,7 +750,7 @@ while i<length(Xmidselec)
                                     '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
                                     [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                             end
-                            hold on
+                            hold on; cm_saturation(map0sat);
                             if Flogscale==1
                                 set(gca,'xscale','log');
                             end
@@ -893,7 +903,7 @@ while i<length(Xmidselec)
                     '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
                     [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             end
-            hold on
+            hold on; cm_saturation(map0sat);
             if Flogscale==1
                 set(gca,'xscale','log');
             end
@@ -919,7 +929,7 @@ while i<length(Xmidselec)
                         '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
                         [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                 end
-                hold on
+                hold on; cm_saturation(map0sat);
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
@@ -1046,7 +1056,7 @@ while i<length(Xmidselec)
                         '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
                         [1 length(mappick)],fticks,Vphticks,[],[],flimplot,[],[],[],[],0);
                 end
-                hold on
+                hold on; cm_saturation(mappicksat);
                 if plotlamlim==1 && sampling==1
                     dashline(f,f*max(resampvec),3,3,3,3,'color',[0 0 0],'linewidth',5);
                 end
@@ -1091,7 +1101,7 @@ while i<length(Xmidselec)
                         '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
                         [1 length(mappick)],fticks,Vphticks,[],[],flim(ix),[],[],[],[],0);
                 end
-                hold on
+                hold on; cm_saturation(mappicksat);
                 if plotlamlim==1 && sampling==1
                     dashline(f,f*max(resampvec),3,3,3,3,'color',[0 0 0],'linewidth',5);
                 end
@@ -1146,37 +1156,37 @@ while i<length(Xmidselec)
             pvcstructauto=dir(fullfile(dir_pick,['*.M',num2str(modeinit),'.pvc']));
             if length(pvcstructauto)<1
                 fprintf('\n  Autopick requires at least one manually picked file\n');
-                continue
-            end
-            % Read existing dispersion curves
-            if i>1 && exist('pvcfileauto','var')==1
-                filepickprev=fullfile(dir_pick,[num2str(XmidT(Xmidselec(i-1)),...
-                    xmidformat),'.M',num2str(modeinit),'.pvc']);
-                if exist(filepick,'file')==2
-                    pvcfileauto=filepick;
-                elseif exist(filepickprev,'file')==2
-                    pvcfileauto=filepickprev;
-                end
             else
-                if exist(filepick,'file')==0
-                    [~,idx]=sort([pvcstructauto.datenum]);
-                    pvcfileauto=fullfile(dir_pick,pvcstructauto(idx(end)).name);
+                % Read existing dispersion curves
+                if i>1 && exist('pvcfileauto','var')==1
+                    filepickprev=fullfile(dir_pick,[num2str(XmidT(Xmidselec(i-1)),...
+                        xmidformat),'.M',num2str(modeinit),'.pvc']);
+                    if exist(filepick,'file')==2
+                        pvcfileauto=filepick;
+                    elseif exist(filepickprev,'file')==2
+                        pvcfileauto=filepickprev;
+                    end
                 else
-                    pvcfileauto=filepick;
+                    if exist(filepick,'file')==0
+                        [~,idx]=sort([pvcstructauto.datenum]);
+                        pvcfileauto=fullfile(dir_pick,pvcstructauto(idx(end)).name);
+                    else
+                        pvcfileauto=filepick;
+                    end
                 end
+                Vprevauto=load(pvcfileauto);
+                fpick=Vprevauto(:,1);
+                vpick=Vprevauto(:,2);
+                wl=Vprevauto(:,3);
+                % Perform autopick, median filter and moving average
+                [vpickauto,fpickauto]=findpeak(dspmat2,f,v2,fpick,vpick,1.5*wl);
+                vpickauto=median_filt(vpickauto,5,1,length(vpickauto));
+                vpickauto=mov_aver(vpickauto',3,1,length(vpickauto));
+                deltacauto=lorentzerr(vpickauto',vpickauto'./fpickauto,mean([nWmin,nWmax]),dx,...
+                    nWfac,maxerrrat,minerrvel);
+                dlmwrite(filepick,[fpickauto;vpickauto';deltacauto']','delimiter','\t','precision','%.6f');
+                fprintf(['\n  Automatic pick for mode ',num2str(modeinit),'\n']);
             end
-            Vprevauto=load(pvcfileauto);
-            fpick=Vprevauto(:,1);
-            vpick=Vprevauto(:,2);
-            wl=Vprevauto(:,3);
-            % Perform autopick, median filter and moving average
-            [vpickauto,fpickauto]=findpeak(dspmat2,f,v2,fpick,vpick,1.5*wl);
-            vpickauto=median_filt(vpickauto,5,1,length(vpickauto));
-            vpickauto=mov_aver(vpickauto',3,1,length(vpickauto));
-            deltacauto=lorentzerr(vpickauto',vpickauto'./fpickauto,mean([nWmin,nWmax]),dx,...
-                nWfac,maxerrrat,minerrvel);
-            dlmwrite(filepick,[fpickauto;vpickauto';deltacauto']','delimiter','\t','precision','%.6f');
-            fprintf(['\n  Automatic pick for mode ',num2str(modeinit),'\n']);
         end
         
         %% %% %%
@@ -1436,7 +1446,7 @@ while i<length(Xmidselec)
         %%%%% Plot and save picked dispersion image %%%%%
         
         if  plotpckdisp==1 && npvc>0
-            fprintf('\n  Plot and save picked dispersion images\n');
+            fprintf('\n  Plot and save stacked dispersion image with picked dispersion\n');
             if exist(dspfile_sum,'file')==2
                 if Dlogscale==0
                     fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
@@ -1457,7 +1467,7 @@ while i<length(Xmidselec)
                     [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                     [],[],[0 0 24 18],[]);
             end
-            hold on
+            hold on; cm_saturation(map0sat);
             hh=dashline(f,f,3,3,3,3,'color',[0 0 1],'linewidth',5);
             set(hh,'visible','off');
             if plotlamlim==1 && sampling==1
@@ -1514,7 +1524,7 @@ while i<length(Xmidselec)
                        [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                        [],[],[0 0 24 18],[]);
                end
-               hold on
+               hold on; cm_saturation(map0sat);
                hh=dashline(f_new,f_new,3,3,3,3,'color',[0 0 1],'linewidth',5);
                set(hh,'visible','off');
                if plotlamlim==1 && sampling==1
@@ -1643,7 +1653,6 @@ if plot2dobs==1 && Xlength>1
                 lamtitle,'Vph_{obs} (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
                 [vphMIN vphMAX],xticks,lticks,vphticks,[],[],vphISO,[0 0 24 12],[],1,0);
         end
-        szfig1=get(f1,'Position');
         file1=fullfile(dir_img,['Vphobs.M',num2str(ip-1),'.',imgform]);
         save_fig(f1,file1,imgform,imgres,1);
         if showplot==0
@@ -1654,6 +1663,41 @@ if plot2dobs==1 && Xlength>1
     end
     if flagprint==0
         fprintf('\n  No dispersion to plot - Re-run with target=1\n');
+    end
+end
+
+%% %% %%
+
+%%%%%% Plot and save empirical 2D Vs section %%%%%%
+
+if plot2demp==1 && Xlength>1 && sampling==1 && sum(sum(isnan(vph2dobs{1})))~=numel(vph2dobs{1})
+    fprintf('\n  Saving empirical 2D Vs section\n');
+    dz=mean(diff(resampvec/depth_fac));
+    depth=max(zround):-dz:min(zround)-max(resampvec/depth_fac); % Depth vector with topo
+    vs_emp=zeros(length(depth),Xlength);
+    
+    for i=1:Xlength
+        % Look for topo index
+        crit=abs(zround(i)-depth);
+        indi=find(crit==min(crit),1);
+        % Fill velocity matrix with average model
+        vs_emp(indi:indi+length(resampvec)-1,i)=vph2dobs{1}(:,i)/vel_fac;
+        
+        indnan=find(isnan(vs_emp(indi:indi+length(resampvec)-1,i))==0,1,'first');
+        vs_emp(indi:indi+indnan-1,i)=vs_emp(indi+indnan,i);
+    end
+    vs_emp(vs_emp==0)=NaN;
+    f1=plot_img(showplot,XmidT,depth,vs_emp,map5,1,0,cbpos,fs,'X (m)','Altitude (m)','Vs (m/s)',...
+        [xMIN xMAX],[zMIN zMAX],[vsMIN vsMAX],xticks,zticks,vsticks,[],[],vsISO,[0 0 24 12],[],1,vertex);
+    hold on
+    plot(acquiparam.topo(:,1),acquiparam.topo(:,2),'k-','linewidth',2);
+    
+    file1=fullfile(dir_img,['Vs_empirical.',imgform]);
+    save_fig(f1,file1,imgform,imgres,1);
+    if showplot==0
+        close(f1);
+    else
+        showplot=showplot+1;
     end
 end
 

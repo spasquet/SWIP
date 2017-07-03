@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.04.19
+%%% S. Pasquet - V17.05.25
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for 
@@ -901,7 +901,7 @@ for ix=Xmidselec
             layered(layered==0)=NaN;
             % Plot pseudo-section
             f0=plot_img(10,XmidT,depth,layered,haxby(32),1,0,1,fs/2.5,...
-                'X (m)','Z (m)','Vs (m/s)',[xmin xmax],...
+                'X (m)','Z (m)','Vs (m/s)',[],...
                 [floor(min(depth)/10)*10 ceil(max(depth)/10)*10],...
                 [min(min(layered)) max(max(layered))],[],[],[],[],[],[],[],[],1);
             set(gca,'YDir','normal');
