@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V20.02.17
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for
@@ -45,24 +45,23 @@ outpoints  = 0;          % No. of points allowed out of the error bars
 dz         = 0.2;        % Depth sampling (m)
 
 %%% Toggle plots
-plotinvres = 1;          % Save inversion results (=1) or not (=0) (!! time consuming !!)
+plotinvres = 0;          % Save inversion results (=1) or not (=0) (!! time consuming !!)
 plotparam  = 0;          % Save inversion parameters (=1) or not (=0) (!! time consuming !!)
 plot2dVS   = 1;          % Plot raw pseudo-2D Vs section during inversion (=1) or not (=0)
 showplot   = 0;          % Show plots before saving (=1) or not (=0)
 
 %%% Figure display and output settings
 imgform    = 'png';      % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
-imgres     = 500;        % Fig. resolution (dpi) when saving as raster
-fs         = 30;         % Fig. font size
+imgres     = 250;        % Fig. resolution (dpi) when saving as raster
+fs         = 20;         % Fig. font size
 concat     = 1;          % Save indiv. and merged figures (=2), merged figure (=1) or indiv. figures (=0)
 colnb      = 3;          % No. of columns when merging figures
 cbpos      = 2;          % Colorbar on the right (=1) or at the bottom (=2)
-
-%%% Calculated dispersion and models display settings (used if plotinvres=1 or plotparam=1)
 Clogscale  = 1;                   % Log colorscale (=1) or linear (=0) for misfit
 map2       = hsv(16);             % Colormap for accepted models misfit
 map3       = graycm(16);          % Colormap for rejected models misfit
 
+%%% Calculated dispersion curves display settings (used if plotinvres=1)
 Flogscale  = 0;                   % Logscale frequency axis (=1) or linear (=0)
 fMIN       = [];                  % Min. frequency (Hz)
 fMAX       = [];                  % Max. frequency (Hz)
@@ -72,7 +71,7 @@ VphMAX     = [];                  % Max. phase velocity (m/s)
 % Vphticks   = (VphMIN:500:VphMAX); % Phase velocity ticks (m/s)
 
 plot1dVS   = 1;                   % Plot final 1D Vs model (=1) or not (=0)
-modeltype  = 5;                   % 1D final Vs model to plot
+modeltype  = 3;                   % 1D final Vs model to plot
 %%% (1=best, 2=averaged layered, 3=average smooth, 4=weighted layered, 5=weighted smooth, 6=ridge)
 
 dpMIN      = [];                  % Min. depth (m)

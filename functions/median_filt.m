@@ -1,8 +1,16 @@
-function velout = median_filt(vel,npts,b1,b2)
+function velout = median_filt(vel,npts,b1,b2,test)
 
 %%% S. Pasquet - V16.11.18
 % Median filter
 % velout = median_filt(vel,npts,b1,b2)
+if nargin == 2
+    b1 = 1;
+    b2 = length(vel);
+end
+
+if nargin < 5
+    test = 0;
+end
 
 vel=vel';
 velout=vel;
@@ -16,5 +24,11 @@ if indend<length(vel)
     vel(indend+1:indend+fix(npts/2))=vel(indend);
 end
 for i=b1:b2
-    velout(i)=median(vel(i:i+npts-1));
+    if test == 0
+        velout(i)=median(vel(i:i+npts-1));
+    else
+        if abs(median(vel(i:i+npts-1))-velout(i))>abs(median(vel(i:i+npts-1))-std(vel(i:i+npts-1)))
+            velout(i)=median(vel(i:i+npts-1));
+        end
+    end
 end

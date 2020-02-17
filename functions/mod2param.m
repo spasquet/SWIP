@@ -310,8 +310,13 @@ for j=1:4
         else
             fprintf(fid0,'%s \n',['<isDepth>','false','</isDepth>']);
         end
-        fprintf(fid0,'%s \n',['<dhMin>',num2str(layer(i).thmin),'</dhMin>']);
-        fprintf(fid0,'%s \n',['<dhMax>',num2str(layer(i).thmax),'</dhMax>']);
+        if j==1 && Vplink(i) == 0
+            fprintf(fid0,'%s \n',['<dhMin>',num2str((layer(i).thmin + 2*layer(i).thmax)/3),'</dhMin>']);
+            fprintf(fid0,'%s \n',['<dhMax>',num2str((layer(i).thmin + 2*layer(i).thmax)/3),'</dhMax>']);
+        else
+            fprintf(fid0,'%s \n',['<dhMin>',num2str(layer(i).thmin),'</dhMin>']);
+            fprintf(fid0,'%s \n',['<dhMax>',num2str(layer(i).thmax),'</dhMax>']);
+        end
         fprintf(fid0,'%s \n','</ParamLayer>');
     end
     fprintf(fid0,'%s \n','</ParamProfile>');

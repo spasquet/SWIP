@@ -14,6 +14,7 @@ else
     fig=figure;
 end
 set(fig,'Units','centimeters');
+grid on;
 
 if exist('fs','var')==1 && isempty(fs)~=1
     set(fig,'DefaultTextFontSize',fs,'DefaultAxesFontSize',fs);
@@ -69,8 +70,8 @@ seismomat = seismomat*dx;
 seismomat = seismomat*scal;
 
 if clip==1
-   seismomat(seismomat>dx)=dx; 
-   seismomat(seismomat<-dx)=-dx;
+   seismomat(seismomat>dx/1.5)=dx/1.5; 
+   seismomat(seismomat<-dx/1.5)=-dx/1.5;
 end
 
 % set display range
@@ -94,8 +95,19 @@ for i=1:nx
         tr=seismomat(:,i); 	% --- one scale for all section
         s = sign(tr) ;
         i1= find( s(1:nt-1) ~= s(2:nt) );	% zero crossing points
+        if isempty(i1)
+            if isempty(find(s>0, 1))
+                i1 = 1;
+            else
+                i1 = nt-1;
+            end
+        end
         
-        zadd = i1 + tr(i1) ./ (tr(i1) - tr(i1+1)); %locations with 0 amplitudes
+        try
+            zadd = i1 + tr(i1) ./ (tr(i1) - tr(i1+1)); %locations with 0 amplitudes
+        catch
+            keyboard
+        end
         aadd = zeros(size(zadd));
         
         [zpos] = find(tr >0);
@@ -107,7 +119,11 @@ for i=1:nx
         if tr(1)>0
             a0=0; z0=1.00;
         else
+            try
             a0=0; z0=zadd(1);
+            catch
+                keyboard
+            end
         end;
         if tr(nt)>0
             a1=0; z1=nt;

@@ -17,34 +17,11 @@
 \def\MATLAB{\textbf{MATLAB}}
 \def\Cygwin{\textbf{Cygwin}}
 
-\title{\Huge{\textbf{SWIP User's Guide}}}
+\title{\vspace{5cm}\Huge{\textbf{SWIP User's Guide}}}
 \author{\Large{Sylvain Pasquet} (\url{pasquet.syl@gmail.com})}
 
-\date{\LARGE{Version 1.5: April 2017}\\[2ex]
-\large\url{https://github.com/SWIPdev/SWIP/releases}\\
-\vspace{2.5cm}
-\large{The Surface-Wave dispersion Inversion and Profiling software is supported by:\\
-\vspace{1cm}
-\textbf{University of Wyoming}\\
-Department of Geology and Geophysics\\
-Wyoming Center for Environmental Hydrology and Geophysics\\
-\bigskip
-\includegraphics[scale=0.04]{./figures/logo_UW_brown_2L.png}
-\hspace{0.5cm}
-\includegraphics[scale=0.05]{./figures/logo_dept_geol_geophy.png}
-\hspace{0.5cm}
-\includegraphics[scale=0.21]{./figures/logo_WyCEHG.png}\\
-\bigskip
-Laramie, WY 82070, USA\\
-\vspace{1.5cm}
-\textbf{Université Pierre et Marie Curie}\\
-UMR 7619 METIS\\
-\bigskip
-\includegraphics[scale=0.095]{./figures/logo_upmc.png}
-\hspace{0.5cm}
-\includegraphics[scale=0.125]{./figures/logo_metis.png}\\
-\bigskip
-75005 Paris, France}}
+\date{\LARGE{Version 2.0: February 2020}\\[2ex]
+\large\url{https://github.com/SWIPdev/SWIP/releases}}
 
 
 \begin{document}
@@ -54,22 +31,28 @@ UMR 7619 METIS\\
 \tableofcontents
 
 \newpage
+\section{Theoretical background}
+The theory behind {\SWIP} has been published in GEOPHYSICS in 2017. You can find the article in \verb|SWIP/docs/publi| or at \url{https://library.seg.org/doi/abs/10.1190/geo2016-0625.1}. Please use the following citation to refer to {\SWIP} in your publications:
+
+Pasquet, S., Bodet, L., 2017. SWIP: An integrated workflow for surface-wave dispersion inversion and profiling. Geophysics 82(6), WB47–WB61.
+
 \section{Quick installation instructions}
 If you have experience on how to install and compile codes under a Linux environment, follow these quick installation instructions. More detailed instructions can be found in §\ref{sec:detailedinstruc}.
 \begin{enumerate}[leftmargin=*]
 \setlength\itemsep{2ex}
-\item Install {\MATLAB} (version > 2014a might experience slow figure display and saving).
+\item Install {\MATLAB} (version <= 2014a recommended).
 \item Download {\SWIP} at \url{https://github.com/SWIPdev/SWIP/releases} and add the content of the archive to your {\MATLAB} path.
 \item (Windows only) Install {\Cygwin} (32 bits recommended, \url{http://www.cygwin.com/setup-x86.exe}).
 \item (Mac OS only) Install \textbf{Xcode}, \textbf{Homebrew} and \textbf{gnu-tar}.
-\item Install {\SeismicUnix} (\url{http://www.cwp.mines.edu/cwpcodes}).
-\item Install {\Geopsy} (\url{http://www.geopsy.org/download.php}).
+\item Install {\SeismicUnix} (\url{https://github.com/JohnWStockwellJr/SeisUnix}).
+\item Install {\Geopsy} - version 3.xx not supported yet (\url{http://www.geopsy.org/download.php}).
 \item Install {\SU} extra binaries located in \verb|SWIP/src|.
 \item (Optional) Install {\ImageMagick}, {\PDFjam}, and {\pdfcrop}.
 \end{enumerate}
 
 \section{How to use SWIP (quick start)}
-Here is a quick tutorial to run SWIP and reproduce the figures presented in a paper submitted to Geophysics in December 2016.
+Here is a quick tutorial to run {\SWIP} and reproduce the figures presented in the paper.
+
 \begin{enumerate}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item In \verb|your_working_folder|, extract the content of the \verb|yellowstone.tar.gz| file located in \verb|SWIP/docs/example|.
@@ -103,6 +86,8 @@ Here is a quick tutorial to run SWIP and reproduce the figures presented in a pa
 
 Whatever OS you are using, you will need the administrator/root rights to install {\SWIP}.
 
+Look at the \textbf{Known problems} section if you encounter issues during install.
+
 \subsection{First steps}
 Get the latest version of {\SWIP} available at \url{https://github.com/SWIPdev/SWIP/releases}. Download the zipped file \verb|SWIP-x.x.zip| or the gzipped tarfile \verb|SWIP-x.x.tar.gz| containing the source codes for {\SWIP} (the "x.x" is the current release number).
 
@@ -124,9 +109,10 @@ Type \verb|swip_version| in the MATLAB prompt to check if the scripts are correc
 \subsection{Install on GNU/Linux}
 I only tested {\SWIP} with a standard Ubuntu distribution, but the procedure should be similar for other GNU/Linux distributions.
 \subsubsection{Prerequisites}
-Before installing {\SeismicUnix} and/or {\Geopsy}, you need to make sure that the following libraries and packages are installed on your computer. To install them, type \verb|sudo apt-get install packagename| in the terminal.
+Before installing {\SeismicUnix} and/or {\Geopsy}, you need to make sure that the following libraries and packages are installed on your computer. To install them, type \verb|sudo apt install packagename| in the terminal with the following package names.
 
 \verb|gcc|\\
+\verb|g++-multilib|\\
 \verb|gfortran|\\
 \verb|qt4-qmake|\\
 \verb|libqt4-dev|\\
@@ -137,9 +123,9 @@ Before installing {\SeismicUnix} and/or {\Geopsy}, you need to make sure that th
 \subsubsection{Seismic Unix}
 \textit{The installation of {\SeismicUnix} ({\SU}) is only necessary to handle seismic data in order to compute, stack and pick dispersion images. If you have your own software for picking dispersion curves and just want to use {\SWIP} to invert them, you can skip the installation of {\SU}.}
 
-The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{http://www.cwp.mines.edu/cwpcodes/Installation_Instructions}). Refer to it for more detailed instructions.
+The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{https://github.com/JohnWStockwellJr/SeisUnix/tree/master/src}). Refer to it for more detailed instructions.
 
-Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes} (older versions might not be compatible).
+Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix} (older versions might not be compatible).
 
 Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
 
@@ -193,6 +179,8 @@ For more information about installing {\Geopsy} under Linux, please refer to the
 
 Download the latest stable Linux version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
 
+\textbf{!! Version 3.1.0 and higher is not yet supported in SWIP !!}
+
 Create a folder that will contain all the {\Geopsy} codes (refered later as \verb|/your/Geopsy/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 30 Mb available.\\[1ex]
 Examples of \verb|/your/Geopsy/path| folder:
 
@@ -200,7 +188,7 @@ Examples of \verb|/your/Geopsy/path| folder:
 \verb|/home/yourusername/Geopsy.org|\\
 \verb|/opt/Geopsy.org|
 
-Decompress the gzipped tarfile \verb|geopsypack-nnitems-src-xx.tgz| ("nn" is the number of items and "xx" is the current release number) in \verb|/your/Geopsy/path|, the folder \verb|/your/SU/path/geopsypack-nnitems-src-xx| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf geopsypack-nnitems-src-xx.tgz| in the terminal.
+Decompress the gzipped tarfile \verb|geopsypack-nnitems-src-xx.tgz| in \verb|/your/Geopsy/path|, the folder \verb|/your/Geopsy/path/geopsypack-nnitems-src-xx| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf geopsypack-nnitems-src-xx.tgz| in the terminal.
 
 Set the binaries path in the file \verb|.profile| located in \verb|/home/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and extend the \verb|PATH| line (see {\SU} installation) with \verb|:/your/Geopsy/path/bin| such as:
 
@@ -208,7 +196,7 @@ Set the binaries path in the file \verb|.profile| located in \verb|/home/youruse
 
 Run \verb|source .profile| in the terminal and check if the path is correctly set by typing \verb|echo $PATH| in the terminal.
 
-In the terminal, go in the \verb|/your/SU/path/geopsypack-nnitems-src-xx| folder by typing \verb|cd /your/SU/path/geopsypack-nnitems-src-xx|.
+In the terminal, go in the \verb|/your/Geopsy/path/geopsypack-nnitems-src-xx| folder by typing \verb|cd /your/Geopsy/path/geopsypack-nnitems-src-xx|.
 
 To configure the installation in the default \verb|/your/Geopsy/path| folder, type:
 
@@ -227,16 +215,16 @@ You will then compile the codes by typing:
 \subsubsection{Additionnal packages}
 Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
 
-Install {\ImageMagick} by typing in the terminal: \verb|sudo apt-get install imagemagick|\\
-Install {\PDFjam} by typing in the terminal: \verb|sudo apt-get install pdfjam|\\
-Install {\pdfcrop} by typing in the terminal: \verb|sudo apt-get install texlive-extra-utils|
+Install {\ImageMagick} by typing in the terminal: \verb|sudo apt install imagemagick|\\
+Install {\PDFjam} by typing in the terminal: \verb|sudo apt install pdfjam|\\
+Install {\pdfcrop} by typing in the terminal: \verb|sudo apt install texlive-extra-utils|
 
 \subsubsection{Known problems}
-When starting {\MATLAB} (version < 2011b), the error message \textit{Error while loading shared library libXp.so.6} can appear. A workaround can be found here:
+- When starting {\MATLAB} (version < 2011b), the error message \textit{Error while loading shared library libXp.so.6} can appear. A workaround can be found here:
 
 \url{http://fr.mathworks.com/matlabcentral/answers/99815-why-do-i-receive-xsetup-errors-regarding-libxp-so-6-when-installing-or-launching-matlab-on-fedora-co}
 
-When running the inversion (module C, with verbose=1), {\MATLAB} can give you the error message:
+- When running the inversion (module C, with verbose=1), {\MATLAB} can give you the error message:
 
 \textit{dinver: symbol lookup error: /opt/Geopsy.org/lib/libQGpGuiTools.so.1: undefined symbol: \_ZN12QApplication10commitDataER15QSessionManager}.
 
@@ -244,7 +232,17 @@ It means there is a conflict between Ubuntu QT libraries and {\MATLAB} QT libari
 
 \verb|/your/MATLAB/path/bin/glnxa64/libQtGui.so.4|\\
 \verb|/your/MATLAB/path/bin/glnxa64/libQtNetwork.so.4|\\
-\verb|/your/MATLAB/path/bin/glnxa64/libQtCore.so.4|
+\verb|/your/MATLAB/path/bin/glnxa64/libQtCore.so.4|\\
+\verb|/your/MATLAB/path/bin/glnxa64/libstdc++.so.6|
+
+- When running MATLAB 2014a in Ubuntu 18.04, there are display problem with MATLAB. You need to install \verb|openjdk-8-jre| and add its location in your \verb|.profile| file with the following line:
+
+\verb|export MATLAB_JAVA=/usr/lib/jvm/java-8-openjdk-amd64/jre|
+
+- If the fonts of raster figures are too small, you need to install the following packages:
+
+\verb|sudo apt install xfonts-175dpi|\\
+\verb|sudo apt install xfonts-100dpi|
 
 \clearpage
 \subsection{Install on Mac OS X}
@@ -264,15 +262,17 @@ You also need to install \verb|gnu-tar| with:
 \subsubsection{Seismic Unix}
 \textit{The installation of {\SeismicUnix} ({\SU}) is only necessary to handle seismic data in order to compute, stack and pick dispersion images. If you have your own software for picking dispersion curves and just want to use {\SWIP} to invert them, you can skip the installation of {\SU}.}
 
-The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{http://www.cwp.mines.edu/cwpcodes/Installation_Instructions}). Refer to it for more detailed instructions.
+The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{https://github.com/JohnWStockwellJr/SeisUnix/tree/master/src}). Refer to it for more detailed instructions.
 
-Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes}
+Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix} (older versions might not be compatible).
 
 Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
 
 Examples of \verb|/your/SU/path| folder:
 
-\verb|/Users/yourusername/SU|
+\verb|/usr/local/SU|\\
+\verb|/home/yourusername/SU|\\
+\verb|/opt/SU|
 
 Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the folder \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
 
@@ -282,7 +282,7 @@ In order to set the necessary environment variable and the binaries path, open t
 \verb|PATH=$PATH:/your/SU/path/bin|\\
 \verb|export PATH|
 
-Run \verb|source .bash_profile| in the terminal and check if these variables are correctly set by typing \verb|echo $CWPROOT| and \verb|echo $PATH|.
+Run \verb|source .profile| in the terminal and check if these variables are correctly set by typing \verb|echo $CWPROOT| and \verb|echo $PATH|.
 
 In \verb|/your/SU/path/src/configs|, select the file \verb|Makefile.config_your_system| corresponding to your configuration, rename it \verb|Makefile.config| and copy it in \verb|/your/SU/path/src| to replace the existing \verb|Makefile.config|. Then, go in \verb|/your/SU/path/src| by typing \verb|cd /your/SU/path/src| in the terminal. You will then compile the codes by typing:
 
@@ -314,7 +314,9 @@ Type the commands \verb|supomegal| and \verb|seg2segy| in the terminal to check 
 !! \verb|supomegal| might not compile correctly with older versions of {\SU} (error with \verb|cwp_cexp|) !!
 
 \subsubsection{Geopsy}
-Download the latest stable Mac OS X version of {\Geopsy} at \url{http://www.geopsy.org/download.php} (there is a problem with the El Capitan devel version, so you need to use the sources for Mountain Lion).
+Download the latest stable Mac OS X version of {\Geopsy} at \url{http://www.geopsy.org/download.php} (Check for Old platforms and download the sources for Mountain Lion).
+
+\textbf{!! Version 3.1.0 and higher is not yet supported in SWIP !!}
 
 Mount the .dmg file, double click and follow the installation instructions. By default, {\Geopsy} will be installed in \verb|/Applications/Geopsy.org| (refered later as \verb|/your/Geopsy/path|).
 
@@ -346,7 +348,7 @@ Then you need to make a shortcut of that \verb|matlab| file and run {\MATLAB} wi
 
 \clearpage
 \subsection{Install on Windows}
-{\SWIP} has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar on other Windows versions. As mentionned earlier, the Linux-like environment {\Cygwin} is currently required to run {\SeismicUnix} on Windows. However, I don't recommend running {\SWIP} on Windows since the use of a 32 bit version of {\Cygwin} considerably slows down the computation of dispersion images (cf. \ref{sec:cygwin}).
+{\SWIP} has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar on other Windows versions. As mentioned earlier, the Linux-like environment {\Cygwin} is currently required to run {\SeismicUnix} on Windows. However, I don't recommend running {\SWIP} on Windows since the use of a 32 bit version of {\Cygwin} considerably slows down the computation of dispersion images (cf. \ref{sec:cygwin}).
 
 Microsoft has just announced that Windows 10 will soon be able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (\url{https://msdn.microsoft.com/en-us/commandline/wsl/about}). Hopefully we will soon be able to run {\SeismicUnix} without any third party software like {\Cygwin}.
 
@@ -372,9 +374,9 @@ Once all the required packages are selected, click Next (keep "select required p
 \label{subsec:WinSU}
 \textit{The installation of {\SeismicUnix} ({\SU}) is only necessary to handle seismic data in order to compute, stack and pick dispersion images. If you have your own software for picking dispersion curves and just want to use {\SWIP} to invert them, you can skip the installation of {\SU}.}
 
-The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{http://www.cwp.mines.edu/cwpcodes/Installation_Instructions}). Refer to it for more detailed instructions.
+The following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{https://github.com/JohnWStockwellJr/SeisUnix/tree/master/src}). Refer to it for more detailed instructions.
 
-Download the latest stable version of {\SU} at \url{http://www.cwp.mines.edu/cwpcodes}
+Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix}
 
 Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available. I recommend that you create \verb|/your/SU/path| in the root folder of {\Cygwin} \verb|\your\cygwin\path|.
 
@@ -433,8 +435,11 @@ Type the commands \verb|supomegal| and \verb|seg2segy| in the terminal to check 
 
 \subsubsection{Geopsy}
 Download the Windows version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
+(Check for Old platforms and download the sources for Windows 32 bits).
 
-Execute the file \verb|geopsypack-nnitems-src-xx.exe| ("nn" is the number of items and "xx" is the current release number) and follow the instructions to install {\Geopsy} in \verb|/your/Geopsy/path|.
+\textbf{!! Version 3.1.0 and higher is not yet supported in SWIP !!}
+
+Execute the file \verb|geopsypack-nnitems-src-xx.exe| and follow the instructions to install {\Geopsy} in \verb|/your/Geopsy/path|.
 
 Example of \verb|/your/Geopsy/path| folder:
 
@@ -446,32 +451,29 @@ The final step before using {\SWIP} under Windows is to make sure that the envir
 Right click on \textit{Computer -> Properties -> Advanced system settings -> Environment variables}
 
 %% Usefull or not ?
-Click on \textit{New} (top one) to create a new User variable:
+In the top list, create a new \textbf{user variable} by clicking on \textit{New}:
 
-\textit{Variable name} => \verb|CWPROOT|
-
+\textit{Variable name} => \verb|CWPROOT|\\
 \textit{Variable value} => \verb|\your\SU\path|\\
-Example => \verb|C:\cygwin\home\yourusername\SU|
+Ex. => \verb|C:\cygwin\home\yourusername\SU|
 %%
 
-Click on \textit{New} (top one) to create a new User variable
+Repeat the process to create another \textbf{user variable}:
 
-\textit{Variable name} => \verb|MATLAB_SHELL|
-
+\textit{Variable name} => \verb|MATLAB_SHELL|\\
 \textit{Variable value} => \verb|\your\cygwin\path\bin;\your\SU\path\bin;\your\Geopsy\path\bin|\\
-Example => \verb|C:\cygwin\bin;C:\cygwin\home\yourusername\SU\bin;C:\Program Files (x86)|
+Ex. => \verb|C:\cygwin\bin;C:\cygwin\home\yourusername\SU\bin;C:\Program Files (x86)\Geopsy.org\bin|
 
-\verb|\Geopsy.org\bin|
-
-Select the system variable \verb|Path| in the bottom list, click on \textit{Edit} (bottom one) and add the following at the end of \textit{Variable value} (the ... correspond to the existing value of the variable):
-
+In the bottom list, modify the \textbf{system variable} \verb|Path| by clicking on \textit{Edit}.\\
+Add the following text at the end of \textit{Variable value} (... corresponds to the existing value of the variable):
 Variable value => \verb|...;\your\cygwin\path\bin;\your\SU\path\bin;\your\Geopsy\path\bin|\\
-Example => \verb|...;C:\cygwin\bin;C:\cygwin\home\yourusername\SU\bin;C:\Program Files (x86)|\\
-\verb|\Geopsy.org\bin|
+Ex. => \verb|...;C:\cygwin\bin;C:\cygwin\home\yourusername\SU\bin;C:\Program Files (x86)\Geopsy.org\bin|
 
 !! Make sure there are no spaces between each path definition !!
 
-Relog your session and check if the environment variables are correctly setup by typing \verb|swip_version| in the {\MATLAB} prompt.
+Relog your session and check if the environment variables are correctly setup by typing \verb|unix('seg2segy')| in the {\MATLAB} prompt. The following message should be displayed in the command window: \verb|Usage: seg2segy first-seg2file number-of-files [shot-number]|
+
+If it doesn't work, try creating \verb|CWPROOT| and \verb|MATLAB_SHELL| as new \textbf{system variables}.
 
 \subsubsection{Additionnal packages}
 \label{subsec:WinExtra}
@@ -518,18 +520,18 @@ Before starting, you need to create a project folder (referred later as \verb|pr
 
 !! Don't create \verb|projdir| in your {\MATLAB} path !!
 
-!! Don't work in a path containing spaces in one of the folder names !!
+!! Don't work in a path containing spaces or accents in one of the folder names !!
 
 \subsubsection{Converting field data in SU format}
 \label{sec:seg2su}
 Unless you have your own software for picking dispersion curves, you will also need a \verb|.su| file containing all shot gathers in order to compute, stack and pick surface-wave dispersion. The required headers for this \verb|.su| file are \verb|fldr| (field record number), \verb|tracf| (trace number), \verb|gx| (geophone X position), \verb|sx| (source X position), \verb|ns| (number of time samples), \verb|dt| (time sample), \verb|gdel| (mean geophone spacing) and \verb|scalco| (scaling factor, see item list below). You can also add \verb|gelev| (geophone elevation), \verb|selev| (source elevation) to consider the topography. 
 
-For users non familiar with the use of {\SeismicUnix}, the tool \verb|seg2su.m| is provided for an easy creation of \verb|.su| files in \verb|/your/MATLAB/path/SWIP/tools|:
+For users non familiar with the use of {\SeismicUnix}, the tool \verb|seg2su_clean.m| is provided for an easy creation of \verb|.su| files in \verb|/your/MATLAB/path/SWIP/tools|:
 
 \begin{itemize}[leftmargin=*]
 \setlength\itemsep{2ex}
 \item Regroup all your SEG2 or SEGY files (e.g. \verb|.dat|, \verb|.sg2|, \verb|.sgy|) in a single folder (referred as \verb|rawdatadir|) located in your \verb|projdir| folder. Individual SEG2 files should be named with increasing numbers (e.g. 1001.dat, 1002.dat,...). If your field data are contained in a single SEGY file, just add this file in the folder instead of the SEG2 files. If you have topography along the line, add a two-column ASCII file (referred as \verb|topofile|) containing the distance and the elevation (X,Z).
-\item In {\MATLAB}, go in \verb|projdir| and execute the command \verb|seg2su| in the command window.
+\item In {\MATLAB}, go in \verb|projdir| and execute the command \verb|seg2su_clean| in the command window.
 \item Select the folder \verb|rawdatadir| when asked for the folder containing SEG2 or SEGY files.
 \item Then, define the scaling factor. This factor is used to convert your X and Z coordinates in full integers since {\SU} cannot read decimals. The scaling factor has to be set according to the desired coordinates precision (e.g. a scaling factor of 100 is required if you want a precision of 0.01~m in your geophone X or Z coordinate; coordinates will thus be stored in centimeters).
 \item The acquisition setup should then be displayed. Check if the source and geophone positions are correct. When importing SEG2 or SEGY files with non-integer coordinates, only the integer part is read (e.g. 2.5~m becomes 2~m). If that is the case, you need to setup manually the geophones and shots coordinates.
@@ -1339,7 +1341,7 @@ Quick plot of 2D models from X,Z,V ASCII file. Need to provide at least a \verb|
 \paragraph{quick\_invert}
 Quick inversion of dispersion data. Need to provide at least a \verb|.target| and a \verb|.param| file. If not specified, other parameters are defined with \verb|SWIP_defaultsettings.m|.
 
-\paragraph{seg2su}
+\paragraph{seg2su clean}
 Convert SEG2 or SEGY files to SU (cf \ref{sec:seg2su}). Possibility to change default name and add extra time samples to smooth dispersion images.
 
 \end{document}

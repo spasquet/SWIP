@@ -52,14 +52,12 @@ for ip=1:nmode
         lmaxpick(ip)=max(vresamp./freqresamp);
     else
         lmaxpick(ip)=NaN;
-        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        fprintf('\n   No sample in the range of resampvec - Target file empty');
-        fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
-        fclose(fid0);
-        unix(['rm -rf ',nametarg]);
-        return
     end
     nsp=length(vresamp);
+    if nsp <= 1
+        continue
+    end
+    
     NSP=NSP+nsp;
     fprintf(fid0,'%s \n','<ModalCurve>');
     fprintf(fid0,'%s \n',['<name>',pvcfile,'</name>']);
@@ -99,6 +97,15 @@ for ip=1:nmode
         %         end
     end
     fprintf(fid0,'%s \n','</ModalCurve>');
+end
+
+if all(isnan(lmaxpick))
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    fprintf('\n   No sample in the range of resampvec - Target file empty');
+    fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+    fclose(fid0);
+    unix(['rm -rf ',nametarg]);
+    return
 end
 
 if NSP>100

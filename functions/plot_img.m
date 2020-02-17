@@ -49,6 +49,10 @@ else
     map=colormap;
 end
 
+if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==3
+    [X,Y,Z] = xyz2plot(X,Y,Z);
+end
+
 if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==2
     if exist('zlimit','var')==1 && isempty(zlimit)~=1
         isolevels=linspace(zlimit(1),zlimit(2),length(map)+1);
@@ -60,19 +64,20 @@ end
 
 % Plot image
 if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==1
-    han1=pcolor(X,Y,Z); shading interp;
+    han1 = pcolor(X,Y,Z); shading interp;
 elseif exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==2
-    han1=contourf(X,Y,Z,isolevels,'edgecolor','none');
+    [~,han1] = contourf(X,Y,Z,isolevels,'edgecolor','none');
+elseif exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==3
+    han1 = pcolor(X,Y,Z); shading flat;
 else
-    if isempty(Z(isnan(Z)))==1
-        han1=imagesc(X,Y,Z);
-    else
+    try
         han1=imagescnan(X,Y,Z);
+    catch
+        han1=surf(X,Y,Z,'edgecolor','none');
     end
 end
 hold on
-grid off; view(0,90);
-
+box on; grid off; view(0,90);
 
 % Vertical exageration
 if exist('vertex','var')==1 && isempty(vertex)~=1
@@ -111,12 +116,12 @@ end
 if exist('xlimit','var')==1 && isempty(xlimit)~=1
     xlim(xlimit)
 else
-    xlim([min(X(:))-abs(median(unique(diff(X(:))))) max(X(:))+abs(median(unique(diff(X(:)))))]);
+    xlim([min(X(:))-min(abs(diff(X(~isnan(X))))) max(X(:))+min(abs(diff(X(~isnan(X)))))]);
 end
 if exist('ylimit','var')==1 && isempty(ylimit)~=1
     ylim(ylimit);
 else
-    ylim([min(Y(:))-abs(median(unique(diff(Y(:))))) max(Y(:))+abs(median(unique(diff(Y(:)))))]);
+    ylim([min(Y(:))-min(abs(diff(Y(~isnan(Y))))) max(Y(:))+min(abs(diff(Y(~isnan(Y)))))]);
 end
 
 % Change ticks
@@ -126,7 +131,6 @@ end
 if exist('yticks','var')==1 && isempty(yticks)~=1
     set(gca,'YTick',yticks);
 end
-
 if exist('zlimit','var')==1 && isempty(zlimit)~=1
     caxis(zlimit);
 else
@@ -153,11 +157,15 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
             ticklength=get(cbhandle,'TickLength');
             set(cbhandle,'XTick',zticks,'TickLength',[ticklength(1)/3 ticklength(2)]);
         else
-            set(cbhandle,'YTick',zticks);
+            ticklength=get(cbhandle,'TickLength');
+            set(cbhandle,'YTick',zticks,'TickLength',ticklength*2);
         end
     end
-    ticklength=get(cbhandle,'TickLength');
-    set(cbhandle,'linewidth',1.5,'box','on','TickLength',ticklength*2);    
+    set(cbhandle,'linewidth',1.5,'box','on');    
+%     if cb==2 && axetop==0
+%         cbpos = get(cbhandle,'position');
+%         set(cbhandle,'position',[cbpos(1) cbpos(2) cbpos(3) cbpos(4)]);
+%     end
 else
     c=[];
 end
@@ -181,8 +189,14 @@ if exist('isoline','var')==1 && isempty(isoline)~=1
     if length(isoline)==1
         isoline=[isoline isoline];
     end
-    [cs,hc]=contour(X,Y,Z,isoline,'k','linewidth',1);
-    clabel(cs, hc, 'Color', 'k', 'Rotation', 0);
+    for i = 1:length(isoline)
+        if mod(i,2) == 0
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',1);
+        else
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',0.5);
+        end
+    end
+%     clabel(cs, hc, 'Color', 'k', 'Rotation', 0);
 end
 
 set(gca,'TickDir','out','linewidth',1.5,'XMinorTick','on','YMinorTick','on');

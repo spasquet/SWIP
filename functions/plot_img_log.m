@@ -1,7 +1,7 @@
 function [fig,han1,han2,han3,c]=plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 
-%%% S. Pasquet - V17.05.15
+%%% S. Pasquet - V17.09.13
 %
 % plot_img_log(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,...
 %    xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
@@ -49,6 +49,10 @@ else
     map=colormap;
 end
 
+if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==3
+    [X,Y,Z] = xyz2plot(X,Y,Z);
+end
+
 % Convert data for log representation
 Z(Z==0)=NaN;
 Z(isinf(Z))=NaN;
@@ -72,15 +76,18 @@ if exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==1
     han1=pcolor(X,Y,Zlog); shading interp;
 elseif exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==2
     han1=contourf(X,Y,Zlog,isolevels,'edgecolor','none');
+elseif exist('blocky','var')==1 && isempty(blocky)~=1 && blocky==3
+    han1 = pcolor(X,Y,Zlog); shading flat;
 else
-    if isempty(Zlog(isnan(Zlog)))==1
-        han1=imagesc(X,Y,Zlog);
-    else
+    try
         han1=imagescnan(X,Y,Zlog);
+    catch
+        han1=surf(X,Y,Zlog,'edgecolor','none');
     end
 end
-hold on
+hold on;
 grid off; view(0,90);
+cbhandle('visible','on');
 
 % Vertical exageration
 if exist('vertex','var')==1 && isempty(vertex)~=1
@@ -119,12 +126,12 @@ end
 if exist('xlimit','var')==1 && isempty(xlimit)~=1
     xlim(xlimit)
 else
-    xlim([min(X(:))-abs(median(unique(diff(X(:))))) max(X(:))+abs(median(unique(diff(X(:)))))]);
+    xlim([min(X(:))-min(abs(diff(X(~isnan(X))))) max(X(:))+min(abs(diff(X(~isnan(X)))))]);
 end
 if exist('ylimit','var')==1 && isempty(ylimit)~=1
     ylim(ylimit);
 else
-    ylim([min(Y(:))-abs(median(unique(diff(Y(:))))) max(Y(:))+abs(median(unique(diff(Y(:)))))]);
+    ylim([min(Y(:))-min(abs(diff(Y(~isnan(Y))))) max(Y(:))+min(abs(diff(Y(~isnan(Y)))))]);
 end
 
 % Change ticks
@@ -175,12 +182,10 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
             ztickslog=get(cbhandle,'Ytick');
         end
         zticks=round(10.^(mn+rng*(ztickslog-1)/(length(map)-1)));
-        if min(zticks)<1
-            prec=1;
-        elseif min(zticks)<0.1
-            prec=2;
+        if abs(min(zticks))<1
+            prec = -log10(abs(min(zticks)));
         else
-            prec=0;
+            prec = 0;
         end
         zticks = round(10^prec*zticks)/10^prec;
     end
@@ -188,10 +193,17 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
         ticklength=get(cbhandle,'TickLength');
         set(cbhandle,'Xtick',ztickslog,'XTicklabel',zticks,'TickLength',[ticklength(1)/3 ticklength(2)]);
     else
+        ticklength=get(cbhandle,'TickLength');
+        ztickslog(1) = ztickslog(1) + 1e-12;
+        ztickslog(end) = ztickslog(end) - 1e-12;
         set(cbhandle,'Ytick',ztickslog,'YTicklabel',zticks);
     end
     ticklength=get(cbhandle,'TickLength');
     set(cbhandle,'linewidth',1.5,'box','on','TickLength',ticklength*2);
+%     if cb==2 && axetop==0
+%         cbpos = get(cbhandle,'position');
+%         set(cbhandle,'position',[cbpos(1) cbpos(2)-0.625*cbpos(2) cbpos(3) cbpos(4)]);
+%     end
 else
     c=[];
 end
@@ -215,8 +227,14 @@ if exist('isoline','var')==1 && isempty(isoline)~=1
     if length(isoline)==1
         isoline=[isoline isoline];
     end
-    [cs,hc]=contour(X,Y,Z,isoline,'k','linewidth',1);
-    clabel(cs, hc, 'Color', 'k', 'Rotation', 0);
+    for i = 1:length(isoline)
+        if mod(i,2) == 0
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',1.25);
+        else
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',0.5);
+        end
+    end
+%     clabel(cs, hc, 'Color', 'k', 'Rotation', 0);
 end
 
 set(gca,'TickDir','out','linewidth',1.5,'XMinorTick','on','YMinorTick','on');

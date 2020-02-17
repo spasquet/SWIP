@@ -42,7 +42,7 @@ if clearnan==1
     XX(isnan(VV)==1)=[];
     ZZ(isnan(VV)==1)=[];
 end
-if isempty(mask)==0
+if isempty(mask)==0 && clearnan==1
     MASK(isnan(VV)==1)=[];
 end
 if clearnan==1
@@ -52,4 +52,4 @@ if convert==1;
     VV=VV*1000;
 end
 
-dlmwrite(filexzv,[XX,ZZ,VV,MASK],'delimiter','\t','precision','%6.2f');
+dlmwrite(filexzv,[XX,ZZ,VV,MASK],'delimiter','\t','precision','%6.4f');

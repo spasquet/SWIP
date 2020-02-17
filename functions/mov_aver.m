@@ -4,6 +4,11 @@ function velout = mov_aver(vel,npts,b1,b2)
 % Moving average filter
 % velout = mov_aver(vel,npts,b1,b2)
 
+if nargin == 2
+    b1 = 1;
+    b2 = length(vel);
+end
+
 vel=vel';
 velout=vel;
 vel=[repmat(vel(1),fix(npts/2),1);vel;repmat(vel(end),fix(npts/2),1)];

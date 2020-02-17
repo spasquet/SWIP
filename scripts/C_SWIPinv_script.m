@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V17.05.25
+%%% S. Pasquet - V18.11.26
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for 
@@ -239,8 +239,20 @@ if nbest==0
 else
     extens=['.best',num2str(nbest)]; % Arbitrary nb
 end
-dir_img_inv_mod=fullfile(dir_img_inv,['models',extens]);
-dir_img_inv_1d=fullfile(dir_img_inv_mod,'1dmodels');
+dir_img_inv_mod = fullfile(dir_img_inv,['models',extens]);
+dir_img_inv_1d = fullfile(dir_img_inv_mod,'1dinvres');
+dir_img_inv_mean = fullfile(dir_img_inv_mod,'1dmean');
+dir_img_inv_param = fullfile(dir_img_inv_mod,'1dparam');
+
+if exist(dir_img_inv_1d,'dir') ~= 7
+    mkdir(dir_img_inv_1d);
+end
+if exist(dir_img_inv_mean,'dir') ~= 7 && plot1dcal == 1
+    mkdir(dir_img_inv_mean);
+end
+if exist(dir_img_inv_param,'dir') ~= 7 && plot1dcal == 1
+    mkdir(dir_img_inv_param);
+end
 
 % Final average model type names
 if modeltype==1
@@ -275,6 +287,10 @@ else
     zipmethod=1;
 end
 
+if calc == 0
+    calcmod = 0;
+end
+
 fprintf('\n  **********************************************************');
 fprintf('\n  **********************************************************\n');
 
@@ -295,10 +311,6 @@ for ix=Xmidselec
     end
     % Create folder to store inversion results for each Xmid
     dir_rep_ind=fullfile(dir_rep_inv,[num2str(XmidT(ix),xmidformat),'_reports']);
-    dir_img_ind=fullfile(dir_img_inv_1d,['mod1d_',num2str(XmidT(ix),xmidformat)]);
-    if exist(dir_img_ind,'dir')~=7
-        mkdir(dir_img_ind);
-    end
     
     %% %% %%
     
@@ -307,6 +319,20 @@ for ix=Xmidselec
     if inversion==1 % Run new inversion
         if sum(nshot(ix,:))>=0
             fprintf(['\n  Inversion with "type ',num2str(paramtype),'" parameterization\n']);
+        end
+        
+        % Get target file
+        nametarg=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.target']);
+        if exist(nametarg,'file')~=2
+            if sum(nshot(ix,:))>=0
+                fprintf('\n  No target - Go to next Xmid\n\n');
+                % Save settings in .mat file
+                inv_set.nC(ix)=NaN;
+                inv_set.nmod(ix)=NaN;
+                inv_set.minmis(ix)=NaN;
+                save(matfileinv,'-append','inv_set');
+            end
+            continue
         end
         
         % Get parameter file if autoparam
@@ -319,15 +345,6 @@ for ix=Xmidselec
                 end
                 continue
             end
-        end
-        
-        % Get target file
-        nametarg=fullfile(dir_targ,[num2str(XmidT(ix),xmidformat),'.target']);
-        if exist(nametarg,'file')~=2
-            if sum(nshot(ix,:))>=0
-                fprintf('\n  No target - Go to next Xmid\n\n');
-            end
-            continue
         end
         
         % Create report folder to store inversion results
@@ -503,8 +520,51 @@ for ix=Xmidselec
             fprintf(['\n  The best ',num2str(nmod(ix)),' models have been selected\n']);
         end
         if nmod(ix)==0 % Go to next Xmid if no models selected
+            fprintf('\n  Export best model only\n');
+            % Export calculated models from binary report files
+            matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
+            VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
+            VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
+            RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
+            
+            % Loop over all runs
+            for n=1:inv_set.nrun(ix)
+                fprintf(['\n      Run ',num2str(n),'\n']);
+                vsfile=fullfile(dir_rep_ind,['vs',num2str(n),'.txt']);
+                vpfile=fullfile(dir_rep_ind,['vp',num2str(n),'.txt']);
+                rhofile=fullfile(dir_rep_ind,['rho',num2str(n),'.txt']);
+                [VSall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                    readmodel(vsfile,nmaxmod(ix),n); % Read file
+                [VPall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                    readmodel(vpfile,nmaxmod(ix),n); % Read file
+                [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                    readmodel(rhofile,nmaxmod(ix),n); % Read file
+            end
+            delete(fullfile(dir_rep_ind,'*.txt'),fullfile(dir_rep_ind,'*.report')); % Delete temp file
+            
+            % Read models
+            dim=ndims(VSall{1});
+            VS=cat(dim,VSall{:,1}); % All Vs
+            VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
+            VP=cat(dim,VPall{:,1}); % All Vp
+            VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
+            RHO=cat(dim,RHOall{:,1}); % All Rho
+            RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
+            ZALL=cat(dim,VSall{:,2}); % All depth
+            ZALL(end,:)=maxdepth;
+            Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
+            THbest=diff(Zbest);
+            THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
+
+            % Best model
+            nameDINbest=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.Vms.best']); % Best model
+             % Save best model
+            dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
+            
             fprintf('\n  **********************************************************');
             fprintf('\n  **********************************************************\n');
+            
             delete(fullfile(dir_rep_ind,'*.report'));
             
             % Save settings in .mat file
@@ -586,7 +646,6 @@ for ix=Xmidselec
             fprintf('\n  Building average models\n');
             
             %%% Mean layered model %%%
-            
             VSmean=mean(VSin,dim);
             VPmean=mean(VPin,dim);
             RHOmean=mean(RHOin,dim);
@@ -599,6 +658,7 @@ for ix=Xmidselec
                 Zmean(ll:ll+1)=Zmeantmp(mm);
             end
             Zmean(end)=maxdepth;
+            
             % Standard deviation layered model
             VSstd=std(VSin,0,dim);
             VPstd=std(VPin,0,dim);
@@ -613,6 +673,34 @@ for ix=Xmidselec
             end
             Zstd(end)=maxdepth;
             
+            % Max layered model
+            VSmax=max(VSin,[],dim);
+            VPmax=max(VPin,[],dim);
+            RHOmax=max(RHOin,[],dim);
+            THmax=max(THin,[],dim);
+            Zmax=zeros(size(VSmax));
+            Zmaxtmp=cumsum(THmax);
+            mm=0;
+            for ll=2:2:length(VSmax)-1
+                mm=mm+1;
+                Zmax(ll:ll+1)=Zmaxtmp(mm);
+            end
+            Zmax(end)=maxdepth;
+            
+            % Min layered model
+            VSmin=min(VSin,[],dim);
+            VPmin=min(VPin,[],dim);
+            RHOmin=min(RHOin,[],dim);
+            THmin=min(THin,[],dim);
+            Zmin=zeros(size(VSmin));
+            Zmintmp=cumsum(THmin);
+            mm=0;
+            for ll=2:2:length(VSmin)-1
+                mm=mm+1;
+                Zmin(ll:ll+1)=Zmintmp(mm);
+            end
+            Zmin(end)=maxdepth;
+            
             %%% Mean smoothed model %%%
             
             % !!!!(to be optimized for constant density)!!!!
@@ -621,6 +709,7 @@ for ix=Xmidselec
             IVsR=zeros(nmod(ix),nZ);
             IVpR=IVsR; IrhoR=IVsR;
             Zi(end,:)=Zi(end,:)+dz*(Zi(end,:)==Zi(end-1,:));
+            
             % Interpolate Vs, Vp and Rho
             IVs = arrayfun(@(ii)(interp1q(Zi(:,ii),VSin(:,ii),ZZ')), 1:size(VSin, 2), 'UniformOutput', false);
             IVs = cell2mat(IVs)';
@@ -631,10 +720,21 @@ for ix=Xmidselec
             IVSmean=mean(IVs,1);
             IVPmean=mean(IVp,1);
             IRHOmean=mean(Irho,1);
+            
             % Standard deviation smoothed model
             IVSstd=std(IVs,0,1);
             IVPstd=std(IVp,0,1);
             IRHOstd=std(Irho,0,1);
+            
+            % Max smoothed model
+            IVSmax=max(IVs,[],1);
+            IVPmax=max(IVp,[],1);
+            IRHOmax=max(Irho,[],1);
+            
+            % Max smoothed model
+            IVSmin=min(IVs,[],1);
+            IVPmin=min(IVp,[],1);
+            IRHOmin=min(Irho,[],1);
             
             %%% Ridge model %%%
             
@@ -642,13 +742,13 @@ for ix=Xmidselec
                 % Velocity and density vectors for ridge search
                 minVs=floor(min(min(IVs))/10)*10;
                 maxVs=ceil(max(max(IVs))/10)*10;
-                velocityS=minVs:25:maxVs;
+                velocityS=minVs:20:maxVs;
                 minVp=floor(min(min(IVp))/10)*10;
                 maxVp=ceil(max(max(IVp))/10)*10;
-                velocityP=minVp:25:maxVp;
+                velocityP=minVp:50:maxVp;
                 minrho=floor(min(min(Irho))/10)*10;
                 maxrho=ceil(max(max(Irho))/10)*10;
-                density=minrho:25:maxrho;
+                density=minrho:50:maxrho;
                 for ii=1:length(velocityS)
                     flagg1=abs(velocityS(ii)-IVs);
                     if ii==1
@@ -683,32 +783,56 @@ for ix=Xmidselec
                 NNP=zeros(nZ,length(velocityP));
                 NNr=zeros(nZ,length(density));
                 VSridge=zeros(1,nZ); VPridge=VSridge; RHOridge=VSridge;
+                VSridge_min=VSridge; VSridge_max=VSridge;
+                VPridge_min=VSridge; VPridge_max=VSridge;
+                RHOridge_min=VSridge; RHOridge_max=VSridge;
                 % Count number of model per cell
+                a_std = 0.1; % Keep cells with at least(1-a_std)*std models
                 for jj=1:nZ
                     NN(jj,:)=histc(IVsR(:,jj),velocityS);
-                    VSridge(jj)=mean(velocityS(NN(jj,:)==max(NN(jj,:))));
+                    VSridge(jj)=mean(velocityS(NN(jj,:)==max(NN(jj,:))));                   
+                    VSridge_min(jj) = velocityS(find(NN(jj,:)>=a_std*std(NN(jj,:)),1,'first'));
+                    VSridge_max(jj) = velocityS(find(NN(jj,:)>=a_std*std(NN(jj,:)),1,'last'));
+                                        
                     NNP(jj,:)=histc(IVpR(:,jj),velocityP);
                     VPridge(jj)=mean(velocityP(NNP(jj,:)==max(NNP(jj,:))));
+                    VPridge_min(jj) = velocityP(find(NNP(jj,:)>=a_std*std(NNP(jj,:)),1,'first'));
+                    VPridge_max(jj) = velocityP(find(NNP(jj,:)>=a_std*std(NNP(jj,:)),1,'last'));
+                    
                     NNr(jj,:)=histc(IrhoR(:,jj),density);
                     RHOridge(jj)=mean(density(NNr(jj,:)==max(NNr(jj,:))));
+                    RHOridge_min(jj) = density(find(NNr(jj,:)>=a_std*std(NNr(jj,:)),1,'first'));
+                    RHOridge_max(jj) = density(find(NNr(jj,:)>=a_std*std(NNr(jj,:)),1,'last'));
                 end
+                VSridge = median_filt(VSridge,9,1,length(VSridge));
+                VSridge = mov_aver(VSridge',5,1,length(VSridge));
+                VSridge_min = median_filt(VSridge_min,9,1,length(VSridge_min));
+                VSridge_min = mov_aver(VSridge_min',5,1,length(VSridge_min));
+                VSridge_max = median_filt(VSridge_max,9,1,length(VSridge_max));
+                VSridge_max = mov_aver(VSridge_max',5,1,length(VSridge_max));
                 NN(NN==0)=NaN;
+                
                 % Plot ridgesearch results
-                if nmod(ix)>1 && plotinvres==1
-                    [f2,~,~,~,c]=plot_img(showplot,velocityS,ZZ,NN,flipud(autumn),...
+                if nmod(ix)>1 %&& plotinvres==1
+                    [f2,~,~,~,c]=plot_img_log(showplot,velocityS,ZZ,NN,flipud(autumn),...
                         1,1,1,fs,'Vs (m/s)',depthtitle,'Number of models',...
-                        [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
+                        [0 max(velocityS(:))],[dpMIN dpMAX],[1 max(NN(:))],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
+                    cm_saturation(0.5);
                     hold on
-                    dashline(VSridge,ZZ,2,2,2,2,'color','k','linewidth',1.5);
-                    cpos=get(c,'position');
-                    set(c,'Position',[cpos(1)+0.04 cpos(2) cpos(3)*1.5 cpos(4)]);
+                    plot(VSridge,ZZ,'color','k','linewidth',1.5);
+                    dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
+                    dashline(VSridge_max,ZZ,2,2,2,2,'color','k','linewidth',1.5);
+%                     if str2double(matrelease(1:4))<=2014
+%                         cpos=get(c,'position');
+%                         set(c,'Position',[cpos(1)+0.04 cpos(2) cpos(3)*1.5 cpos(4)]);
+%                     end
                     h=findall(gcf,'Type','Axes'); set(h,'FontSize',fs);
                     % Save figure
-                    file_ridge=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                    file_ridge=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),...
                         '.mod1d.ridge.',imgform]);
                     save_fig(f2,file_ridge,imgform,imgres,1,1-testplot);
                     close(f2); figHandles = findall(0,'Type','figure');
-                    
+%                     
                     if str2double(matrelease(1:4))>2014
                         figHandles=get(figHandles,'Number');
                     end
@@ -784,10 +908,10 @@ for ix=Xmidselec
             % Velocity model filenames
             % Best model
             nameDINbest=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.Vms.best']); % Layered model
+                extens,'.Vms.best']); % Best model
             % Ridge
             nameDINridge=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.Vms.ridge']); % Layered model
+                extens,'.Vms.ridge']); % Ridge model
             % Mean
             nameDINlay=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
                 extens,'.Vms.layered']); % Layered model
@@ -795,35 +919,55 @@ for ix=Xmidselec
                 extens,'.Vms.smooth']); % Smooth model
             % Std
             nameDINlaystd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.VmsStd.layered']); % Layered model
+                extens,'.VmsStd.layered']); % STD Layered model
             nameDINsmstd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.VmsStd.smooth']); % Smooth model
+                extens,'.VmsStd.smooth']); % STD Smooth model
+            % Min
+            nameDINlaymin=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMin.layered']); % Min Layered model
+            nameDINsmmin=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMin.smooth']); % Min Smooth model
+            nameDINridgemin=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMin.ridge']); % Min ridge model
+            % Max
+            nameDINlaymax=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMax.layered']); % Max Layered model
+            nameDINsmmax=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMax.smooth']); % Max Smooth model
+            nameDINridgemax=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                extens,'.VmsMax.ridge']); % Max ridge model
             % Weighted
             nameDINlayw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.Vws.layered']); % Layered model
+                extens,'.Vws.layered']); % Weighted Layered model
             nameDINsmw=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.Vws.smooth']); % Smooth model
+                extens,'.Vws.smooth']); % Weighted Smooth model
             
             % Save best model
             dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
             % Save ridge model
             if ridgecalc==1
                 dinsave(nameDINridge,repmat(dz,1,length(ZZ)),VPridge,VSridge,RHOridge);
+                dinsave(nameDINridgemin,repmat(dz,1,length(ZZ)),VPridge_min,VSridge_min,RHOridge_min);
+                dinsave(nameDINridgemax,repmat(dz,1,length(ZZ)),VPridge_max,VSridge_max,RHOridge_max);
             end
             % Save mean models (layered, smoothed, layered smooth)
             dinsave(nameDINlay,THmean,VPmean(1:2:end),VSmean(1:2:end),RHOmean(1:2:end));
             dinsave(nameDINsm,repmat(dz,1,length(ZZ)),IVPmean,IVSmean,IRHOmean);
             dinsave(nameDINlaystd,THstd,VPstd(1:2:end),VSstd(1:2:end),RHOstd(1:2:end));
+            dinsave(nameDINlaymin,THmin,VPmin(1:2:end),VSmin(1:2:end),RHOmin(1:2:end));
+            dinsave(nameDINlaymax,THmax,VPmax(1:2:end),VSmax(1:2:end),RHOmax(1:2:end));
             dinsave(nameDINsmstd,repmat(dz,1,length(ZZ)),IVPstd,IVSstd,IRHOstd);
+            dinsave(nameDINsmmin,repmat(dz,1,length(ZZ)),IVPmin,IVSmin,IRHOmin);
+            dinsave(nameDINsmmax,repmat(dz,1,length(ZZ)),IVPmax,IVSmax,IRHOmax);
             if weightcalc==1 && nmod(ix)>1
                 dinsave(nameDINlayw,THweight,VPweight(1:2:end),VSweight(1:2:end),RHOweight(1:2:end));
                 dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
             end
             
             % Plot and save average and weighted 1D models
-            if plotinvres==1
+%             if plotinvres==1
                 [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
-                    'Vs (m/s)',depthtitle,[],[vsMIN vsMAX],[dpMIN dpMAX],[],[],[],...
+                    'Vs (m/s)',depthtitle,[],[0 max(velocityS(:))],[dpMIN dpMAX],[],[],[],...
                     [],[],[],[0 0 24 18],[],0);
                 hold on
                 str0='Best model';
@@ -840,6 +984,8 @@ for ix=Xmidselec
                 if ridgecalc==1 && nmod(ix)>1
                     h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
                     str7='Ridge model';
+                    dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
+                    dashline(VSridge_max,ZZ,2,2,2,2,'color','k','linewidth',1.5);
                 end
                 colorbar; cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
                 if exist('NN','var')==1
@@ -855,11 +1001,11 @@ for ix=Xmidselec
                 else
                     h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
                 end
-                set(h_legend,'FontSize',10,'linewidth',1,'location','southwest');
+                set(h_legend,'FontSize',10,'linewidth',1,'location','northeast');
                 hold off
                 
                 % Save figure
-                file_mod=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
+                file_mod=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
                 save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
                 close(f3);
                 % Concatenate ridge and average models figures
@@ -868,7 +1014,7 @@ for ix=Xmidselec
                 else
                     colnb_tmp=colnb;
                 end
-                filename_panel0=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_panel0=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),...
                     '.mod1d.mean.',imgform]);
                 if exist('file_ridge','var')==1 && testplot==1 && nmod(ix)>1
                     cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
@@ -876,7 +1022,7 @@ for ix=Xmidselec
                         delete(file_ridge);
                     end
                 end
-            end
+%             end
         end
         
         %% %% %%
@@ -901,7 +1047,7 @@ for ix=Xmidselec
             layered(layered==0)=NaN;
             % Plot pseudo-section
             f0=plot_img(10,XmidT,depth,layered,haxby(32),1,0,1,fs/2.5,...
-                'X (m)','Z (m)','Vs (m/s)',[],...
+                'X (m)','Elevation (m)','Vs (m/s)',[],...
                 [floor(min(depth)/10)*10 ceil(max(depth)/10)*10],...
                 [min(min(layered)) max(max(layered))],[],[],[],[],[],[],[],[],1);
             set(gca,'YDir','normal');
@@ -998,13 +1144,13 @@ for ix=Xmidselec
                 set(cbhandle,'visible','off'); % Hide colorbar
                 
                 % Save figure
-                filenamedsp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filenamedsp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.calcdisp.M',num2str(m),'.',imgform]);
                 save_fig(f1,filenamedsp,imgform,imgres,1,1-testplot);
                 close(f1); clear f1;
             end
             % Get all filenames for all modes in one string
-            filename_dspall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+            filename_dspall=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.calcdisp.*.',imgform]);
             
             %% %% %%
@@ -1079,10 +1225,9 @@ for ix=Xmidselec
             str2=sprintf([' Rejec. models (' num2str((inv_set.nrun(ix)*nmaxmod(ix))-nmod(ix))...
                 ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
             % Plot first model
-            f4=plot_curv(showplot,tmpall,zall,[],[],colall,2,1,1,...
-                cbpos,fs,'Vs (m/s)',depthtitle,str1,...
-                [vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,[],...
-                [],[],[0 0 24 18],sizax,0);
+            f4=plot_curv(showplot,tmpall,zall,[],[],colall,2,1,1,cbpos,fs,...
+                'Vs (m/s)',depthtitle,str1,[vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,...
+                [],[],[],[0 0 24 18],sizax,0);
             colormap(map2);
             hold on
             % Loop over all models
@@ -1093,14 +1238,14 @@ for ix=Xmidselec
             set(cbhandle,'visible','off');
             
             % Save figure
-            filename_modall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+            filename_modall=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.mod1d.all.',imgform]);
             save_fig(f4,filename_modall,imgform,imgres,1,1-testplot);
             close(f4); clear f4;
             
-            filename_cbin=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+            filename_cbin=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.cbmisin.',imgform]);
-            filename_cbout=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+            filename_cbout=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.cbmisout.',imgform]);
             
             % Save colorbars in separate file for nice display
@@ -1153,14 +1298,14 @@ for ix=Xmidselec
                 end
                 
                 % Concatenate dispersion and 1D models
-                filename_imgtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_imgtmp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
                 cat_img([filename_dspall,' ',filename_modall],imgform,colnb_tmp,'east',filename_imgtmp,0);
                 
                 
-                filename_cbtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_cbtmp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.cb.',imgform]);
-                filename_panel=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_panel=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.invresults.',imgform]);
                 if  nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
                     % Concatenate colorbars
@@ -1241,6 +1386,11 @@ for ix=Xmidselec
                 p1=diff(p1);
                 p1=p1(1:2:end,:);
                 XMIN=[]; XMAX=[]; xticks=[];
+            elseif strcmp(param1,'Dp')==1
+                axtit1='Depth (m)';
+                p1=[Zout,Zin];
+                p1=p1(1:2:end,:);
+                XMIN=[]; XMAX=[]; xticks=[];
             elseif strcmp(param1,'Vp')==1
                 axtit1='Vp (m/s)';
                 p1=[VPout,VPin];
@@ -1265,6 +1415,11 @@ for ix=Xmidselec
                 axtit2='Thickness (m)';
                 p2=[Zout,Zin];
                 p2=diff(p2);
+                p2=p2(1:2:end,:);
+                YMIN=[]; YMAX=[]; yticks=[];
+            elseif strcmp(param2,'Dp')==1
+                axtit2='Depth (m)';
+                p2=[Zout,Zin];
                 p2=p2(1:2:end,:);
                 YMIN=[]; YMAX=[]; yticks=[];
             elseif strcmp(param2,'Vp')==1
@@ -1293,12 +1448,24 @@ for ix=Xmidselec
                         num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
                     str2=sprintf([' Rejec. models (' num2str((inv_set.nrun(ix)*nmaxmod(ix))-nmod(ix))...
                         ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
+                    
+                    if length(unique(p1(np1(i),:)))==1
+                        XMIN = unique(p1(np1(i),:)) - 0.1*unique(p1(np1(i),:));
+                        XMAX = unique(p1(np1(i),:)) + 0.1*unique(p1(np1(i),:));
+                    end
+                    
+                    if length(unique(p2(np2(j),:)))==1
+                        YMIN = unique(p2(np2(j),:)) - 0.1*unique(p2(np2(j),:));
+                        YMAX = unique(p2(np2(j),:)) + 0.1*unique(p2(np2(j),:));
+                    end
+                    
                     % Plot first model parameter
                     f4=plot_curv(showplot,p1(np1(i),:),p2(np2(j),:),[],'.','k',2,1,1,...
                         cbpos,fs,[axtit1,' [layer ',num2str(np1(i)),']'],[axtit2,' [layer ',num2str(np2(j)),']'],...
                         str1,[XMIN XMAX],[YMIN YMAX],[],vsticks,dticks,[],...
                         [],[],[0 0 24 18],sizax,0);
                     hold on
+
                     % Loop over all models
                     for ii=1:length(p1(np1(i),:))
                         line(p1(np1(i),ii),p2(np2(j),ii),'color',colall(ii,:),'markerfacecolor',colall(ii,:),...
@@ -1311,14 +1478,14 @@ for ix=Xmidselec
                     drawnow
                     
                     % Save figure
-                    filename=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                    filename=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                         '.param.',param1,num2str(np1(i)),param2,num2str(np2(j)),'.',imgform]);
                     save_fig(f4,filename,imgform,imgres,1,0);
                     close(f4); clear f4;
                     
-                    filename_cbin=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                    filename_cbin=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                         '.cbmisin.',imgform]);
-                    filename_cbout=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                    filename_cbout=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                         '.cbmisout.',imgform]);
                     
                     % Save colorbars
@@ -1360,14 +1527,14 @@ for ix=Xmidselec
             % Concatenation
             if testplot==1
                 % Concatenate parameter plots
-                filename_paramall=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_paramall=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.param.*.',imgform]);
-                filename_imgtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_imgtmp=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
                 cat_img(filename_paramall,imgform,colnb_tmp,'east',filename_imgtmp,0);
                 
                 % Concatenate colorbars
-                filename_cbtmp=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_cbtmp=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.cb.',imgform]);
                 if (cbpos==1 && colnb_tmp==length(np1)*length(np2)) || (cbpos==2 && colnb_tmp>1)
                     cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
@@ -1401,7 +1568,7 @@ for ix=Xmidselec
                 end
                 
                 % Concatenate all
-                filename_param=fullfile(dir_img_ind,[num2str(XmidT(ix),xmidformat),...
+                filename_param=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.param_',param1,num2str(np1(1)),'_',num2str(np1(end)),...
                     param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
                 if cbpos==1 && colnb_tmp==length(np1)*length(np2)
@@ -1452,14 +1619,14 @@ if sum(isnan(nmodeinv))<Xlength && sum(isnan(nC))<Xlength
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Nb of layers for each Xmid
     f13=subplot(5,1,3);
-    plot(XmidT,nC,'k.','linewidth',1)
+    plot(XmidT,inv_set.nC,'k.','linewidth',1)
     set(gca,'YTick',0:2:50);
     xlabel('X (m)');ylabel('Nb of layers');
-    xlim([xmin xmax]); ylim([0 max(nC)+1]);
+    xlim([xmin xmax]); ylim([0 max(inv_set.nC)+1]);
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Nb of models for each Xmid
     f14=subplot(5,1,4);
-    semilogy(XmidT,nmod,'k.','linewidth',1)
+    semilogy(XmidT,inv_set.nmod,'k.','linewidth',1)
     xlabel('X (m)');ylabel('Accepted models');
     xlim([xmin xmax]); ylim([1 nmaxmod(ix)*max(inv_set.nrun(ix))]);
     set(gca,'Ytick',[10^0 10^1 10^2 10^3 10^4 10^5 ...
@@ -1467,9 +1634,9 @@ if sum(isnan(nmodeinv))<Xlength && sum(isnan(nC))<Xlength
     set(gca,'TickDir','out','linewidth',1,'XMinorTick','on','YMinorTick','on');
     % Lambda max for each Xmid
     f15=subplot(5,1,5);
-    plot(XmidT,minmis,'k.','linewidth',1)
+    plot(XmidT,inv_set.minmis,'k.','linewidth',1)
     xlabel('X (m)');ylabel('Misfit min.');
-    xlim([xmin xmax]); ylim([0 max(minmis)+0.05]);
+    xlim([xmin xmax]); ylim([0 max(inv_set.minmis)+0.05]);
     set(gca,'TickDir','out','linewidth',1.5,'XMinorTick','on','YMinorTick','on');
     % Save figure
     filename=fullfile(dir_img_inv_mod,['C_SWIPinv_summary.',imgform]);

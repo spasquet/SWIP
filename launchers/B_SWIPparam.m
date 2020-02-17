@@ -2,7 +2,7 @@ clear all; clc; close all;
 
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE B : SWIPparam.m
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V120.02.17
 %%% SWIPparam.m creates the parameterization file required to invert with
 %%% module C the dispersion curves picked in module A
 %%% It can create either a single parameterization file for all the profile
@@ -25,6 +25,7 @@ paramtype = 0;    % Type of parameterization
 %%% 2 => Fixed Vp defined from velocity model - thicknesses vary with Vs
 %%% 3 => Fixed thicknesses - Vp vary in reduced range defined from velocity model
 %%% 4 => Fixed Vp and thicknesses defined from velocity model
+%%% 5 => Vp, Vs and thicknesses vary in reduced range defined from velocity model
 
 %%% Parameter space settings
 nlay      = 11;   % No. of layers (including half-space)
@@ -33,8 +34,9 @@ nlay      = 11;   % No. of layers (including half-space)
 %%% or vectors with nlay elements (specific parameters for each layer)
 
 nsublay   = 10;   % No. of sublayers per layer (used if shape ~=1)
-thmin     = 0.5;  % Min. thickness per layer (m)
-thmax     = 2.5;    % Max. thickness per layer (m)
+
+thmin     = 10.^linspace(log10(0.5),log10(2),nlay-1);  % Min. thickness per layer (m)
+thmax     = 10.^linspace(log10(1.5),log10(6),nlay-1);    % Max. thickness per layer (m)
 
 lvz       = 0;    % Allow low velocity layer (=1) or not (=0)
 shape     = 1;    % Shape of the velocity variation with depth
@@ -57,6 +59,10 @@ Nulink    = 1;    % Nu linked (=1) or not (=0) to Vs
 plot2dVP  = 1;    % Plot imported Vp models (=1) or not (=0)
 dz        = 0.2;  % Sampling in depth (m)
 vfac      = 0.25; % Increase Vp range (Vpmin-vfac*Vpmin<Vp<Vpmax+vfac*Vpmax)
+
+plot2dVS  = 1;    % Plot empirical Vs models (=1) or not (=0)
+depth_fac = 4;    % Depth conversion factor (wavelength/depth_fac)
+vel_fac   = 0.95; % Velocity conversion factor (phase velocity/vel_fac)
 
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%

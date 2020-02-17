@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% Default settings
-%%% S. Pasquet - V17.06.12
+%%% S. Pasquet - V18.11.26
 
 matrelease=version('-release'); % Get matlab release
 
@@ -30,7 +30,7 @@ if exist('dW','var')==0 || isempty(dW)==1
 end
 % Offset min. between window and shot (nb of traces)
 if exist('dSmin','var')==0 || isempty(dSmin)==1
-    dSmin=0;
+    dSmin=1;
 end
 % Offset max. between window and shot (nb of traces)
 if exist('dSmax','var')==0 || isempty(dSmax)==1
@@ -39,6 +39,10 @@ end
 % Source side (B=both, L=left, R=right)
 if exist('side','var')==0 || isempty(side)==1
     side='B';
+end
+% Force using only one shot gather (=1) or not (=0)
+if exist('one_shot','var')==0 || isempty(one_shot)==1
+    one_shot=0;
 end
 
 % P-omega transform settings (used if calc=1 or calc=2)
@@ -68,11 +72,15 @@ if exist('vmin','var')==0 || isempty(vmin)==1
 end
 % Max. velocity for p-omega transform (m/s)
 if exist('vmax','var')==0 || isempty(vmax)==1
-    vmax=1500;
+    vmax=2000;
 end
 % Vel. vs Freq. (=0) or Freq. vs Vel. (=1)
 if exist('flip','var')==0 || isempty(flip)==1
     flip=1;
+end
+% Normalize single dispersion images (=1) or not (=0)
+if exist('normalize','var')==0 || isempty(normalize)==1
+    normalize=2;
 end
 
 % Filter and mute settings (used if calc=1)
@@ -132,7 +140,7 @@ if exist('mappicklog','var')==0 || isempty(mappicklog)==1
 end
 % Min. phase velocity sampling (m/s)
 if exist('dvmin','var')==0 || isempty(dvmin)==1
-    dvmin=2;
+    dvmin=0;
 end
 % First picked propagation mode (0 = fundamental)
 if exist('modeinit','var')==0 || isempty(modeinit)==1
@@ -150,7 +158,7 @@ end
 % Dispersion curves sampling settings
 % Convert picks to dinver target (=1) or not (=0)
 if exist('target','var')==0 || isempty(target)==1
-    target=0;
+    target=1;
 end
 % Surface-wave type (R=Rayleigh or L=Love)
 if exist('wave','var')==0 || isempty(wave)==1
@@ -168,17 +176,37 @@ end
 if exist('resampvec','var')==0 || isempty(resampvec)==1
     resampvec=[];
 end
+% Resampling vector min. (wavelength [m] or frequency [Hz])
+if exist('min_resamp','var')==0 || isempty(min_resamp)==1
+    if sampling == 1
+        min_resamp = 0.5;
+    else
+        min_resamp = [];
+    end
+end
+% Resampling vector max. (wavelength [m] or frequency [Hz])
+if exist('max_resamp','var')==0 || isempty(max_resamp)==1
+    if sampling == 1
+        max_resamp = [];
+    else
+        max_resamp = 100;
+    end
+end
+% Number of samples in vector
+if exist('n_resamp','var')==0 || isempty(n_resamp)==1
+    n_resamp=50;
+end
 % Freq. low cut: user defined (=0) or amplitude threshold (=1)
 if exist('freqlim','var')==0 || isempty(freqlim)==1
-    freqlim=1;
+    freqlim=0;
 end
 % Min. picked frequency (Hz)
 if exist('fminpick','var')==0 || isempty(fminpick)==1
-    fminpick=2;
+    fminpick=0;
 end
 % Amplitude threshold (between 0 and 1) (used if freqlim=1)
 if exist('specampmin','var')==0 || isempty(specampmin)==1
-    specampmin=0.01;
+    specampmin=0.005;
 end
 
 % Error settings (used if target=1)
@@ -192,11 +220,11 @@ if exist('nWfac','var')==0 || isempty(nWfac)==1
 end
 % Min. vel. error for Lorentz (m/s) (used if err=1)
 if exist('minerrvel','var')==0 || isempty(minerrvel)==1
-    minerrvel=10;
+    minerrvel=20;
 end
 % Max. vel. error ratio for Lorentz (used if err=1)
 if exist('maxerrrat','var')==0 || isempty(maxerrrat)==1
-    maxerrrat=0.5;
+    maxerrrat=0.3;
 end
 % Standard deviation error (%) (used if err=2)
 if exist('sigma','var')==0 || isempty(sigma)==1
@@ -252,11 +280,11 @@ if exist('imgform','var')==0 || isempty(imgform)==1
 end
 % Fig. resolution (dpi) when saving as raster
 if exist('imgres','var')==0 || isempty(imgres)==1
-    imgres=500;
+    imgres=250;
 end
 % Fig. font size (reduce by 40% with fs=40 => fs=16 in AI) (max=40)
 if exist('fs','var')==0 || isempty(fs)==1
-    fs=20;
+    fs=16;
 end
 % Colorbar on the right (=1) or at the bottom (=2)
 if exist('cbpos','var')==0 || isempty(cbpos)==1
@@ -315,7 +343,7 @@ if exist('pickcol2','var')==0 || isempty(pickcol2)==1
 end
 % Plot low cut frequency (=1) or not (=0)
 if exist('plotflim','var')==0 || isempty(plotflim)==1
-    plotflim=1;
+    plotflim=0;
 end
 % Plot max. lambda defined by resampvec (=1) or not (=0)
 if exist('plotlamlim','var')==0 || isempty(plotlamlim)==1
@@ -417,7 +445,7 @@ end
 % Empirical 2D Vs section settings
 % Depth conversion factor (wavelength/depth_fac)
 if exist('depth_fac','var')==0 || isempty(depth_fac)==1
-    depth_fac   = 2;
+    depth_fac   = 3;
 end
 % Velocity conversion factor (phase velocity/vel_fac)
 if exist('vel_fac','var')==0 || isempty(vel_fac)==1
@@ -450,7 +478,7 @@ if exist('thmin','var')==0 || isempty(thmin)==1
 end
 % Max. thickness per layer (m)
 if exist('thmax','var')==0 || isempty(thmax)==1
-    thmax=2.5;
+    thmax=3;
 end
 
 % Allow low velocity layer (=1) or not (=0) for each layer
@@ -775,6 +803,10 @@ end
 if exist('fact','var')==0 || isempty(fact)==1
     doifact=0.66;
 end
+% VsSTD limit (%) to apply mask (used if plotDOI = 2)
+if exist('std_mask','var')==0 || isempty(std_mask)==1
+    std_mask=15;
+end
 % Percentage error on velocity models (in %) (0 to use STD from SWIP)
 if exist('errstd','var')==0 || isempty(errstd)==1
     errstd=0;
@@ -791,6 +823,18 @@ end
 % Vp/Vs ticks
 if exist('vpvsticks','var')==0 || isempty(vpvsticks)==1
     vpvsticks=[];
+end
+% Min Vpt*s
+if (exist('vptvsMIN','var')==0 || isempty(vptvsMIN)==1) || (exist('vptvsMAX','var')==0 || isempty(vptvsMAX)==1)
+    vptvsMIN=[];
+end
+% Max Vp*Vs
+if (exist('vptvsMIN','var')==0 || isempty(vptvsMIN)==1) || (exist('vptvsMAX','var')==0 || isempty(vptvsMAX)==1)
+    vptvsMAX=[];
+end
+% Vp*Vs ticks
+if exist('vptvsticks','var')==0 || isempty(vptvsticks)==1
+    vptvsticks=[];
 end
 % Min Poisson's ratio
 if (exist('poisMAX','var')==0 || isempty(poisMAX)==1) || (exist('poisMIN','var')==0 || isempty(poisMIN)==1)
@@ -872,6 +916,10 @@ end
 if exist('maskDOI','var')==0 || isempty(maskDOI)==1
     maskDOI=2;
 end
+% Transparency mask (=1) or not (=0)
+if exist('transpa','var')==0 || isempty(transpa)==1
+    transpa=0;
+end
 % Plot specific isocontours on all plots (>0) or not (=0)
 %%% Vp (=1), Vs (=2), StdVs (=3), Vp/Vs (=4), Poisson's ratio (=5), auxiliary data (=6)
 if exist('plotiso','var')==0 || isempty(plotiso)==1
@@ -882,13 +930,17 @@ if exist('specISO','var')==0 || isempty(specISO)==1
     specISO=[];
 end
 
-% Colormap for Vp, Vs and Rho
+% Colormap for Vp and Vs
 if exist('map5','var')==0 || isempty(map5)==1
     map5=haxby(32);
 end
 % Colormap for Vp/Vs and Poisson's ratio
 if exist('map6','var')==0 || isempty(map6)==1
     map6=haxby(32);
+end
+% Colormap for Standard Deviation
+if exist('map7','var')==0 || isempty(map7)==1
+    map7=flipud(inferno(32));
 end
 
 % Min altitude (m)
@@ -903,22 +955,22 @@ end
 if exist('zticks','var')==0 || isempty(zticks)==1
     zticks=[];
 end
-% Min StdVs (m/s)
+% Min StdVs (%)
 if (exist('stdMIN','var')==0 || isempty(stdMIN)==1) || (exist('stdMAX','var')==0 || isempty(stdMAX)==1)
-    stdMIN=0;
+    stdMIN=[];
 end
-% Max STdVs (m/s)
+% Max STdVs (%)
 if (exist('stdMIN','var')==0 || isempty(stdMIN)==1) || (exist('stdMAX','var')==0 || isempty(stdMAX)==1)
-    stdMAX=150;
+    stdMAX=[];
 end
-% Vs STD ticks (m/s)
+% Vs STD ticks (%)
 if exist('stdticks','var')==0 || isempty(stdticks)==1
     stdticks=[];
 end
 
 % Colormap for auxiliary data
-if exist('map7','var')==0 || isempty(map7)==1
-    map7=haxby(32);
+if exist('map8','var')==0 || isempty(map8)==1
+    map8=haxby(32);
 end
 % Min auxiliary data
 if (exist('auxMAX','var')==0 || isempty(auxMAX)==1) || (exist('auxMIN','var')==0 || isempty(auxMIN)==1)
@@ -952,6 +1004,10 @@ end
 % Vp/Vs isocontours
 if exist('vpvsISO','var')==0 || isempty(vpvsISO)==1
     vpvsISO=[];
+end
+% Vp*Vs isocontours
+if exist('vptvsISO','var')==0 || isempty(vptvsISO)==1
+    vptvsISO=[];
 end
 % Poisson's ratio isocontours
 if exist('poisISO','var')==0 || isempty(poisISO)==1

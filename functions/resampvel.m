@@ -10,11 +10,8 @@ end
 % Resample in lambda or frequency
 if sampling==1
     lambda=round((vel./freq)*1e10)/1e10;
-    %     dlam=mean(unique(diff(resampvec)));
-    %     dl=unique(diff(lambda));
-    %     if mean(abs(diff(dl)))<1e-10 || isnan(mean(abs(diff(dl))))==1
-    %         lambda=round(lambda/dlam)*dlam;
-    %     end
+    resampvec = round(resampvec*1e10)/1e10;
+%     lambda = vel./freq;
     if length(unique(lambda))<length(lambda)
         [lambda,I]=unique(lambda,'first');
         vel=vel(I);    
@@ -26,6 +23,10 @@ if sampling==1
     if exist('flim','var')==1
         vresamp(freqresamp<flim)=NaN;
     end
+    
+%     if max(vresamp./freqresamp) > 123 && max(vresamp./freqresamp) < 130
+%        keyboard 
+%     end
     if withnan==0
         freqresamp=fliplr(freqresamp(isnan(vresamp)==0));
         deltaresamp=fliplr(deltaresamp(isnan(vresamp)==0));

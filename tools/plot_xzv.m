@@ -49,7 +49,7 @@ else
         return
     end
 end
-% keyboard
+
 if exist('ISOvel2','var')==1 && isempty(ISOvel2)==0
     if exist('filevel2','var')==0 || isempty(filevel2)==1
         [filevel2,pathvel2]=uigetfile({'*.model;*.dat;*.xzv'},'Select velocity model');
@@ -85,11 +85,11 @@ if exist('zMIN','var')==0 || isempty(zMIN)==1 || exist('zMAX','var')==0 || isemp
 end
 
 if logscale==0
-    fig=plot_img([],Xi,Zi,Vi,map7,axetop,0,1,fs,'X (m)',...
+    fig=plot_img([],Xi,Zi,Vi,map5,axetop,0,1,fs,'X (m)',...
         'Altitude (m)',vtitle,[xMIN xMAX],[zMIN zMAX],...
         [vsMIN vsMAX],xticks,zticks,vsticks,[],[],isoline,[25 16 24 12],[],vertex,blocky);
 else
-    fig=plot_img_log([],Xi,Zi,Vi,map7,axetop,0,1,fs,'X (m)',...
+    fig=plot_img_log([],Xi,Zi,Vi,map5,axetop,0,1,fs,'X (m)',...
         'Altitude (m)',vtitle,[xMIN xMAX],[zMIN zMAX],...
         [vsMIN vsMAX],xticks,zticks,vsticks,[],[],isoline,[25 16 24 12],[],vertex,blocky);
 end

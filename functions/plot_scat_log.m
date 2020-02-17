@@ -1,7 +1,7 @@
 function [fig,han1,han2,han3,c]=plot_scat_log(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,...
     xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V18.08.14
 %
 % plot_scat_log(h,X,Y,Z,marker,markersize,filled,map,axetop,axerev,cb,fs,...
 % xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,xticks,yticks,zticks,xline,yline,sizefig,sizeax,vertex)
@@ -79,7 +79,7 @@ else
     han1=scatter(X,Y,markersize,Zlog,marker);
 end
 hold on
-grid off; box on;
+grid on; box on;
 
 % Vertical exageration
 if exist('vertex','var')==1 && isempty(vertex)~=1
@@ -118,12 +118,12 @@ end
 if exist('xlimit','var')==1 && isempty(xlimit)~=1
     xlim(xlimit)
 else
-    xlim([min(X(:))-abs(median(unique(diff(X(:))))) max(X(:))+abs(median(unique(diff(X(:)))))]);
+    xlim([min(X(:))-min(abs(diff(X(~isnan(X))))) max(X(:))+min(abs(diff(X(~isnan(X)))))]);
 end
 if exist('ylimit','var')==1 && isempty(ylimit)~=1
     ylim(ylimit);
 else
-    ylim([min(Y(:))-abs(median(unique(diff(Y(:))))) max(Y(:))+abs(median(unique(diff(Y(:)))))]);
+    ylim([min(Y(:))-min(abs(diff(Y(~isnan(Y))))) max(Y(:))+min(abs(diff(Y(~isnan(Y)))))]);
 end
 
 % Change ticks
@@ -177,12 +177,10 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb==1
             ztickslog=get(cbhandle,'Ytick');
         end
         zticks=10.^(mn+rng*(ztickslog-1)/(length(map)-1));
-        if min(zticks)<1
-            prec=1;
-        elseif min(zticks)<0.1
-            prec=2;
+        if abs(min(zticks))<1
+            prec = -log10(abs(min(zticks)));
         else
-            prec=0;
+            prec = 0;
         end
         zticks = round(10^prec*zticks)/10^prec;
     end

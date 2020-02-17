@@ -1,6 +1,6 @@
 function acquiparam=get_acquiparam(sufile,xsca,istomo)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V19.01.28
 % get_acquiparam.m retrieves .SU file acquisition parameters
 %
 % acquiparam=get_acquiparam(sufile,xsca,istomo)
@@ -67,8 +67,11 @@ Gz=str2num(Gz)/xsca;
 [~,Sz]=unix(['sugethw < ',sufile,' key=selev output=geom']);
 Sz=str2num(Sz)/xsca;
 % Sources number
-[~,fldr]=unix(['sugethw < ',sufile,' key=fldr output=geom | uniq']);
-fldr=str2num(fldr);
+[~,fldr]=unix(['sugethw < ',sufile,' key=fldr output=geom']);
+[fldr,I]=unique(str2num(fldr),'first');
+% Sort source numbers with shot positions
+[~,J]=sort(Sx(I));
+fldr=fldr(J);
 
 [Gxsing,I]=unique(Gx,'first'); % Single geophone positions
 Gzsing=Gz(I); % Single geophone altitude
@@ -78,7 +81,13 @@ NGx=length(Gxsing); % Nb of geophones positions
 NSx=length(Sxsing); % Nb of sources positions
 [Xsing,I]=unique([Gxsing;Sxsing],'first'); % X single positions
 Zsing=[Gzsing;Szsing]; % Z single positions
-topo=sortrows([Xsing,Zsing(I)],1); % Topo
+
+array  = check_depth_array(Gx,Gz,Sx,Sz);
+if ~isempty(array{1})
+    topo = unique(sortrows([array{1}.G_sing; array{1}.S_sing],1),'rows');
+else
+    topo=sortrows([Xsing,Zsing(I)],1); % Topo
+end
 
 acquiparam=struct('dt',dt,'dx',dx,'Gx',Gx,'Gz',Gz,'Sx',Sx,'Sz',Sz,...
     'NGx',NGx,'NSx',NSx,'Gxsing',Gxsing,'Gzsing',Gzsing,...

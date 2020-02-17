@@ -13,7 +13,7 @@ if exist('autosize','var')==0 || isempty(autosize)==1
 end
 
 if exist('transparent','var')==0 || isempty(transparent)==1
-    transparent=0;
+    transparent = 0;
 end
 
 if transparent == 0

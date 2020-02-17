@@ -1,4 +1,4 @@
-function [VelI,XI,ZI]=readtomo(Velfile,mask,X,Z,xsca,vaverage,nW,dx)
+function [VelI,XI,ZI,VelI_std]=readtomo(Velfile,mask,X,Z,xsca,vaverage,nW,dx)
 
 %%% S. Pasquet - V16.11.18
 % Read tomography velocity file with x,z,v columns and resample it along
@@ -14,6 +14,8 @@ end
 if exist('vaverage','var')==0 || isempty(vaverage)==1
     vaverage=0; nW=0; dx=0;
 end
+
+VelI_std = [];
 
 % Read refraction velocity model
 bb=load(Velfile);
@@ -31,69 +33,94 @@ bb=sortrows(bb,1);
 Xi=unique(bb(:,1));
 Zi=unique(bb(:,2));
 nxi=length(Xi);
-% nzi=length(Zi);
-dxv=min(unique(diff(Xi)));
-dzv=min(unique(diff(Zi)));
-dxz=round(mean([dxv,dzv])*0.5*xsca)/xsca;
-% minx=min(Xi);
-minz=min(Zi);
-% maxx=max(Xi);
-maxz=max(Zi);
+nzi=length(Zi);
 
-% Xv=minx:dxv:maxx;
-Xv=Xi';
-Zv=minz:dxz:maxz;
-% XV=repmat(Xv,length(Zv),1);
-% ZV=repmat(Zv',1,length(Xv));
-% nxv=length(Xv);
-nzv=length(Zv);
+test_sizeX = length(unique(hist(bb(:,1),Xi)));
+test_sizeZ = length(unique(hist(bb(:,2),Zi)));
 
-Vel=zeros(nxi,nzv)*NaN;
-for i=1:nxi
-    [Ztmp,II]=sort(bb(bb(:,1)==Xi(i),2));
-    Veltmp=bb(bb(:,1)==Xi(i),3);
-    Veltmp=Veltmp(II);
-    if length(find(Veltmp>0))>1
-        Vel(i,:)=interp1qr(Ztmp(Veltmp>0),Veltmp(Veltmp>0),Zv');
+if test_sizeX == 1 && (~exist('X','var') || isempty(X) || ~exist('Z','var') || isempty(Z))
+    XI = reshape(bb(:,1),length(bb(:,1))/nxi,nxi);
+    ZI = reshape(bb(:,2),length(bb(:,2))/nxi,nxi);
+    VelI = reshape(bb(:,3),length(bb(:,3))/nxi,nxi);
+else
+    dxv=min(unique(diff(Xi)));
+    dzv=min(unique(diff(Zi)));
+    dxz=round(mean([dxv,dzv])*0.5*xsca)/xsca;
+    minz=min(Zi);
+    maxz=max(Zi);
+    
+    Xv=Xi';
+    Zv=minz:dxz:maxz;
+    nzv=length(Zv);
+    
+    Vel=zeros(nxi,nzv)*NaN;
+    topo=zeros(nxi,1)*NaN; 
+    
+    for i=1:nxi
+        [Ztmp,II]=sort(bb(bb(:,1)==Xi(i),2));
+        Veltmp=bb(bb(:,1)==Xi(i),3);
+        Veltmp=Veltmp(II);
+        if length(find(Veltmp>0))>1
+            Vel(i,:)=interp1qr(Ztmp(Veltmp>0),Veltmp(Veltmp>0),Zv');
+        end
+        ind_topo = find(~isnan(Vel(i,:)),1,'last');
+        if ~isempty(ind_topo)
+            topo(i) = Zv(ind_topo);
+        end
     end
+    DEPTH = bsxfun(@minus,topo,Zv);
+    
 end
-% Vel=zeros(nzv,nxv);
-% for i=1:nzv
-%     Veltmp=Veli(isnan(Veli(:,i))==0,i);
-%     Xtmp=Xi(isnan(Veli(:,i))==0);
-%     Vel(i,:)=interp1(Xtmp,Veltmp,Xv,'linear');
-% end
-% Vel=Vel';
-
-% Xv=reshape(bb(:,1),nz,nx);
-% Zv=reshape(bb(:,2),nz,nx);
-% dxv=(max(bb(:,1))-min(bb(:,1)))/(nx-1);
-% dzv=(max(bb(:,2))-min(bb(:,2)))/(nz-1);
-% Vel=reshape(bb(:,3),nz,nx);
 
 if exist('X','var')==1 && isempty(X)==0 && exist('Z','var')==1 && isempty(Z)==0
-    [XI,ZI]=meshgrid(X,Z);
+    if min(size(X))==1
+        [XI,ZI]=meshgrid(X,Z);
+    else
+        XI = X; ZI = Z;
+    end
     if vaverage==1
         % Average velocity below extraction window
-        [XI2,ZI2]=meshgrid(X,Zv);
-        VelI2=zeros(size(Vel,2),length(X));
-        for i=1:length(X)
-            vtemp2=zeros(size(Vel,2),1);
-            for j=1:size(Vel,2)
-                vtemp=Vel(Xv>=X(i)-dx*(nW-1)*0.5 ...
-                & Xv<=X(i)+dx*(nW-1)*0.5,j);
-                vtemp=vtemp(~isnan(vtemp));
-                vtemp2(j)=mean(vtemp);
+        [XI2,ZI2]=meshgrid(Xv,Zv);
+        VelI2 = zeros(size(XI2))*NaN;
+        VelI2_std = VelI2;
+        
+        for i = 1:size(Vel,1)
+            vtemp2 = zeros(size(Vel,2),1)*NaN;
+            vtemp2_std = vtemp2;
+            if length(unique(nW)) == 2
+                max_depth_win = max(nW).*10.^(1./sqrt(0.5*max(nW)));
+                nW_tmp = interp1([0 max_depth_win],nW,DEPTH(i,:),'linear',max(nW));
+                nW_tmp(find(nW_tmp==min(nW))+1:end) = NaN;
+%                 nW_tmp = interp1([0 max(DEPTH(:))],nW,DEPTH(i,:));
+                nW_tmp = flipud(nW_tmp);
+            else
+                nW_tmp = unique(nW)*ones(size(Vel,2));
             end
-            VelI2(:,i)=vtemp2;
+            for j = 1:size(Vel,2)
+                if DEPTH(i,j) < 0
+                    continue
+                end
+                vtemp = Vel(Xv>=Xv(i)-dx*(nW_tmp(j))*0.5 & Xv<=Xv(i)+dx*(nW_tmp(j))*0.5,DEPTH(i,:) == DEPTH(i,j));
+                vtemp = vtemp(~isnan(vtemp));
+                vtemp2(j) = mean(vtemp);
+                vtemp2_std(j) = std(vtemp);
+            end
+            VelI2(:,i)= vtemp2;
+            VelI2_std(:,i)= vtemp2_std;
         end
-        VelI=interp2(XI2,ZI2,VelI2,XI,ZI);
+        VelI = interp2(XI2,ZI2,VelI2,XI,ZI);
+        VelI_std = interp2(XI2,ZI2,VelI2_std,XI,ZI);
+%         plot_img([],XI2,ZI2,Vel');
+%         plot_img([],XI2,ZI2,VelI2);
+%         plot_img([],XI,ZI,VelI);
     else
-        VelI=interp2(Xv',Zv',Vel',XI,ZI);
+        VelI = interp2(Xv',Zv',Vel',XI,ZI);
+        VelI_std = 0.1*VelI;
     end
 else
-    VelI=Vel';
-    [XI,ZI]=meshgrid(Xi,Zv);
-end
-
+    if test_sizeX ~=1
+        VelI = Vel';
+        VelI_std = 0.1*VelI;
+        [XI,ZI] = meshgrid(Xi,Zv);
+    end
 end

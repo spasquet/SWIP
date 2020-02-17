@@ -1,4 +1,4 @@
-function [vpout,vpoutmin,vpoutmax,vsout]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
+function [vpout,vpoutmin,vpoutmax,vsout,vpoutstd]=velresamp(zin,vpin,zin2,vsin2,poisMIN,verbose,plot)
 
 %%% S. Pasquet - V17.05.10
 % Resample velocity model according to another one
@@ -16,20 +16,25 @@ else
     vsout=[];
     plot=0;
 end
+vpoutstd = [];
 nlay=length(zin2)-1;
+
 if nlay<length(zin)
     vpout=zeros(1,nlay);
     vpoutmin=vpout;
     vpoutmax=vpout;
+    vpoutstd=vpout;
     for ll=1:nlay
         if isempty(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)))==1 && ll>1
             vpout(ll)=vpout(ll-1);
             vpoutmin(ll)=vpoutmin(ll-1);
             vpoutmax(ll)=vpoutmax(ll-1);
+            vpoutstd(ll)=vpoutstd(ll-1);
         else
             vpout(ll)=mean(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
             vpoutmin(ll)=min(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
             vpoutmax(ll)=max(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
+            vpoutstd(ll)=std(vpin(zin>=zin2(ll) & zin<=zin2(ll+1)));
         end
         if isnan(vpout(ll))==1
             vpout(ll)=vpout(ll-1);
@@ -53,6 +58,7 @@ if nlay<length(zin)
         end
     end
     if plot==1
+        figure(2);
         stairs(zin,vpin(2:end),'g');
         view(90,90)
         hold on
@@ -88,6 +94,7 @@ else
         end
     end
     if plot==1
+        figure(2);
         stairs(zin,vpin,'b');
         view(90,90)
         hold on

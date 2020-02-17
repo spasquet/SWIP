@@ -7,7 +7,7 @@ clear all; clc; close all;
 % START OF INITIALIZATION
 
 profilename='swip_profile'; % Name of the profile
-% newrectime=1; % New recording length (add zeros at the end of each trace)
+% newrectime=0.5; % New recording length (add zeros at the end of each trace)
 
 % END OF INITIALIZATION
 %-----------------------%
@@ -33,15 +33,24 @@ if nasc==0
     return
 end
 
-aa=load(fullfile(dir_asc,ascstruct(1).name));
-ngeo=min(size(aa));
-nsamp=max(size(aa));
-% keyboard
-if nsamp>65535 && nsamp==size(aa,1)
-    aa=aa(1:65535,:);
-    fprintf('\n   Too many samples - Reducing number of samples to 65535\n');
-    movefile(fullfile(dir_asc,ascstruct(1).name),fullfile(dir_asc,[ascstruct(1).name,'.old']));
-    dlmwrite(fullfile(dir_asc,ascstruct(1).name),aa,'delimiter',' ','precision','%10.5e');
+for i=1:nasc
+    aa=load(fullfile(dir_asc,ascstruct(i).name));
+    
+%     % Downsample traces
+%     aa=aa(1:4:end,:);
+%     movefile(fullfile(dir_asc,ascstruct(i).name),fullfile(dir_asc,[ascstruct(i).name,'.old']));
+%     dlmwrite(fullfile(dir_asc,ascstruct(i).name),aa,'delimiter',' ','precision','%10.5e');
+%     delete(fullfile(dir_asc,[ascstruct(i).name,'.old']));
+%     %
+    
+    ngeo=min(size(aa));
+    nsamp=max(size(aa));
+    if nsamp>65535 && nsamp==size(aa,1)
+        aa=aa(1:65535,:);
+        fprintf('\n   Too many samples - Reducing number of samples to 65535\n');
+        movefile(fullfile(dir_asc,ascstruct(i).name),fullfile(dir_asc,[ascstruct(i).name,'.old']));
+        dlmwrite(fullfile(dir_asc,ascstruct(i).name),aa,'delimiter',' ','precision','%10.5e');
+    end
 end
 
 linetest=size(aa,2)==max(size(aa));

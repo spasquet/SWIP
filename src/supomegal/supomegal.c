@@ -1,11 +1,21 @@
-/* !!!!!!!!! Pr?ciser modifs Lud 03/2005*/
-/*****************Under Construction*******************/ 
+/* This code is distributed as part of the source-code package SWIP
+/* that accompanies Pasquet and Bodet (2017). The package can be downloaded 
+/* from the Geophysics source-code archive at http://software.seg.org/2017/0008
+/* Use of this code is subject to acceptance of the terms and conditions
+/* that can be found at http://software.seg.org/disclaimer2.txt
+/* Copyright (c) 2017 by the Society of Exploration Geophysicists.
+/* Reference: Pasquet, S., Bodet, L. (2017) SWIP: an integrated workflow for
+/* surface-wave dispersion inversion and profiling, Geophysics, 82(6), 1-15,
+/* doi: 10.1190/geo2016-0625.1.
+
 /*LB : p-omega stack based on Herrmann, 2002, Computer Programs in Seismology */
 /*     http://www.eas.slu.edu/People/RBHerrmann/ComputerPrograms.html */
 
 /* DISERSION IN FOURIER DOMAIN 	 Herrmann CPS 2002	*/
 /*              Adnand Bitri 1999			*/
 /*            Modif Ludovic Bodet 2004                  */
+/*            Modif Sylvain Pasquet 2014                  */
+
 #include "su.h"
 #include "segy.h"
 #include "header.h"
@@ -222,7 +232,7 @@ main(int argc, char **argv)
         efclose (tracefp);
 	if (istmpdir) eremove(tracefile);
 
-	fds = fopen("speclud","w");
+	fds = fopen(".speclud","w");
 
 	for (ix=0; ix<nx; ix++) {
 		for(it=0;it<nt;it++) cwork1[it]=cmplx(in_traces[ix][it],0.0);
@@ -237,7 +247,7 @@ main(int argc, char **argv)
 	}
 	fclose(fds);
 
-	fds = fopen("speclud","r");
+	fds = fopen(".speclud","r");
 	/*warn("%f %f %f",dist[0], dist[1], dist[nx-1]);*/
 	dc = (vmax - vmin)/(nray -1);
 	dct=(int)(1000.0*dc);
@@ -309,7 +319,7 @@ main(int argc, char **argv)
 
 	/* free allocated space */
 	free2float(in_traces);
-	system("rm -rf speclud");
+	system("rm -rf .speclud");
 
 /*	return(CWP_Exit());*/
 

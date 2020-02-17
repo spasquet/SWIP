@@ -25,13 +25,13 @@ if exist('fldr','var')==0 || isempty(fldr)==1
     fldr=str2num(fldr);
 end
 if exist('scal','var')==0 || isempty(scal)==1
-    scal=2.5;
+    scal=1;
 end
 if exist('clip','var')==0 || isempty(clip)==1
     clip=1;
 end
 if exist('perc','var')==0 || isempty(perc)==1
-    perc=95;
+    perc=97;
 end
 
 if exist('imgsize','var')==0 || isempty(imgsize)==1
@@ -40,13 +40,20 @@ end
 
 [~,xsca]=unix(['sugethw < ',fullfile(seismopath,seismofile),' key=scalco output=geom | uniq']);
 xsca=abs(str2double(xsca));
+if xsca == 0
+   xsca = 1; 
+end
+
+tMIN = -20;
+tMAX = 200;
 
 for i=1:length(fldr)
     com1=sprintf('suwind < %s key=fldr min=%d max=%d > tmp.su',fullfile(seismopath,seismofile),fldr(i),fldr(i));
     unix(com1);
     [seismomat,tseis,xseis]=seismo2dat(fullfile(seismopath,'tmp.su'),0);
+    seismomat_norm = bsxfun(@rdivide,seismomat,max(abs(seismomat),[],2));
     delete(fullfile(seismopath,'tmp.su'));
-    fig=plot_wiggle(showplot,-seismomat',xseis/xsca,tseis*1000,scal,clip,perc,...
+    fig=plot_wiggle(showplot,-seismomat_norm',xseis/xsca,tseis*1000,scal,clip,perc,...
         fs,'Gx (m)','Time (ms)',[xMIN xMAX],[tMIN tMAX],xticks,tticks,imgsize,[]);
     file1=[num2str(fldr(i)),'.seismo.',imgform];
     save_fig(fig,file1,imgform,imgres,1);
