@@ -1013,9 +1013,9 @@ if input_vel==1
         DOI = mov_aver(DOI',5,1,length(DOI));
         DOI = median_filt(DOI',5,1,length(DOI));
         DOI = mov_aver(DOI',5,1,length(DOI));
-        indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',3,1,length(indf(~isnan(DOI)))));
-        indf(~isnan(DOI)) = round(median_filt(indf(~isnan(DOI))',3,1,length(indf(~isnan(DOI)))));
-        indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',3,1,length(indf(~isnan(DOI)))));
+        indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',5,1,length(indf(~isnan(DOI)))));
+        indf(~isnan(DOI)) = round(median_filt(indf(~isnan(DOI))',5,1,length(indf(~isnan(DOI)))));
+        indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',5,1,length(indf(~isnan(DOI)))));
     end
     
     %     f1=plot_img([],XmidT,depth,vsstdmat.*maskmat,map7,axetop,0,cbpos,fs,'X (m)',...

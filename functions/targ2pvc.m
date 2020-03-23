@@ -1,8 +1,17 @@
-function [freq,vel,deltac,modes]=targ2pvc(nametarg)
+function [freq,vel,deltac,modes,tst]=targ2pvc(nametarg)
 
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V20.03.23
 % Read .target dinver file
 % [freq,vel,deltac,modes]=targ2pvc(nametarg)
+% Handles dinver > 2
+
+version = geopsy_version();
+
+freq = [];
+vel = [];
+deltac = [];
+modes = [];
+tst = 0;
 
 dir_inv=fileparts(nametarg);
 if strcmp(dir_inv,'')==1
@@ -19,8 +28,24 @@ delete(nametarg(1:end-3));
 
 fid0=fopen(fullfile(dir_inv,'contents.xml'),'r');
 for i=1:9
-    fgets(fid0); % Read line
+    ligne = fgets(fid0); % Read line
+    if i == 5
+        if version == 2 && ~isempty(strfind(ligne,'<position>0 0 0</position>'))
+            fprintf('\n  Target file not compatible with dinver version!!\n\n');
+            tst = 1;
+        elseif version == 3 && isempty(strfind(ligne,'<position>0 0 0</position>'))
+            fprintf('\n  Target file not compatible with dinver version!!\n\n');
+            tst = 1;
+        else
+            tst = 0;
+        end    
+    end
 end
+
+if version > 2
+    ligne = fgets(fid0); % Read line
+end
+
 modalcurve=fgets(fid0); % Read line
 n=0;
 while strcmp(modalcurve(1:end-2),'<ModalCurve>')==1
@@ -29,6 +54,9 @@ while strcmp(modalcurve(1:end-2),'<ModalCurve>')==1
         ligne=fgets(fid0); % Read line
     end
     nsamples=str2double(ligne(strfind(ligne,'<log>')+5:strfind(ligne,' samples')-1));
+    if version > 2
+        ligne=fgets(fid0); % Read line
+    end
     for i=1:5
         ligne=fgets(fid0); % Read line
     end

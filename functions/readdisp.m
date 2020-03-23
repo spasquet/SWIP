@@ -6,6 +6,8 @@ function [D,dispselec]=readdisp(file,nmaxmod,runnb,nbest,marg,freq,vphmin,vphmax
 % included within the error bars
 % [D,dispselec]=readdisp(file,nmaxmod,runnb,nbest,marg,freq,vphmin,vphmax)
 
+version = geopsy_version();
+
 if exist('runnb','var')==0 && exist('nbest','var')==0
     runnb=1;
     fwd=1;
@@ -16,12 +18,6 @@ else
     end
 end
 
-D=cell(nmaxmod,2);
-modnum=zeros(nmaxmod,1)*NaN;
-modok=modnum;
-misround=modnum;
-nfreqsample=modnum;
-
 fileID=fopen(file);
 % Read velocity model
 formatSpec = '%f %f';
@@ -30,6 +26,18 @@ if ligne==-1
 %     fprintf('\n  Empty dispersion file - Re-run forward calculation\n');
     D=[]; dispselec=[];
 else
+%     if version > 2
+%         keyboard
+%         ind_slash = strfind(ligne,'/');
+%         nmaxmod = str2double(ligne(3:ind_slash-1));
+%     end
+    
+    D=cell(nmaxmod,2);
+    modnum=zeros(nmaxmod,1)*NaN;
+    modok=modnum;
+    misround=modnum;
+    nfreqsample=modnum;
+    
     if fwd==1
         fgets(fileID); % Read line
     end
@@ -39,8 +47,17 @@ else
         ligne=fgets(fileID); % Read line
         if length(ligne)>1
             if fwd~=1
-                modnum(nn)=sscanf(ligne,'%*s %*s %*s %*s %*s %*s %*s %*s %d')+(runnb-1)*nmaxmod;
-                misround(nn)=sscanf(ligne,'%*s %*s %*s %*s %*s %*s %*s %*s %*s %*6s %f');
+                if version == 2
+                    modnum(nn)=sscanf(ligne,'%*s %*s %*s %*s %*s %*s %*s %*s %d')+(runnb-1)*nmaxmod;
+                    misround(nn)=sscanf(ligne,'%*s %*s %*s %*s %*s %*s %*s %*s %*s %*6s %f');
+                else
+                    ind_parenthese = strfind(ligne,')');
+                    ind_2points = strfind(ligne,':');
+                    modnum(nn) = str2double(ligne(ind_parenthese+1:ind_2points-1))+(runnb-1)*nmaxmod;
+                    
+                    ind_value = strfind(ligne,'value=');
+                    misround(nn) = str2double(ligne(ind_value+6:end));
+                end
             end
             D(nn,1:2)=textscan(fileID,formatSpec);
             freqcal=round(10000*cat(2,D{nn,1}))/10000;

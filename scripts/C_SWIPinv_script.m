@@ -352,6 +352,15 @@ for ix=Xmidselec
             mkdir(dir_rep_ind);
         end
         
+        % Read target file to get picked dispersion curves and test target
+        % compatibility
+        [~,~,~,modes,tst]=targ2pvc(nametarg);        
+        if tst == 1
+            return
+        end
+        nmodeinv(ix)=length(modes);
+        maxmodeinv(ix)=max(modes);
+        
         % Run NA inversion with dinver
         status=matdinver(nametarg,paramname,nrun,itmax,ns0,ns,nr,dir_rep_ind,verbose);
         if status~=0 % Check if inversion ran correctly
@@ -362,11 +371,6 @@ for ix=Xmidselec
         copyfile(paramname,dir_rep_ind);
         % Compress inversion results to save disk space
         matzip(1,fullfile(dir_rep_ind,'*.report'),zipmethod,1);
-        
-        % Read target file to get picked dispersion curves
-        [~,~,~,modes]=targ2pvc(nametarg);
-        nmodeinv(ix)=length(modes);
-        maxmodeinv(ix)=max(modes);
         
         % Save inversion settings        
         nmaxmod(ix)=(itmax*ns)+ns0;
@@ -619,6 +623,8 @@ for ix=Xmidselec
         THALL=diff(ZALL);
         THALL=round(THALL(1:2:end,:)*1e6)/1e6; % All thickness
         
+        vsmax = ceil(max(VS(:)/10))*10;
+        
         nC(ix)=length(THALL(:,1)); % nb of layers
         
         % Get selected and rejected models
@@ -816,7 +822,7 @@ for ix=Xmidselec
                 if nmod(ix)>1 %&& plotinvres==1
                     [f2,~,~,~,c]=plot_img_log(showplot,velocityS,ZZ,NN,flipud(autumn),...
                         1,1,1,fs,'Vs (m/s)',depthtitle,'Number of models',...
-                        [0 max(velocityS(:))],[dpMIN dpMAX],[1 max(NN(:))],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
+                        [0 vsmax],[dpMIN dpMAX],[1 max(NN(:))],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
                     cm_saturation(0.5);
                     hold on
                     plot(VSridge,ZZ,'color','k','linewidth',1.5);
@@ -967,7 +973,7 @@ for ix=Xmidselec
             % Plot and save average and weighted 1D models
 %             if plotinvres==1
                 [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
-                    'Vs (m/s)',depthtitle,[],[0 max(velocityS(:))],[dpMIN dpMAX],[],[],[],...
+                    'Vs (m/s)',depthtitle,[],[0 vsmax],[dpMIN dpMAX],[],[],[],...
                     [],[],[],[0 0 24 18],[],0);
                 hold on
                 str0='Best model';

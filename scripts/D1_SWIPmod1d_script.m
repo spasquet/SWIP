@@ -283,7 +283,7 @@ if usevptomo==1 || tomo==1
         fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
-            pois_test = 0.425;
+            pois_test = 0.4;
             VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1)); %plot2dcal=0; plothisto=0;
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   No Vs model file selected - Use Poisson''s ratio of %1.2f',pois_test);
@@ -389,7 +389,7 @@ for ix=Xmidselec
         % Check existence of dispersion image file
         dspfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.dsp']);
         dspfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.weight.dsp']);
-        if exist(dspfile_sum_new,'file')==2
+        if exist(dspfile_sum_new,'file')==2 && stack==3
             dspfile_sum = dspfile_sum_new;
         end
         
@@ -775,6 +775,9 @@ for ix=Xmidselec
     %% %% %%
     
     %%%%% Get Depth Of Investigation (DOI) %%%%%
+    if swip==1
+        flipvsstd = flipud([vsstd;vsstd(end)]);
+    end
     
     if plotDOI==1 % Empirical DOI (Lmax*doifact)
         DOI(ix)=lmaxpick(ix)*doifact;
@@ -782,7 +785,6 @@ for ix=Xmidselec
     elseif plotDOI==2 % DOI from VS standard deviation threshold
         if exist('vsstd','var')==1 && isempty(vsstd)==0
             flipmoddepth = flipud(moddepth);
-            flipvsstd = flipud([vsstd;vsstd(end)]);
             indhsd = find(flipvsstd<std_mask,1,'first');
             if isempty(indhsd) || indhsd == 1
                 indhsd = find(flipvsstd<flipvsstd(1),1,'first');

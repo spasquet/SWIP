@@ -210,9 +210,13 @@ else % Semi-automatic parameterization
                     end
                 end
                 if paramtype==2 % Fixed Vp
-                    deltav=2.5*lorentzerr(vpmean',thmean_vec',2,dx);
+                    deltav=lorentzerr(vpmean',cumsum(thmean_vec'),10,1);
                     Vpmax=vpmean+deltav;
                     Vpmin=vpmean-deltav;
+                    if length(Vpmin_init) > 1
+                        Vpmin(end) = Vpmin_init(end);
+                        Vpmax(end) = Vpmax_init(end);
+                    end
                 elseif paramtype==3 % Fixed thickness
                     thmin=thmax;
                 elseif paramtype==4 % Fixed Vp and thickness

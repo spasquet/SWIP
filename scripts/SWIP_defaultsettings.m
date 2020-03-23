@@ -803,9 +803,9 @@ end
 if exist('fact','var')==0 || isempty(fact)==1
     doifact=0.66;
 end
-% VsSTD limit (%) to apply mask (used if plotDOI = 2)
+% VsSTD limit (m/s) to apply mask (used if plotDOI = 2)
 if exist('std_mask','var')==0 || isempty(std_mask)==1
-    std_mask=15;
+    std_mask=500;
 end
 % Percentage error on velocity models (in %) (0 to use STD from SWIP)
 if exist('errstd','var')==0 || isempty(errstd)==1

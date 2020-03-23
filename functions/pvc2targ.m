@@ -1,8 +1,11 @@
 function lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
-%%% S. Pasquet - V17.05.09
+%%% S. Pasquet - V20.03.23
 % Convert .pvc ASCII file in .target dinver file
 % lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
+% Handles dinver > 2
+
+version = geopsy_version();
 
 if nargin<7
     flim=0;
@@ -32,11 +35,22 @@ fprintf(fid0,'%s \n','<Dinver>');
 fprintf(fid0,'%s \n','<pluginTag>DispersionCurve</pluginTag>');
 fprintf(fid0,'%s \n','<pluginTitle>Surface Wave Inversion</pluginTitle>');
 fprintf(fid0,'%s \n','<TargetList>');
-fprintf(fid0,'%s \n',' <ModalCurveTarget type="dispersion">');
+if version > 2
+    fprintf(fid0,'%s \n','<position>0 0 0</position>');
+end
+if version == 2
+    fprintf(fid0,'%s \n',' <ModalCurveTarget type="dispersion">');
+else
+    fprintf(fid0,'%s \n',' <DispersionTarget type="dispersion">');
+end
 fprintf(fid0,'%s \n','<selected>true</selected>');
 fprintf(fid0,'%s \n','<misfitWeight>1</misfitWeight>');
 fprintf(fid0,'%s \n','<minimumMisfit>0</minimumMisfit>');
-fprintf(fid0,'%s \n','<misfitType>L2_Normalized</misfitType>');
+if version == 2
+    fprintf(fid0,'%s \n','<misfitType>L2_Normalized</misfitType>');
+else
+    fprintf(fid0,'%s \n','<misfitType>L2_LogNormalized</misfitType>');
+end
 for ip=1:nmode
     pvcfile=pvcstruct(ip).name;
     m=str2double(pvcfile(end-4)); % Mode number
@@ -63,10 +77,18 @@ for ip=1:nmode
     fprintf(fid0,'%s \n',['<name>',pvcfile,'</name>']);
     fprintf(fid0,'%s \n',['<log>',num2str(nsp),...
         ' samples loaded from file ',pvcfile,'</log>']);
+    if version > 2
+        fprintf(fid0,'%s \n','<enabled>true</enabled>');
+    end
     fprintf(fid0,'%s \n','<Mode>');
     fprintf(fid0,'%s \n','<slowness>Phase</slowness>');
-    fprintf(fid0,'%s \n',['<polarisation>',...
-        wave,'</polarisation>']);
+    if version == 2
+        fprintf(fid0,'%s \n',['<polarisation>',...
+            wave,'</polarisation>']);
+    else
+        fprintf(fid0,'%s \n',['<polarization>',...
+            wave,'</polarization>']);
+    end
     fprintf(fid0,'%s \n','<ringIndex>0</ringIndex>');
     fprintf(fid0,'%s %i %s \n','<index>',m,'</index>');
     fprintf(fid0,'%s \n','</Mode>');
@@ -79,7 +101,11 @@ for ip=1:nmode
             stdev=maxerr*(1/vresamp(ic));
         end
         
-        fprintf(fid0,'%s \n','<StatPoint>');
+        if version == 2
+            fprintf(fid0,'%s \n','<StatPoint>');
+        else
+            fprintf(fid0,'%s \n','<RealStatisticalPoint>');
+        end
         fprintf(fid0,'%s %4.18f %s\n','<x>',...
             freqresamp(ic),'</x>');
         fprintf(fid0,'%s %4.18f %s\n',' <mean>',...
@@ -88,8 +114,11 @@ for ip=1:nmode
             stdev,'</stddev>');
         fprintf(fid0,'%s \n','<weight>1</weight>');
         fprintf(fid0,'%s \n','<valid>true</valid>');
-        fprintf(fid0,'%s \n',' </StatPoint>');
-        
+        if version == 2
+            fprintf(fid0,'%s \n',' </StatPoint>');
+        else
+            fprintf(fid0,'%s \n','</RealStatisticalPoint>');
+        end        
         %         if lininv==1
         %             fprintf(fid2,'%s %d %4.6f %4.6f %4.6f\n',...
         %                 'SURF96 R C X',m,1/freqresamp(ic),...
@@ -116,7 +145,12 @@ if NSP>100
     fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
 end
 
-fprintf(fid0,'%s \n','</ModalCurveTarget>');
+if version == 2
+    fprintf(fid0,'%s \n','</ModalCurveTarget>');
+else
+    fprintf(fid0,'%s \n','</DispersionTarget>');
+end
+
 fprintf(fid0,'%s \n','<AutocorrTarget>');
 fprintf(fid0,'%s \n','<selected>false</selected>');
 fprintf(fid0,'%s \n','<misfitWeight>1</misfitWeight>');
@@ -155,6 +189,14 @@ fprintf(fid0,'%s \n','<misfitWeight>1</misfitWeight>');
 fprintf(fid0,'%s \n','<minimumMisfit>0</minimumMisfit>');
 fprintf(fid0,'%s \n','<misfitType>L2_Normalized</misfitType>');
 fprintf(fid0,'%s \n','</RefractionTarget>');
+if version > 2
+    fprintf(fid0,'%s \n','<MagnetoTelluricTarget>');
+    fprintf(fid0,'%s \n','<selected>false</selected>');
+    fprintf(fid0,'%s \n','<misfitWeight>1</misfitWeight>');
+    fprintf(fid0,'%s \n','<minimumMisfit>0</minimumMisfit>');
+    fprintf(fid0,'%s \n','<misfitType>L2_Normalized</misfitType>');
+    fprintf(fid0,'%s \n','</MagnetoTelluricTarget>');
+end
 fprintf(fid0,'%s \n','</TargetList>');
 fprintf(fid0,'%s \n','</Dinver>');
 

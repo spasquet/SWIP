@@ -1258,9 +1258,9 @@ while i<length(Xmidselec)
                 end
                 % Window positions during picking
                 set(fig2,'name',figname,'numbertitle','off');
-                % set(gcf,'units','normalized','outerposition',[0 0 1 1]); % Full screen left
-                % set(gcf,'units','normalized','outerposition',[-0.02 0.5 0.5 0.5]); % 1/4 screen left bottom
-                set(gcf,'units','normalized','outerposition',[0.65 0.5 0.35 0.5]); % 1/4 screen right top
+%                 set(gcf,'units','normalized','outerposition',[0 0 1 1]); % Full screen left
+                set(gcf,'units','normalized','outerposition',[0.5 0.5 0.5 0.5]); % 1/4 screen left bottom
+%                 set(gcf,'units','normalized','outerposition',[0.65 0.5 0.35 0.5]); % 1/4 screen right top
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
@@ -1318,8 +1318,8 @@ while i<length(Xmidselec)
                 % Window positions during picking
                 set(fig1,'name',['Xmid = ',num2str(XmidT(ix)),' m'],'numbertitle','off');
 %                 set(gcf,'units','normalized','outerposition',[0.3 0 1 1]); % Full screen right
-%                 set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.5 0.5]); % % 1/4 screen left top
-                set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.6 1]); % % 1/2 screen left
+                set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.5 0.5]); % % 1/4 screen left top
+%                 set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.6 1]); % % 1/2 screen left
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
