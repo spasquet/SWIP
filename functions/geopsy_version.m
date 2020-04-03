@@ -1,6 +1,7 @@
 function version = geopsy_version()
+%%% S. Pasquet - V20.04.02
 
-[~,test] = unix('dinver -version');
+[~,test] = unix('geopsy -app-version');
 
-geopsy = strfind(test,'geopsypack-');
-version = str2double(test(geopsy(1)+11));
+geopsy = strfind(test,'geopsy ');
+version = str2double(test(geopsy(1)+7));

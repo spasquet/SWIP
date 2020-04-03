@@ -93,7 +93,7 @@ showplot    = 0;          % Display plots before saving (=1) or not (=0)
 
 %%% Figure display and output settings
 imgform     = 'png';      % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
-imgres      = 250;        % Fig. resolution (dpi) when saving as raster
+imgres      = 200;        % Fig. resolution (dpi) when saving as raster
 fs          = 16;         % Fig. font size
 cbpos       = 1;          % Colorbar on the right (=1) or at the bottom (=2)
 

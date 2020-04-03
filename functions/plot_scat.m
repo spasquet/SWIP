@@ -26,8 +26,9 @@ function [fig,han1,han2,han3,c]=plot_scat(h,X,Y,Z,marker,markersize,filled,map,a
 % vertex -> Vertical exageration: =0 for square axis, =1 for equal axis, >1
 % increase Y axis size, <1 decrease Y axis size
 
-
 % figHandles = findall(0,'Type','figure')
+
+matrelease=version('-release'); % Get matlab release
 
 % Figure handle
 if isempty(h)==0 && h~=0
@@ -132,27 +133,50 @@ end
 % Plot colorbar
 if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
     c=colorbar; % Colorbar
+    if str2double(matrelease(1:4))<=2014
+        c=cbhandle();
+    end
     if exist('ztitle','var')==1 && isempty(ztitle)~=1
         if cb==2
             if axetop==1
-                set(cbhandle,'location','southoutside');
+                set(c,'location','southoutside');
             else
-                set(cbhandle,'location','northoutside');
+                set(c,'location','northoutside');
             end
-            cblabel(ztitle,'Rotation', 0);
+            if str2double(matrelease(1:4))>2014
+                c.Label.String = ztitle;
+                c.Label.Rotation = 0;
+            else
+                cblabel(ztitle,'Rotation', 0);
+            end
         elseif cb==1
-            cblabel(ztitle,'Rotation', 270,'VerticalAlignment','Bottom');
+            if str2double(matrelease(1:4))>2014
+                c.Label.String = ztitle;
+                c.Label.Rotation = 270;
+                c.Label.VerticalAlignment = 'Bottom';
+            else
+                cblabel(ztitle,'Rotation', 270,'VerticalAlignment','Bottom');
+            end
         end
     end
     if exist('zticks','var')==1 && isempty(zticks)~=1
         if cb==2
-            set(cbhandle,'XTick',zticks);
+            if str2double(matrelease(1:4))<=2014
+                ticklength=get(c,'TickLength');
+                set(c,'XTick',zticks,'TickLength',[ticklength(1)/3 ticklength(2)]);
+            else
+                set(c,'XTick',zticks);
+            end
         else
-            set(cbhandle,'YTick',zticks);
+            set(c,'YTick',zticks);
         end
     end
-    ticklength=get(cbhandle,'TickLength');
-    set(cbhandle,'linewidth',1.5,'box','on','TickLength',ticklength*2);
+    ticklength=get(c,'TickLength');
+    if str2double(matrelease(1:4))<=2014
+        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2);
+    else
+        set(c,'LineWidth',1.5,'box','on');
+    end
 else
     c=[];
 end

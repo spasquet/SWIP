@@ -31,18 +31,18 @@ for i=1:9
     ligne = fgets(fid0); % Read line
     if i == 5
         if version == 2 && ~isempty(strfind(ligne,'<position>0 0 0</position>'))
-            fprintf('\n  Target file not compatible with dinver version!!\n\n');
+%             fprintf('\n  Target file not compatible with dinver version!!\n\n');
             tst = 1;
         elseif version == 3 && isempty(strfind(ligne,'<position>0 0 0</position>'))
-            fprintf('\n  Target file not compatible with dinver version!!\n\n');
-            tst = 1;
+%             fprintf('\n  Target file not compatible with dinver version!!\n\n');
+            tst = 2;
         else
             tst = 0;
         end    
     end
 end
 
-if version > 2
+if version > 2 && tst == 0 || tst == 1
     ligne = fgets(fid0); % Read line
 end
 
@@ -54,7 +54,7 @@ while strcmp(modalcurve(1:end-2),'<ModalCurve>')==1
         ligne=fgets(fid0); % Read line
     end
     nsamples=str2double(ligne(strfind(ligne,'<log>')+5:strfind(ligne,' samples')-1));
-    if version > 2
+    if version > 2 && tst == 0 || tst == 1
         ligne=fgets(fid0); % Read line
     end
     for i=1:5

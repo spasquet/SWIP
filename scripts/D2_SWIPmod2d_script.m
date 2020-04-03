@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V18.09.04
+%%% S. Pasquet - V20.04.03
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -172,7 +172,6 @@ if isempty(dpMAX)==1 % Get maximum depth from parameterization if not setup in l
 end
 % Create depth vector
 maxdepth=ceil(dpMAX/dz)*dz;
-% depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 depth = bsxfun(@plus,zround,(0:-dz:-maxdepth)');
 ZZ=0:dz:maxdepth;
 nZ=length(ZZ);
@@ -262,18 +261,12 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
                     [VpItomo,XmidT_vp,depth_vp]=readtomo(Vpfile,0,[],[],xsca); % Read Vp tomo file
                 end
             elseif input_vel==2
-%                 [VpItomo,Xi,Zi]=readtomo(Vpfile,0); % Read Vp tomo file
-%                                 VpItomo=flipud(VpItomo);
                 [VpItomo,Xi,Zi]=readtomo(Vpfile,0,X_plot,depth,xsca,vpaver,[nWmin,nWmax],dx); % Read Vp tomo file
                 zround=interp1(XmidT,zround,unique(Xi),'linear','extrap');
                 XmidT=unique(Xi)';
-%                 depth=flipud(unique(Zi));
                 Xlength=length(XmidT);
                 Xmidselec=1:Xlength;
                 XmidT_vp=X_plot; depth_vp=depth;
-                %                 if vpmask == 0
-                %                     [VpItomo,XmidT_vp,depth_vp]=readtomo(Vpfile,0,[],[],xsca); % Read Vp tomo file
-                %                 end
             end
         catch
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -291,9 +284,10 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
         fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
-            VsItomo=sqrt(VpItomo.^2/((1/(1-2*0.33))+1)); %plot2dcal=0; plothisto=0;
+            pois_test = 0.4;
+            VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1));
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-            fprintf('\n   No Vs model file selected - Use Poisson''s ratio of 0.33');
+            fprintf('\n   No Vs model file selected - Use Poisson''s ratio of %1.2f',pois_test);
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
             
         else
@@ -484,6 +478,7 @@ for ix=Xmidselec
         % Standard deviation file name
         filestd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
             'VmsStd.',modeltype]);
+        % Get min and max std from ridge search
         filemin=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
             'VmsMin.ridge']);
         filemax=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
@@ -519,7 +514,7 @@ for ix=Xmidselec
                 modstd=modmax;
                 %%% A checker !
 %                 modstd(:,3) = max([abs(modmax(:,3)-modvel(:,3)),abs(modmin(:,3)-modvel(:,3))],[],2);
-                modstd(:,3) = modmax(:,3)-modmin(:,3);
+                modstd(:,3) = (modmax(:,3)-modmin(:,3)); % Check division by two for one standard deviation
             elseif exist(filestd,'file')==2
                 modstd=dlmread(filestd,'',1,0);
             else
@@ -554,12 +549,13 @@ for ix=Xmidselec
             if ~any(vsstd)
                 vsstd = vssw*0.15;
             end
-            vsstd_perc=100*(vsstd./vssw);
-            vsstd_perc_log_up=abs(100*((log10(vssw+vsstd) - log10(vssw))./log10(vssw)));
-            vsstd_perc_log_low=abs(100*((log10(vssw-vsstd) - log10(vssw))./log10(vssw)));
+            
+            vsstd_perc = 100*(vsstd./vssw);
+            vsstd_perc_log_up = abs(100*((log10(vssw+vsstd) - log10(vssw))./log10(vssw)));
+            vsstd_perc_log_low = abs(100*((log10(vssw-vsstd) - log10(vssw))./log10(vssw)));
             vsstd_perc_log = (vsstd_perc_log_up + vsstd_perc_log_low)/2;
-            vsstd_perc = vsstd_perc_log;
-            vsstd_perc = vsstd;
+
+            vsstd_ok = vsstd;
             
             %%% Replace VP from SWIP with VP from tomo file if required %%%
             
@@ -716,55 +712,16 @@ for ix=Xmidselec
                     flipmoddepth = flipud(moddepth);
                     flipvsstd = flipud([vsstd;vsstd(end)]);
                     indhsd = find(flipvsstd<std_mask,1,'first');
-                    if isempty(indhsd) || indhsd == 1
+                    if isempty(indhsd) || indhsd <= 2
                         indhsd = find(flipvsstd<flipvsstd(1),1,'first');
-                        if isempty(indhsd) || indhsd == 1
+%                         indmax = find(flipvsstd==max(flipvsstd),1);
+%                         indhsd_all = find(flipvsstd<std_mask);
+%                         indhsd = find(indhsd_all>indmax,1,'first');
+                        if isempty(indhsd) || indhsd <= 2
                             indhsd = find(flipvsstd~=flipvsstd(1),1,'first');
                         end
                     end
                     hsdtmp=flipmoddepth(indhsd-2);
-%                     flipmoddepth = flipud(moddepth);
-%                     flipvsstd = flipud([vsstd_perc;vsstd_perc(end)]);
-%                     flipvssw = flipud([vssw;vssw(end)]);
-%                     ind_hsdtmp = find(flipvssw/flipvssw(1)>0.95,1,'last');
-%                     hsdtmp2 = flipmoddepth(ind_hsdtmp);
-%                     
-%                     if sum(vsstd)~=0 % Case more than one model is in the error bars
-%                         indhsd = find(flipvsstd<std_mask & flipmoddepth>0.15*max(flipmoddepth),1,'first');
-%                         if indhsd ~= 1 % Case there are some VsSTD < std_mask
-%                             hsdtmp=flipmoddepth(indhsd-2);
-%                         elseif indhsd==1 % Case deepest VsSTD < std_mask
-%                             hsdtmp=0;
-%                             %                             indhsd = find(flipvsstd<std_mask & flipmoddepth<hsdtmp2,1,'first');
-%                             %                             hsdtmp = flipmoddepth(indhsd);
-%                         else % Case all VsSTD > std_mask
-%                             hsdtmp=[];
-%                         end
-%                     else % Only one model => VsSTD=0
-%                         hsdtmp=hsdtmp2;
-%                     end
-%                     if isempty(hsdtmp)==1 % Case all VsSTD > std_mask
-%                         hsdtmp=moddepth(find(vsstd_perc<=median(vsstd_perc),1,'first'));
-%                     elseif hsdtmp==0 % Case deepest VsSTD < std_mask
-%                         indhsd=find(flipvsstd>=std_mask & flipmoddepth>0.175*max(flipmoddepth),1,'last');
-%                         if isempty(indhsd)
-%                             hsdtmp=moddepth(find(flipvsstd==max(flipvsstd(flipmoddepth>0.175*max(flipmoddepth))) & flipmoddepth>0.175*max(flipmoddepth),1,'last'));
-% %                             gradvsstd = gradient(flipvsstd);
-% %                             gradvsstd(abs(gradvsstd)<0.01)=0;
-% %                             firstsign = gradvsstd(find(gradvsstd~=0,1,'first'));
-% %                             %                             hsdtmp=flipmoddepth(round(find(sign(gradvsstd)==0-sign(firstsign),1,'first')/1.5));
-% %                             
-% %                             hsdtmp = hsdtmp2;
-%                         else
-%                             hsdtmp=flipmoddepth(indhsd-2);
-%                         end
-%                         if isempty(hsdtmp)==1
-%                             hsdtmp=flipmoddepth(1);
-%                         end
-%                     end
-%                     if hsdtmp>lmaxpick(ix)*doifact
-%                         hsdtmp=lmaxpick(ix)*doifact; % Fix higher limit to lmaxpick(ix)*doifact
-%                     end
                     if plotDOI==2 || maskDOI==2
                         DOI(ix)=zround(ix)-hsdtmp;
                     end
@@ -781,11 +738,11 @@ for ix=Xmidselec
                 end
             end
             
-            % DOI from VS standard deviation threshold (alternative option)
+            % DOI from VS standard deviation threshold (experimental)
             if (plotDOI==3 || maskDOI==3) && input_vel==1
                 flipmoddepth = flipud(moddepth);
                 flipvssw = flipud([vssw;vssw(end)]);
-                flipvsstd = flipud([vsstd_perc;vsstd_perc(end)]);
+                flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
                 ind_hsdtmp = find(flipvssw/flipvssw(1)>0.95,1,'last');
                 hsdtmp = flipmoddepth(ind_hsdtmp);
                 ind_std = find(flipvsstd < std_mask);
@@ -824,7 +781,7 @@ for ix=Xmidselec
                 
                 flipmoddepth = flipud(moddepth);
                 flipvssw = flipud([vssw;vssw(end)]);
-                flipvsstd = flipud([vsstd_perc;vsstd_perc(end)]);
+                flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
                 flipvsstd_filt = mov_aver(flipvsstd',5,1,length(flipvsstd));
                 gradvsstd = mov_aver(gradient(flipvsstd_filt)',5,1,length(gradient(flipvsstd_filt)));
                 ind_nochange = find(flipvssw/flipvssw(1)>0.95,1,'last');
@@ -903,7 +860,7 @@ for ix=Xmidselec
                 vp0=velresamp(moddepth,[vpsw;vpsw(end)],zinc);
                 vs0=velresamp(moddepth,[vssw;vssw(end)],zinc);
                 rho0=velresamp(moddepth,[rhosw;rhosw(end)],zinc);
-                vsstd0=velresamp(moddepth,[vsstd_perc;vsstd_perc(end)],zinc);
+                vsstd0=velresamp(moddepth,[vsstd_ok;vsstd_ok(end)],zinc);
             elseif input_vel==2
                 vp0=vptomo;
                 vs0=vstomo;
@@ -1348,14 +1305,15 @@ if sum(modexist)>0
             blocky=0;
         end
         if transpa == 0
-            [f1,han1]=plot_img(showplot,X_plot,depth,vsmat.*maskmat,map5,axetop,0,cbpos,fs,'X (m)',...
+            [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,vsmat.*maskmat,map5,axetop,0,cbpos,fs,'X (m)',...
                 'Elevation (m)','Vs (m/s)',[xMIN xMAX],[zMIN zMAX],...
                 [vsMIN vsMAX],xticks,zticks,vsticks,[],[],vsISO,[12 0 24 12],[],vertex,blocky);
         else
-            [f1,han1]=plot_img(showplot,X_plot,depth,vsmat,map5,axetop,0,cbpos,fs,'X (m)',...
+            [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,vsmat,map5,axetop,0,cbpos,fs,'X (m)',...
                 'Elevation (m)','Vs (m/s)',[xMIN xMAX],[zMIN zMAX],...
                 [vsMIN vsMAX],xticks,zticks,vsticks,[],[],vsISO,[12 0 24 12],[],vertex,blocky);
-            limvs = get(cbhandle,'Ylim'); tickV = get(cbhandle,'Ytick');
+            
+            limvs = get(c,'Ylim'); tickV = get(c,'Ytick');
             limx = get(gca,'Xlim'); tickX = get(gca,'Xtick');
             limz = get(gca,'Ylim'); tickZ = get(gca,'Ytick');
         end
@@ -1364,13 +1322,14 @@ if sum(modexist)>0
             mask_transp2 = maskmat;
             mask_transp2(isnan(mask_transp2)) = 10;
             mask_transp2(mask_transp2 == 1) = NaN;
-            [f3,han3] = plot_img(0,X_plot,depth,mask_transp2,map5*0+1,axetop,0,cbpos,fs,'X (m)',...
+            [f3,han3,~,~,c] = plot_img(0,X_plot,depth,mask_transp2,map5*0+1,axetop,0,cbpos,fs,'X (m)',...
                 'Elevation (m)','Vs (m/s)',limx,limz,limvs,tickX,tickZ,tickV,[],[],[],...
                 [12 0 24 12],[],vertex,3);
             set(gca, 'color', 'none');
-            set(cbhandle,'color','none');
-            set(get(cbhandle,'Children'),'visible','off');
-            set(get(cbhandle,'ylabel'),'visible','on')
+            set(c,'visible','off');
+%             set(cbhandle,'color','none');
+%             set(get(cbhandle,'Children'),'visible','off');
+%             set(get(cbhandle,'ylabel'),'visible','on')
 %             mask_transp2 = maskmat;
 %             mask_transp2(isnan(mask_transp2)) = 0.75;
 %             set(han3,'AlphaDataMapping','none','AlphaData',mask_transp2,'facealpha','flat','edgealpha','flat');
@@ -1421,8 +1380,8 @@ if sum(modexist)>0
         end
         if testimgmgck==0 && transpa == 1
             unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
-            unix(sprintf('composite %s %s -gravity center %s',filevsmask,filevs,filevs));
-            delete(filevsmask);
+            unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevs,filevs));
+%             delete(filevsmask);
         end
         fprintf(['\n      Saved as ',filevs,'\n']);
         
@@ -1520,14 +1479,14 @@ if sum(modexist)>0
         
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
             if transpa == 0
-                [f1,han1]=plot_img(showplot,X_plot,depth,vpvsmat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,vpvsmat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Vp/Vs',[xMIN xMAX],[zMIN zMAX],...
                     [vpvsMIN vpvsMAX],xticks,zticks,vpvsticks,[],[],vpvsISO,[25 8.5 24 12],sizeax,vertex,blocky);
             else
-                [f1,han1]=plot_img(showplot,X_plot,depth,vpvsmat,map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,vpvsmat,map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Vp/Vs',[xMIN xMAX],[zMIN zMAX],...
                     [vpvsMIN vpvsMAX],xticks,zticks,vpvsticks,[],[],vpvsISO,[25 8.5 24 12],sizeax,vertex,blocky);
-                limvpvs = get(cbhandle,'Ylim'); tickVPVS = get(cbhandle,'Ytick');
+                limvpvs = get(c,'Ylim'); tickVPVS = get(c,'Ytick');
                 limx = get(gca,'Xlim'); tickX = get(gca,'Xtick');
                 limz = get(gca,'Ylim'); tickZ = get(gca,'Ytick');
             end
@@ -1536,13 +1495,14 @@ if sum(modexist)>0
                 mask_transp2 = maskmat;
                 mask_transp2(isnan(mask_transp2)) = 10;
                 mask_transp2(mask_transp2 == 1) = NaN;
-                [f3,han3] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
+                [f3,han3,~,~,c] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Vp/Vs',limx,limz,limvpvs,tickX,tickZ,tickVPVS,[],[],[],...
                     [25 8.5 24 12],sizeax,vertex,3);
                 set(gca, 'color', 'none');
-                set(cbhandle,'color','none');
-                set(get(cbhandle,'Children'),'visible','off');
-                set(get(cbhandle,'ylabel'),'visible','on')
+                set(c,'visible','off');
+%                 set(cbhandle,'color','none');
+%                 set(get(cbhandle,'Children'),'visible','off');
+%                 set(get(cbhandle,'ylabel'),'visible','on')
 %                 mask_transp2 = maskmat;
 %                 mask_transp2(isnan(mask_transp2)) = 0.75;
 %                 set(han3,'AlphaDataMapping','none','AlphaData',mask_transp2,'facealpha','flat','edgealpha','flat');
@@ -1590,7 +1550,7 @@ if sum(modexist)>0
             end
             if testimgmgck==0 && transpa == 1
                 unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
-                unix(sprintf('composite %s %s -gravity center %s',filevsmask,filevpvs,filevpvs));
+                unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevpvs,filevpvs));
                 delete(filevsmask);
             end
             fprintf(['\n      Saved as ',filevpvs,'\n']);
@@ -1601,31 +1561,31 @@ if sum(modexist)>0
         
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
             if transpa == 0
-                [f1,han1]=plot_img(showplot,X_plot,depth,log10(vptvsmat).*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,log10(vptvsmat).*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','log10(Vp*Vs)',[xMIN xMAX],[zMIN zMAX],...
                     [vptvsMIN vptvsMAX],xticks,zticks,vptvsticks,[],[],vptvsISO,[25 8.5 24 12],sizeax,vertex,blocky);
             else
-                [f1,han1]=plot_img(showplot,X_plot,depth,log10(vptvsmat),map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,log10(vptvsmat),map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','log10(Vp*Vs)',[xMIN xMAX],[zMIN zMAX],...
                     [vptvsMIN vptvsMAX],xticks,zticks,vptvsticks,[],[],vptvsISO,[25 8.5 24 12],sizeax,vertex,blocky);
                 pause(0.1);
                 limx = get(gca,'Xlim'); tickX = get(gca,'Xtick');
                 limz = get(gca,'Ylim'); tickZ = get(gca,'Ytick');
-                limvptvs = get(cbhandle,'Ylim'); tickVPtVS = get(cbhandle,'Ytick');
-
+                limvptvs = get(c,'Ylim'); tickVPtVS = get(c,'Ytick');
             end
             
             if transpa == 1
                 mask_transp2 = maskmat;
                 mask_transp2(isnan(mask_transp2)) = 10;
                 mask_transp2(mask_transp2 == 1) = NaN;
-                [f3,han3] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
+                [f3,han3,~,~,c] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','log10(Vp*Vs)',limx,limz,limvptvs,tickX,tickZ,tickVPtVS,[],[],[],...
                     [25 8.5 24 12],sizeax,vertex,3);
                 set(gca, 'color', 'none');
-                set(cbhandle,'color','none');
-                set(get(cbhandle,'Children'),'visible','off');
-                set(get(cbhandle,'ylabel'),'visible','on')
+                set(c,'visible','off');
+%                 set(cbhandle,'color','none');
+%                 set(get(cbhandle,'Children'),'visible','off');
+%                 set(get(cbhandle,'ylabel'),'visible','on')
 %                 mask_transp2 = maskmat;
 %                 mask_transp2(isnan(mask_transp2)) = 0.75;
 %                 set(han3,'AlphaDataMapping','none','AlphaData',mask_transp2,'facealpha','flat','edgealpha','flat');
@@ -1673,7 +1633,7 @@ if sum(modexist)>0
             end
             if testimgmgck==0 && transpa == 1
                 unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
-                unix(sprintf('composite %s %s -gravity center %s',filevsmask,filevptvs,filevptvs));
+                unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevptvs,filevptvs));
                 delete(filevsmask);
             end
             fprintf(['\n      Saved as ',filevptvs,'\n']);
@@ -1684,14 +1644,14 @@ if sum(modexist)>0
         
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
             if transpa == 0
-                [f1,han1]=plot_img(showplot,X_plot,depth,poismat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,poismat.*maskmat,map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Poisson''s ratio',[xMIN xMAX],[zMIN zMAX],...
                     [poisMIN poisMAX],xticks,zticks,poisticks,[],[],poisISO,[25 16 24 12],sizeax,vertex,blocky);
             else
-                [f1,han1]=plot_img(showplot,X_plot,depth,poismat,map6,axetop,0,cbpos,fs,'X (m)',...
+                [f1,han1,~,~,c]=plot_img(showplot,X_plot,depth,poismat,map6,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Poisson''s ratio',[xMIN xMAX],[zMIN zMAX],...
                     [poisMIN poisMAX],xticks,zticks,poisticks,[],[],poisISO,[25 16 24 12],sizeax,vertex,blocky);
-                limpois = get(cbhandle,'Ylim'); tickPOIS = get(cbhandle,'Ytick');
+                limpois = get(c,'Ylim'); tickPOIS = get(c,'Ytick');
                 limx = get(gca,'Xlim'); tickX = get(gca,'Xtick');
                 limz = get(gca,'Ylim'); tickZ = get(gca,'Ytick');
             end
@@ -1700,13 +1660,14 @@ if sum(modexist)>0
                 mask_transp2 = maskmat;
                 mask_transp2(isnan(mask_transp2)) = 10;
                 mask_transp2(mask_transp2 == 1) = NaN;
-                [f3,han3] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
+                [f3,han3,~,~,c] = plot_img(0,X_plot,depth,mask_transp2,map6*0+1,axetop,0,cbpos,fs,'X (m)',...
                     'Elevation (m)','Poisson''s ratio',limx,limz,limpois,tickX,tickZ,tickPOIS,[],[],[],...
                     [25 16 24 12],sizeax,vertex,3);
                 set(gca, 'color', 'none');
-                set(cbhandle,'color','none');
-                set(get(cbhandle,'Children'),'visible','off');
-                set(get(cbhandle,'ylabel'),'visible','on')
+                set(c,'visible','off');
+%                 set(cbhandle,'color','none');
+%                 set(get(cbhandle,'Children'),'visible','off');
+%                 set(get(cbhandle,'ylabel'),'visible','on')
 %                 mask_transp2 = maskmat;
 %                 mask_transp2(isnan(mask_transp2)) = 0.75;
 %                 set(han3,'AlphaDataMapping','none','AlphaData',mask_transp2,'facealpha','flat','edgealpha','flat');
@@ -1754,7 +1715,7 @@ if sum(modexist)>0
             end
             if testimgmgck==0 && transpa == 1
                 unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
-                unix(sprintf('composite %s %s -gravity center %s',filevsmask,filepois,filepois));
+                unix(sprintf('composite %s %s -gravity West %s',filevsmask,filepois,filepois));
                 delete(filevsmask);
             end
             fprintf(['\n      Saved as ',filepois,'\n']);

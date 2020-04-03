@@ -50,6 +50,11 @@ valplot = valplot-dv/2;
 % while ismember(0,diff(round(test*cticks)/test))==1
 %     test=test*10;
 % end
+if abs(min(cticks))<1
+    prec = ceil(-log10(abs(min(cticks))))+1;
+else
+    prec = 0;
+end
 cticks = round(10^prec*cticks)/10^prec;
 
 switch orientation

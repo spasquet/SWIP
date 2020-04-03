@@ -61,7 +61,7 @@ Here is a quick tutorial to run {\SWIP} and reproduce the figures presented in t
 
 \item In {\MATLAB}, go in the extracted folder \verb|your_working_folder/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|yellowstone.su| file provided in the archive (once you've checked that, keep only one {\SU} file in the \verb|your_working_folder/yellowstone| folder). If you are using {\SWIP} in {\Cygwin}, the \verb|yellowstone.su| file provided in the archive will not work, so you will have to use the one created with \verb|seg2su|.
 
-\item Open the script launcher \verb|A_SWIPdisp.m| in {\MATLAB} and run it without changing any parameter (it might take about 45 min to run through the whole line). It will compute dispersion along the acquisition line, with a 31-trace window and shots located on both sides of the window with offset ranging between 0 and 20 traces. It will also resample in wavelength the dispersion curves located in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.pick| and save target files required for the inversion in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|. Finally, it will plot and save 1D data figures (windowed shot gather, composite spectrogram and stacked dispersion image with and without picks) in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data|. The 2D pseudo-section of picked phase velocity will also be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/|.
+\item Open the script launcher \verb|A_SWIPdisp.m| in {\MATLAB} and run it without changing any parameter (it might take about 45 min to run through the whole line). It will compute dispersion along the acquisition line, with a 31-trace window and shots located on both sides of the window with offset ranging between 0 and 20 traces. It will also re-sample in wavelength the dispersion curves located in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.pick| and save target files required for the inversion in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|. Finally, it will plot and save 1D data figures (windowed shot gather, composite spectrogram and stacked dispersion image with and without picks) in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data|. The 2D pseudo-section of picked phase velocity will also be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/|.
 
 \item Run \verb|A_SWIPdisp.m| with \verb|Xmidselec = [16 96]|, \verb|calc = 0|, \verb|plotdisp = 1|, \verb|plotspec = 1|, \verb|plotseismo = 1|, \verb|plotsingle = 1|, \verb|plotstkdisp = 1| (set other plot toggle settings to 0 or comment the corresponding line). Select the folder \verb|W31_31.dW1.dS0_20.B| when asked. It will plot individual windowed shot gathers along with the corresponding spectrograms and dispersion images for $Xmid = 30$~m and $Xmid = 110$~m. It will also plot intermediate stacked dispersion images. These images will be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data/|.
 
@@ -73,16 +73,16 @@ Here is a quick tutorial to run {\SWIP} and reproduce the figures presented in t
 
 \item Run \verb|C_SWIPinv.m| with \verb|Xmidselec = [16 96]|, \verb|inversion = 0| and \verb|plotinvres = 1| to plot inversion results for $Xmid = 30$~m and $Xmid = 110$~m. Select the folder \verb|W31_31.dW1.dS0_20.B|, then the inversion folder \verb|Type1_param|. Resulting figures for the corresponding $Xmid$ will be stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/Type1_param/models.bweb0/1dmodels|.
 
-\item Open the script launcher \verb|D1_SWIPmod1d.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B|, then the inversion folder \verb|Type1_param|, and finally the velocity file \verb|yellowstone_vp.txt|. It will run the forward modelling for $Xmid = 30$~m and $Xmid = 110$~m and plot final 1D $V_P$, $V_S$, $V_P/V_S$ and Poisson's ratio models. It will also plot theoretical dispersion on top of the dispersion image. Resulting figures for the corresponding $Xmid$ will be stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/Type1_param/models.bweb0/1dmodels|.
+\item Open the script launcher \verb|D1_SWIPmod1d.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B|, then the inversion folder \verb|Type1_param|, and finally the velocity file \verb|yellowstone_vp.txt|. It will run the forward modeling for $Xmid = 30$~m and $Xmid = 110$~m and plot final 1D $V_P$, $V_S$, $V_P/V_S$ and Poisson's ratio models. It will also plot theoretical dispersion on top of the dispersion image. Resulting figures for the corresponding $Xmid$ will be stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/Type1_param/models.bweb0/1dmodels|.
 
-\item Open the script launcher \verb|D2_SWIPmod2d.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B|, then the inversion folder \verb|Type1_param|, and finally the velocity file \verb|yellowstone_vp.txt|. When asksed for an auxiliary data file, select the electrical resistivity file \verb|yellowstone_res.txt|. It will first run the forward modelling along the whole line using $V_P$ from tomography and $V_S$ from SWIP. It will then plot pseudo-2D section of observed and calculated phase velocity along with their residual. It will finally plot final 2D $V_P$, $V_S$, $V_P/V_S$, Poisson's ratio and auxiliary data (i.e. electrical resistivity) models. Resulting figures will be stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/Type1_param/models.bweb0/2dmodels|, and ASCII \verb|.xzv| files in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.xzv/Type1_param/models.bweb0|
+\item Open the script launcher \verb|D2_SWIPmod2d.m| in {\MATLAB} and run it without changing any parameter. Select the folder \verb|W31_31.dW1.dS0_20.B|, then the inversion folder \verb|Type1_param|, and finally the velocity file \verb|yellowstone_vp.txt|. When asked for an auxiliary data file, select the electrical resistivity file \verb|yellowstone_res.txt|. It will first run the forward modeling along the whole line using $V_P$ from tomography and $V_S$ from SWIP. It will then plot pseudo-2D section of observed and calculated phase velocity along with their residual. It will finally plot final 2D $V_P$, $V_S$, $V_P/V_S$, Poisson's ratio and auxiliary data (i.e. electrical resistivity) models. Resulting figures will be stored in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/Type1_param/models.bweb0/2dmodels|, and ASCII \verb|.xzv| files in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.xzv/Type1_param/models.bweb0|
 
 \end{enumerate}
 
 \newpage
 \section{Detailed installation instructions}
 \label{sec:detailedinstruc}
-{\SWIP} is a \MATLAB-based software originally developped to work under a GNU/Linux distribution (but it has been sucessfully installed on Mac OS X and Windows). It executes binaries from the open software packages {\SeismicUnix} and {\Geopsy}. It (optionally) requires the open software packages {\ImageMagick}, {\PDFjam}, and {\pdfcrop}.
+{\SWIP} is a \MATLAB-based software originally developed to work under a GNU/Linux distribution (but it has been successfully installed on Mac OS X and Windows). It executes binaries from the open software packages {\SeismicUnix} and {\Geopsy}. It (optionally) requires the open software packages {\ImageMagick}, {\PDFjam}, and {\pdfcrop}.
 
 Whatever OS you are using, you will need the administrator/root rights to install {\SWIP}.
 
@@ -91,11 +91,11 @@ Look at the \textbf{Known problems} section if you encounter issues during insta
 \subsection{First steps}
 Get the latest version of {\SWIP} available at \url{https://github.com/SWIPdev/SWIP/releases}. Download the zipped file \verb|SWIP-x.x.zip| or the gzipped tarfile \verb|SWIP-x.x.tar.gz| containing the source codes for {\SWIP} (the "x.x" is the current release number).
 
-If not already installed, install {\MATLAB} on your computer (no extra toolbox is required). A change of graphics engine in {\MATLAB} 2014b and higher causes problem with figures output (slow figure display, huge output file size). To avoid those problems, I recommend to use an older version of {\MATLAB}.
+If not already installed, install {\MATLAB} on your computer (no extra toolbox is required). A change of graphics engine in {\MATLAB} 2014b and higher can cause problems with figures output (slow figure display, huge output file size). To avoid those problems, I recommend using an older version of {\MATLAB}.
 
 To download an older version, you need to create a Mathworks account (\url{http://www.mathworks.com}) and download the selected release (\url{http://fr.mathworks.com/downloads/select_release?mode=gwylf}). If you are using a network license, just create an account using your institution email. For a standalone license, you will need to associate it with your Mathworks account in the License Center (\textit{Associate License} on the top right of the screen). When installing {\MATLAB}, you will just need to login to your Mathworks account and provide the path of the license file to activate it.
 
-Once {\MATLAB} is installed, you will need to extract the content of the {\SWIP} archive file in your {\MATLAB} path (refered later as \verb|/your/MATLAB/path|) and give {\MATLAB} access to the contents of this folder. To decompress the gzipped tarfile, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux or Mac, or use a software like 7zip if you are under Windows. In {\MATLAB}, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.
+Once {\MATLAB} is installed, you will need to extract the content of the {\SWIP} archive file in your {\MATLAB} path (referred later as \verb|/your/MATLAB/path|) and give {\MATLAB} access to the contents of this folder. To decompress the gzipped tarfile, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux or Mac, or use a software like 7zip if you are under Windows. In {\MATLAB}, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.
 
 Examples of \verb|/your/MATLAB/path| folder:
 
@@ -127,7 +127,7 @@ The following instructions are mainly copied from the {\SeismicUnix} \verb|Insta
 
 Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix} (older versions might not be compatible).
 
-Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
+Create a folder that will contain all the {\SU} codes (referred later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available.
 
 Examples of \verb|/your/SU/path| folder:
 
@@ -179,7 +179,7 @@ For more information about installing {\Geopsy} under Linux, please refer to the
 
 Download the latest stable Linux version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
 
-Create a folder that will contain all the {\Geopsy} codes (refered later as \verb|/your/Geopsy/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 30 Mb available.\\[1ex]
+Create a folder that will contain all the {\Geopsy} codes (referred later as \verb|/your/Geopsy/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 30 Mb available.\\[1ex]
 Examples of \verb|/your/Geopsy/path| folder:
 
 \verb|/usr/local/Geopsy.org| (default)\\
@@ -209,9 +209,12 @@ You will then compile the codes by typing:
 \verb|make|\\
 \verb|make install|
 
+Most of the time, the QT libraries of {\MATLAB} cause dinver to crash. Removing (or renaming) them is a good way of ensuring everything works fine. These libraries are usually found in:
+
+\verb|/your/MATLAB/path/bin/glnxa64/libqt*|\\
 
 \subsubsection{Additionnal packages}
-Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
+Some additional packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publications. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
 
 Install {\ImageMagick} by typing in the terminal: \verb|sudo apt install imagemagick|\\
 Install {\PDFjam} by typing in the terminal: \verb|sudo apt install pdfjam|\\
@@ -228,10 +231,8 @@ Install {\pdfcrop} by typing in the terminal: \verb|sudo apt install texlive-ext
 
 It means there is a conflict between Ubuntu QT libraries and {\MATLAB} QT libaries. A workaround is to delete the redundant libraries of {\MATLAB}. These libraries are usually found in:
 
-\verb|/your/MATLAB/path/bin/glnxa64/libQtGui.so.4|\\
-\verb|/your/MATLAB/path/bin/glnxa64/libQtNetwork.so.4|\\
-\verb|/your/MATLAB/path/bin/glnxa64/libQtCore.so.4|\\
-\verb|/your/MATLAB/path/bin/glnxa64/libstdc++.so.6|
+\verb|/your/MATLAB/path/bin/glnxa64/libqt*|\\
+\verb|/your/MATLAB/path/bin/glnxa64/libstdc++.so.6| (can also cause problems if exists)
 
 - When running MATLAB 2014a in Ubuntu 18.04, there are display problem with MATLAB. You need to install \verb|openjdk-8-jre| and add its location in your \verb|.profile| file with the following line:
 
@@ -239,7 +240,7 @@ It means there is a conflict between Ubuntu QT libraries and {\MATLAB} QT libari
 
 - If the fonts of raster figures are too small, you need to install the following packages:
 
-\verb|sudo apt install xfonts-175dpi|\\
+\verb|sudo apt install xfonts-75dpi|\\
 \verb|sudo apt install xfonts-100dpi|
 
 \clearpage
@@ -312,9 +313,9 @@ Type the commands \verb|supomegal| and \verb|seg2segy| in the terminal to check 
 !! \verb|supomegal| might not compile correctly with older versions of {\SU} (error with \verb|cwp_cexp|) !!
 
 \subsubsection{Geopsy}
-Download the latest stable Mac OS X version of {\Geopsy} at \url{http://www.geopsy.org/download.php} (Check for Old platforms and download the sources for Mountain Lion).
+Download the latest stable Mac OS X version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
 
-Mount the .dmg file, double click and follow the installation instructions. By default, {\Geopsy} will be installed in \verb|/Applications/Geopsy.org| (refered later as \verb|/your/Geopsy/path|).
+Mount the .dmg file, double click and follow the installation instructions. By default, {\Geopsy} will be installed in \verb|/Applications/Geopsy.org| (referred later as \verb|/your/Geopsy/path|).
 
 Set the binaries path in the file \verb|.bash_profile| located in \verb|/Users/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and add the following lines at the end of the file:
 
@@ -324,7 +325,7 @@ Set the binaries path in the file \verb|.bash_profile| located in \verb|/Users/y
 Run \verb|source .bash_profile| in the terminal and check if the path is correctly set by typing \verb|echo $PATH| in the terminal.
 
 \subsubsection{Additionnal packages}
-Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
+Some additional packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publications. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
 
 First of all you need to become the owner of the \verb|/usr/local| folder by running the following command:
 
@@ -346,13 +347,13 @@ Then you need to make a shortcut of that \verb|matlab| file and run {\MATLAB} wi
 \subsection{Install on Windows}
 {\SWIP} has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar on other Windows versions. As mentioned earlier, the Linux-like environment {\Cygwin} is currently required to run {\SeismicUnix} on Windows. However, I don't recommend running {\SWIP} on Windows since the use of a 32 bit version of {\Cygwin} considerably slows down the computation of dispersion images (cf. \ref{sec:cygwin}).
 
-Microsoft has just announced that Windows 10 will soon be able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (\url{https://msdn.microsoft.com/en-us/commandline/wsl/about}). Hopefully we will soon be able to run {\SeismicUnix} without any third party software like {\Cygwin}.
+Windows 10 is now able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (\url{https://msdn.microsoft.com/en-us/commandline/wsl/about}). I have not tried it but we should be able to run {\SeismicUnix} without any third party software like {\Cygwin}.
 
 \subsubsection{Cygwin}
 \label{sec:cygwin}
 Download the 32 bits version of {\Cygwin} available at \url{http://www.cygwin.com/setup-x86.exe} (I could not install {\SU} with the 64 bits version, but if you want to give it a try, be my guest and let me know).
 
-Run \verb|setup-x86.exe|. When asked, choose \textit{Install from Internet}. Select the root folder to install {\Cygwin} (refered later as \verb|\your\cygwin\path|). Make sure it is located in a partition with at least 1 Gb available. Finally, select any of the proposed mirrors to download the data.
+Run \verb|setup-x86.exe|. When asked, choose \textit{Install from Internet}. Select the root folder to install {\Cygwin} (referred later as \verb|\your\cygwin\path|). Make sure it is located in a partition with at least 1 Gb available. Finally, select any of the proposed mirrors to download the data.
 Examples of \verb|\your\cygwin\path| folder:
 
 \verb|C:\cygwin| (default)\\
@@ -374,7 +375,7 @@ The following instructions are mainly copied from the {\SeismicUnix} \verb|Insta
 
 Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix}
 
-Create a folder that will contain all the {\SU} codes (refered later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available. I recommend that you create \verb|/your/SU/path| in the root folder of {\Cygwin} \verb|\your\cygwin\path|.
+Create a folder that will contain all the {\SU} codes (referred later as \verb|/your/SU/path|). This folder should be owned by you (meaning you have write/read/execute rights) and located in a partition with at least 100 Mb available. I recommend that you create \verb|/your/SU/path| in the root folder of {\Cygwin} \verb|\your\cygwin\path|.
 
 Examples of \verb|/your/SU/path| folder (assuming that you create it from the terminal in the root folder of {\Cygwin}):
 
@@ -471,9 +472,9 @@ If it doesn't work, try creating \verb|CWPROOT| and \verb|MATLAB_SHELL| as new \
 
 \subsubsection{Additionnal packages}
 \label{subsec:WinExtra}
-Some additionnal packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separated figures that would need to be concatenated manually).
+Some additional packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separated figures that would need to be concatenated manually).
 
-{\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publicactions. At that point, {\ImageMagick} should have already been installed with {\Cygwin}. However, {\SWIP} uses a function of {\ImageMagick} called \verb|convert| which is redundant with the Windows \verb|convert| function. A workaround consists in creating a link to the {\ImageMagick} \verb|convert| named \verb|img_convert| using the DOS command prompt.
+{\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publications. At that point, {\ImageMagick} should have already been installed with {\Cygwin}. However, {\SWIP} uses a function of {\ImageMagick} called \verb|convert| which is redundant with the Windows \verb|convert| function. A workaround consists in creating a link to the {\ImageMagick} \verb|convert| named \verb|img_convert| using the DOS command prompt.
 
 Go in the Windows \textit{Start} menu and search for \textit{cmd} (or go in \textit{Accessories -> Command Prompt})\\
 Right click on \textit{cmd} or \textit{Command Prompt} and select \textit{Run as administrator}\\
@@ -494,7 +495,7 @@ Download the \textbf{TeX Live} Windows installer at \url{http://mirror.ctan.org/
 \textit{LaTeX recommended packages}\\
 \textit{Windows support programs}
 
-You can also modify the installation folder (refered later as \verb|your\tex\path|) by changing the \textit{TEXDIR (principal TeX folder)} option. Start the installation by clicking on \textit{Install TeX Live}
+You can also modify the installation folder (referred later as \verb|your\tex\path|) by changing the \textit{TEXDIR (principal TeX folder)} option. Start the installation by clicking on \textit{Install TeX Live}
 
 \subsubsection{Known problems}
 \begin{itemize}
@@ -506,15 +507,16 @@ You can also modify the installation folder (refered later as \verb|your\tex\pat
 
 \clearpage
 \section{How to use {\SWIP} (in details)}
+Some options and parameters are not yet described in this manual. Refer to the comments in the scripts and launchers for more details, or send me an email.
 
 %%%%%
 \subsection{Project creation}
 \subsubsection{Creating your project folder}
 Before starting, you need to create a project folder (referred later as \verb|projdir|) in which seismic data will be processed with {\SWIP}. You need to copy the 5 module launchers of {\SWIP} located in \verb|/your/MATLAB/path/SWIP/launchers| into your project folder.
 
-!! Don't create \verb|projdir| in your {\MATLAB} path !!
+\textbf{!! Don't create \verb|projdir| in your {\MATLAB} path !!}
 
-!! Don't work in a path containing spaces or accents in one of the folder names !!
+\textbf{!! Don't work in a path containing spaces or accents in one of the folder names !!}
 
 \subsubsection{Converting field data in SU format}
 \label{sec:seg2su}
@@ -549,7 +551,7 @@ For each parameter, you can use the default/automatic settings by commenting the
 \label{sec:moduleA}
 The first module \verb|A_SWIPdisp.m| takes advantage of multi-shot acquisition set-ups to retrieve the lateral variations of surface-wave dispersion using shot gather windowing and dispersion stacking. A range of acceptable window sizes and shot offsets is first defined to extract the data and compute dispersion images using a slant stack in the frequency domain ($p-\omega$ stack). The windows are then shifted along the acquisition profile to obtain a set of dispersion images associated with their corresponding spread mid-point ($Xmid$). Dispersion images associated with an identical $Xmid$ are finally stacked to improve signal-to-noise ratio and enhance the maxima. The shift between two successive extraction windows can range from one receiver spacing to several window lengths.
 
-On each stacked dispersion image, the coherent maxima associated with the different propagation modes are identified, picked and extracted with an estimated standard error in phase velocity depending on the frequency and the spread length (the dispersion curves can also be imported from another picking software). The dispersion curves are finally resampled either in wavelength or in frequency, with several criterions limiting their frequency range into reasonable boundaries (e.g. minimum frequency defined according to the spectral amplitude, maximum wavelength defined according to the extraction window length...), and saved in the data format required for the inversion software. The dispersion extraction procedure is illustrated by the flowchart in Figure~\ref{fig:flowchart_extraction}.
+On each stacked dispersion image, the coherent maxima associated with the different propagation modes are identified, picked and extracted with an estimated standard error in phase velocity depending on the frequency and the spread length (the dispersion curves can also be imported from another picking software). The dispersion curves are finally re-sampled either in wavelength or in frequency, with several criterions limiting their frequency range into reasonable boundaries (e.g. minimum frequency defined according to the spectral amplitude, maximum wavelength defined according to the extraction window length...), and saved in the data format required for the inversion software. The dispersion extraction procedure is illustrated by the flowchart in Figure~\ref{fig:flowchart_extraction}.
 
 \begin{figure*}
 \centerline{\includegraphics[width=0.65\linewidth]{figures/flowchart_extraction.png}}

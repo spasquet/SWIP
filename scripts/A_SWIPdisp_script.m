@@ -195,6 +195,9 @@ elseif calc==0
     end
     if plotspec==1 && isempty(sizeax)==1
         plotdisp=1; % To avoid sizeax problems
+        if exist(dir_img_disp,'dir')~=7 && plotdisp==1 && strcmp(side,'imported')==0
+            mkdir(dir_img_disp);
+        end
     end
 elseif calc==2
     matfile=fullfile(dir_dat,'imported.param.mat'); % .mat file containing subproject parameters
@@ -438,6 +441,8 @@ end
 if isempty(resampvec) == 1
 %     resampvec = linspace(min_resamp,max_resamp,n_resamp);
     resampvec = logspace(log10(min_resamp),log10(max_resamp),n_resamp);
+else
+    auto_resamp = 0;
 end
 
 % Default error scaling factor (power law depending on window size)
@@ -1072,7 +1077,7 @@ while i<length(Xmidselec)
                 set(gca,'xscale','log');
             end
             sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-            if cb_disp==1
+            if cb_disp==1 && str2double(matrelease(1:4))<=2014
                 sizeax=sizeax{2};
             end
             file1=fullfile(dir_img_disp,[num2str(XmidT(ix),xmidformat),'.disp.',imgform]);
@@ -2025,21 +2030,19 @@ if plot2demp==1 && Xlength>1 && sampling==1 && sum(sum(isnan(vph2dobs{1})))~=num
     if ~isempty(vs_emp)
         f1=plot_img(showplot,XX,ZZ,vs_emp,map5,1,0,cbpos,fs,'X (m)','Elevation (m)','Vs (m/s)',...
             [xMIN xMAX],[zMIN zMAX],[vsMIN vsMAX],xticks,zticks,vsticks,[],[],vsISO,[0 0 24 12],[],1,2);
-    else
-        break
+        hold on
+        plot(acquiparam.topo(:,1),acquiparam.topo(:,2),'k-','linewidth',2);
+        
+        file1=fullfile(dir_img,['Vs_empirical.',imgform]);
+        %     save_fig(f1,file1,imgform,imgres,1);
+        export_fig(file1,strcat('-r',num2str(imgres)));
+        if showplot==0
+            close(f1);
+        else
+            showplot=showplot+1;
+        end
+        save_xzv(fullfile(dir_xzv,'VS_empirical.xzv'),XmidT,ZZ,vs_emp);
     end
-    hold on
-    plot(acquiparam.topo(:,1),acquiparam.topo(:,2),'k-','linewidth',2);
-    
-    file1=fullfile(dir_img,['Vs_empirical.',imgform]);
-%     save_fig(f1,file1,imgform,imgres,1);
-    export_fig(file1,strcat('-r',num2str(imgres)));
-    if showplot==0
-        close(f1);
-    else
-        showplot=showplot+1;
-    end
-    save_xzv(fullfile(dir_xzv,'VS_empirical.xzv'),XmidT,ZZ,vs_emp);
 end
 
 %% %% %%

@@ -26,7 +26,7 @@ function [fig,han1,han2,han3,c]=plot_curv(h,X,Y,errbar,symb,col,lw,axetop,axerev
 % vertex -> Vertical exageration: =0 for square axis, =1 for equal axis, >1
 % increase Y axis size, <1 decrease Y axis size
 
-matrelease=version('-release');
+matrelease=version('-release'); % Get matlab release
 
 % Figure handle
 if isempty(h)==0 && h~=0
@@ -203,29 +203,43 @@ end
 % Plot colorbar
 if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
     c=colorbar; % Colorbar
+    if str2double(matrelease(1:4))<=2014
+        c=cbhandle();
+    end
     if exist('ztitle','var')==1 && isempty(ztitle)~=1
         if cb==2
             if axetop==1
-                set(cbhandle,'location','southoutside');
+                set(c,'location','southoutside');
             else
-                set(cbhandle,'location','northoutside');
+                set(c,'location','northoutside');
             end
-            cblabel(ztitle,'Rotation', 0);
+            if str2double(matrelease(1:4))>2014
+                c.Label.String = ztitle;
+                c.Label.Rotation = 0;
+            else
+                cblabel(ztitle,'Rotation', 0);
+            end
         elseif cb==1
-            cblabel(ztitle,'Rotation', 270,'VerticalAlignment','Bottom');
+            if str2double(matrelease(1:4))>2014
+                c.Label.String = ztitle;
+                c.Label.Rotation = 270;
+                c.Label.VerticalAlignment = 'Bottom';
+            else
+                cblabel(ztitle,'Rotation', 270,'VerticalAlignment','Bottom');
+            end
         end
     end
     if exist('zticks','var')==1 && isempty(zticks)~=1
         if cb==2
-            set(cbhandle,'XTick',zticks);
+            set(c,'XTick',zticks);
         else
-            set(cbhandle,'YTick',zticks);
+            set(c,'YTick',zticks);
         end
     end
     if exist('zlimit','var')==1 && isempty(zlimit)~=1
         caxis(zlimit);
     end
-    set(cbhandle,'linewidth',1.5);
+    set(c,'LineWidth',1.5);
 else
     c=[];
 end

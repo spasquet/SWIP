@@ -37,7 +37,7 @@ else
     youp(end)=data_max;
     col=ones(length(data),3);
     ind=ones(length(data),1);
-    for e=1:size(map,1)-1;
+    for e=1:size(map,1)-1
         col(data>=youp(e) & data<youp(e+1),:)=...
             repmat(map(e,:),...
             size(col(data>=youp(e) & data<youp(e+1),:),1),1);

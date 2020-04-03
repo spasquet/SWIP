@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V18.11.26
+%%% S. Pasquet - V20.04.03
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for 
@@ -355,7 +355,8 @@ for ix=Xmidselec
         % Read target file to get picked dispersion curves and test target
         % compatibility
         [~,~,~,modes,tst]=targ2pvc(nametarg);        
-        if tst == 1
+        if tst > 0
+            fprintf('\n  Target file not compatible with dinver version!!\n\n');
             return
         end
         nmodeinv(ix)=length(modes);
@@ -818,9 +819,9 @@ for ix=Xmidselec
                 VSridge_max = mov_aver(VSridge_max',5,1,length(VSridge_max));
                 NN(NN==0)=NaN;
                 
-                % Plot ridgesearch results
+                %% Plot ridgesearch results
                 if nmod(ix)>1 %&& plotinvres==1
-                    [f2,~,~,~,c]=plot_img_log(showplot,velocityS,ZZ,NN,flipud(autumn),...
+                    f2=plot_img_log(showplot,velocityS,ZZ,NN,flipud(autumn),...
                         1,1,1,fs,'Vs (m/s)',depthtitle,'Number of models',...
                         [0 vsmax],[dpMIN dpMAX],[1 max(NN(:))],vsticks,dticks,[],[],[],[],[0 0 24 18],[],0);
                     cm_saturation(0.5);
@@ -828,17 +829,14 @@ for ix=Xmidselec
                     plot(VSridge,ZZ,'color','k','linewidth',1.5);
                     dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
                     dashline(VSridge_max,ZZ,2,2,2,2,'color','k','linewidth',1.5);
-%                     if str2double(matrelease(1:4))<=2014
-%                         cpos=get(c,'position');
-%                         set(c,'Position',[cpos(1)+0.04 cpos(2) cpos(3)*1.5 cpos(4)]);
-%                     end
                     h=findall(gcf,'Type','Axes'); set(h,'FontSize',fs);
+
                     % Save figure
                     file_ridge=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),...
                         '.mod1d.ridge.',imgform]);
                     save_fig(f2,file_ridge,imgform,imgres,1,1-testplot);
                     close(f2); figHandles = findall(0,'Type','figure');
-%                     
+
                     if str2double(matrelease(1:4))>2014
                         figHandles=get(figHandles,'Number');
                     end
@@ -971,64 +969,71 @@ for ix=Xmidselec
             end
             
             % Plot and save average and weighted 1D models
-%             if plotinvres==1
-                [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
-                    'Vs (m/s)',depthtitle,[],[0 vsmax],[dpMIN dpMAX],[],[],[],...
-                    [],[],[],[0 0 24 18],[],0);
-                hold on
-                str0='Best model';
-                h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
-                str1='Average layered model';
-                h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
-                str3='Average smooth model';
-                if weightcalc==1 && nmod(ix)>1
-                    h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
-                    str4='Weighted layered model';
-                    h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
-                    str6='Weighted smooth model';
+            [f3,h0]=plot_curv(showplot,VSbest,Zbest,[],'-','k',[],1,1,0,fs,...
+                'Vs (m/s)',depthtitle,[],[0 vsmax],[dpMIN dpMAX],[],[],[],...
+                [],[],[],[0 0 24 18],[],0);
+            hold on
+            str0='Best model';
+            h1=plot(VSmean,Zmean,'b-','linewidth',1.5);
+            str1='Average layered model';
+            h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
+            str3='Average smooth model';
+            if weightcalc==1 && nmod(ix)>1
+                h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
+                str4='Weighted layered model';
+                h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
+                str6='Weighted smooth model';
+            end
+            if ridgecalc==1 && nmod(ix)>1
+                h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
+                str7='Ridge model';
+                dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
+                dashline(VSridge_max,ZZ,2,2,2,2,'color','k','linewidth',1.5);
+            end
+            c=colorbar;
+            if str2double(matrelease(1:4))>2014
+                c.Label.String = 'Number of models';
+                c.Label.Rotation = 270;
+                c.Label.VerticalAlignment = 'Bottom';
+            else
+                c = cbhandle();
+                cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
+            end
+            if exist('NN','var')==1
+                caxis([0 max(NN(:))]);
+            end
+            
+            set(c,'visible','off');
+            if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
+                h_legend=legend([h0,h1,h3],str0,str1,str3);
+            elseif weightcalc==1 && ridgecalc==0
+                h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
+            elseif weightcalc==0 && ridgecalc==1
+                h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
+            else
+                h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
+            end
+            set(h_legend,'FontSize',10,'linewidth',1,'location','northeast');
+            hold off
+            
+            % Save figure
+            file_mod=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
+            save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
+            close(f3);
+            % Concatenate ridge and average models figures
+            if colnb>1
+                colnb_tmp=2;
+            else
+                colnb_tmp=colnb;
+            end
+            filename_panel0=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),...
+                '.mod1d.mean.',imgform]);
+            if exist('file_ridge','var')==1 && testplot==1 && nmod(ix)>1
+                cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
+                if concat==1
+                    delete(file_ridge);
                 end
-                if ridgecalc==1 && nmod(ix)>1
-                    h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
-                    str7='Ridge model';
-                    dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
-                    dashline(VSridge_max,ZZ,2,2,2,2,'color','k','linewidth',1.5);
-                end
-                colorbar; cblabel('Number of models','Rotation', 270,'VerticalAlignment','Bottom');
-                if exist('NN','var')==1
-                    caxis([0 max(NN(:))]);
-                end
-                set(cbhandle,'visible','off');
-                if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
-                    h_legend=legend([h0,h1,h3],str0,str1,str3);
-                elseif weightcalc==1 && ridgecalc==0
-                    h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);
-                elseif weightcalc==0 && ridgecalc==1
-                    h_legend=legend([h0,h1,h3,h7],str0,str1,str3,str7);
-                else
-                    h_legend=legend([h0,h1,h3,h4,h6,h7],str0,str1,str3,str4,str6,str7);
-                end
-                set(h_legend,'FontSize',10,'linewidth',1,'location','northeast');
-                hold off
-                
-                % Save figure
-                file_mod=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),'.mod1d.mean.',imgform]);
-                save_fig(f3,file_mod,imgform,imgres,1,1-testplot);
-                close(f3);
-                % Concatenate ridge and average models figures
-                if colnb>1
-                    colnb_tmp=2;
-                else
-                    colnb_tmp=colnb;
-                end
-                filename_panel0=fullfile(dir_img_inv_mean,[num2str(XmidT(ix),xmidformat),...
-                    '.mod1d.mean.',imgform]);
-                if exist('file_ridge','var')==1 && testplot==1 && nmod(ix)>1
-                    cat_img([file_mod,' ',file_ridge],imgform,colnb_tmp,'south',filename_panel0);
-                    if concat==1
-                        delete(file_ridge);
-                    end
-                end
-%             end
+            end
         end
         
         %% %% %%
@@ -1092,6 +1097,8 @@ for ix=Xmidselec
             else
                 [colout,youpout]=createcolormap(misout,map3,Clogscale);
             end
+            nmod_total = inv_set.nrun(ix)*nmaxmod(ix);
+            nmod_out = nmod_total - nmod(ix);
             if 2*std(misout)>min(misout)
                 maxmisout=2*std(misout);
             else
@@ -1122,16 +1129,36 @@ for ix=Xmidselec
                 str1=sprintf([' Accep. models ('...
                     num2str(nmod(ix)) ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
                 % Plot first dispersion curve
-                f1=plot_curv(showplot,tmpall{1,1},1./tmpall{1,2},[],'-',colall(1,:),2,1,1,...
+                [f1,~,~,~,c]=plot_curv(showplot,tmpall{1,1},1./tmpall{1,2},[],'-',colall(1,:),2,1,1,...
                     cbpos,fs,freqtitle_long,'Phase velocity (m/s)',str1,...
                     [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                     [],[],[0 0 24 18],[],0);
                 hold on
+                
                 % Loop on all dispersion curves
-                for kk=2:inv_set.nrun(ix)*nmaxmod(ix)
-                    line(tmpall{kk,1},1./tmpall{kk,2},'color',...
-                        colall(kk,:),'linewidth',2);
+                % Workaround for large number of plots
+                if nmod_out > 5000
+                    step_mod = 10;
+                else
+                    step_mod = 1;
                 end
+                % Plot rejected models
+                for kk=2:step_mod:nmod_out
+                    line(tmpall{kk,1}',1./tmpall{kk,2}','color',...
+                        colall(kk,:),'linewidth',2); hold on;
+                end
+                % Workaround for large number of plots
+                if nmod(ix) > 5000
+                    step_mod = 3;
+                else
+                    step_mod = 1;
+                end
+                % Plot accepted models
+                for ll=nmod_out+1:step_mod:nmod_total
+                    line(tmpall{ll,1}',1./tmpall{ll,2}','color',...
+                        colall(ll,:),'linewidth',2); hold on;
+                end
+                
                 % Plot picked dispersion with errorbars
                 plot(freqresamp{m+1},vresamp{m+1},'k+','linewidth',1.25,'markersize',4);
                 if str2double(matrelease(1:4))>2014
@@ -1147,7 +1174,7 @@ for ix=Xmidselec
                 hold off
                 colormap(map2);
                 sizax=get(gca,'Position');
-                set(cbhandle,'visible','off'); % Hide colorbar
+                set(c,'visible','off'); % Hide colorbar
                 
                 % Save figure
                 filenamedsp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
@@ -1231,17 +1258,42 @@ for ix=Xmidselec
             str2=sprintf([' Rejec. models (' num2str((inv_set.nrun(ix)*nmaxmod(ix))-nmod(ix))...
                 ' / ' num2str(inv_set.nrun(ix)*nmaxmod(ix)) ')']);
             % Plot first model
-            f4=plot_curv(showplot,tmpall,zall,[],[],colall,2,1,1,cbpos,fs,...
+            [f4,~,~,~,c]=plot_curv(showplot,tmpall(:,1),zall(:,1),[],[],colall(1,:),2,1,1,cbpos,fs,...
                 'Vs (m/s)',depthtitle,str1,[vsMIN vsMAX],[dpMIN dpMAX],[],vsticks,dticks,...
                 [],[],[],[0 0 24 18],sizax,0);
+            
+            % Loop on all models
+            % Workaround for large number of plots
+            if nmod_out > 5000
+                step_mod = 10;
+            else
+                step_mod = 1;
+            end
+            % Plot rejected models
+            for kk=2:step_mod:nmod_out
+                line(tmpall(:,kk)',zall(:,kk)','color',...
+                    colall(kk,:),'linewidth',2); hold on;
+            end
+            % Workaround for large number of plots
+            if nmod(ix) > 5000
+                step_mod = 3;
+            else
+                step_mod = 1;
+            end
+            % Plot accepted models
+            for ll=nmod_out+1:step_mod:nmod_total
+                line(tmpall(:,ll)',zall(:,ll)','color',...
+                    colall(ll,:),'linewidth',2); hold on;
+            end
+            
             colormap(map2);
             hold on
-            % Loop over all models
+            % Plot 1d model
             if plot1dVS==1
                 dashline(VSplot,Zplot,2,2,2,2,'color','k','linewidth',2);
             end
             hold off
-            set(cbhandle,'visible','off');
+            set(c,'visible','off'); % Hide colorbar
             
             % Save figure
             filename_modall=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
@@ -1257,9 +1309,11 @@ for ix=Xmidselec
             % Save colorbars in separate file for nice display
             if nmod(ix)>1
                 if cbpos==1
-                    cbticks=youp(1:3:end);
+%                     cbticks=youp(1:3:end);
+                    cbticks = logspace(log10(min(misin)),log10(max(misin)),6);
                 else
-                    cbticks=youp(1:4:end);
+%                     cbticks=youp(1:4:end);
+                    cbticks = logspace(log10(min(misin)),log10(max(misin)),4);
                 end
                 f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale, cbticks,...
                     [min(misin) max(misin)], fs, [0 0 24 18], sizax, 2);
@@ -1268,12 +1322,14 @@ for ix=Xmidselec
             end
             if nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
                 if cbpos==1
-                    cbticks=youpout(1:2:end);
+%                     cbticks=youpout(1:3:end);
+                    cbticks = logspace(log10(min(misout)),log10(maxmisout),6);
                 else
-                    cbticks=youpout(1:3:end);
+%                     cbticks=youpout(1:4:end);
+                    cbticks = logspace(log10(min(misout)),log10(maxmisout),4);
                 end
                 f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale, cbticks,...
-                    [min(misout) maxmisout], fs, [0 0 24 18], sizax, 1);
+                    [min(misout) maxmisout], fs, [0 0 24 18], sizax,1);
                 save_fig(f4,filename_cbout,imgform,imgres,1,0);
                 close(f4); clear f4;
             end
@@ -1466,22 +1522,40 @@ for ix=Xmidselec
                     end
                     
                     % Plot first model parameter
-                    f4=plot_curv(showplot,p1(np1(i),:),p2(np2(j),:),[],'.','k',2,1,1,...
+                    [f4,~,~,~,c]=plot_curv(showplot,p1(np1(i),:),p2(np2(j),:),[],'.','k',2,1,1,...
                         cbpos,fs,[axtit1,' [layer ',num2str(np1(i)),']'],[axtit2,' [layer ',num2str(np2(j)),']'],...
                         str1,[XMIN XMAX],[YMIN YMAX],[],vsticks,dticks,[],...
                         [],[],[0 0 24 18],sizax,0);
                     hold on
-
-                    % Loop over all models
-                    for ii=1:length(p1(np1(i),:))
+                    
+                    % Loop on all models
+                    % Workaround for large number of plots
+                    if nmod_out > 5000
+                        step_mod = 10;
+                    else
+                        step_mod = 1;
+                    end
+                    % Plot rejected models
+                    for ii=2:step_mod:nmod_out
                         line(p1(np1(i),ii),p2(np2(j),ii),'color',colall(ii,:),'markerfacecolor',colall(ii,:),...
                             'markersize',5,'marker','o','linestyle','none');
                     end
+                    % Workaround for large number of plots
+                    if nmod(ix) > 5000
+                        step_mod = 3;
+                    else
+                        step_mod = 1;
+                    end
+                    % Plot accepted models
+                    for ii=nmod_out+1:step_mod:nmod_total
+                        line(p1(np1(i),ii),p2(np2(j),ii),'color',colall(ii,:),'markerfacecolor',colall(ii,:),...
+                            'markersize',5,'marker','o','linestyle','none');
+                    end
+
                     hold off
                     colormap(map2);
                     sizax=get(gca,'Position');
-                    set(cbhandle,'visible','off');
-                    drawnow
+                    set(c,'visible','off'); % Hide colorbar
                     
                     % Save figure
                     filename=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
@@ -1497,25 +1571,28 @@ for ix=Xmidselec
                     % Save colorbars
                     if i==1 && j==1
                         if nmod(ix)>1
-                            % Save colorbars
                             if cbpos==1
-                                cbticks=youp(1:3:end);
+                                %                     cbticks=youp(1:3:end);
+                                cbticks = logspace(log10(min(misin)),log10(max(misin)),6);
                             else
-                                cbticks=youp(1:4:end);
+                                %                     cbticks=youp(1:4:end);
+                                cbticks = logspace(log10(min(misin)),log10(max(misin)),4);
                             end
-                            f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale,cbticks,...
+                            f4 = plot_colorbar(showplot,[24, 1], cbpos, str1, map2, Clogscale, cbticks,...
                                 [min(misin) max(misin)], fs, [0 0 24 18], sizax, 2);
                             save_fig(f4,filename_cbin,imgform,imgres,1,0);
                             close(f4); clear f4;
                         end
                         if nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
                             if cbpos==1
-                                cbticks=youpout(1:2:end);
+                                %                     cbticks=youpout(1:3:end);
+                                cbticks = logspace(log10(min(misout)),log10(maxmisout),6);
                             else
-                                cbticks=youpout(1:3:end);
+                                %                     cbticks=youpout(1:4:end);
+                                cbticks = logspace(log10(min(misout)),log10(maxmisout),4);
                             end
-                            f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale,cbticks,...
-                                [min(misout) maxmisout], fs, [0 0 24 18], sizax, 1);
+                            f4 = plot_colorbar(showplot,[24, 1], cbpos, str2, map3, Clogscale, cbticks,...
+                                [min(misout) maxmisout], fs, [0 0 24 18], sizax,1);
                             save_fig(f4,filename_cbout,imgform,imgres,1,0);
                             close(f4); clear f4;
                         end

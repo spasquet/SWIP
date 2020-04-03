@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V18.11.26
+%%% S. Pasquet - V20.04.03
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -187,7 +187,6 @@ if isempty(dpMAX)==1 % Get maximum depth from parameterization if not setup in l
 end
 % Create depth vector
 maxdepth=ceil(dpMAX/dz)*dz;
-% depth=max(zround):-dz:min(zround)-maxdepth; % Depth vector with topo
 depth = bsxfun(@plus,zround,(0:-dz:-maxdepth)');
 ZZ=0:dz:maxdepth;
 nZ=length(ZZ);
@@ -284,7 +283,7 @@ if usevptomo==1 || tomo==1
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
             pois_test = 0.4;
-            VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1)); %plot2dcal=0; plothisto=0;
+            VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1));
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   No Vs model file selected - Use Poisson''s ratio of %1.2f',pois_test);
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
@@ -294,7 +293,7 @@ if usevptomo==1 || tomo==1
             try
                 VsItomo=readtomo(Vsfile,0,X_plot,depth,xsca,vpaver,[nWmin,nWmax],dx); % Read Vp tomo file
                 ind_nan = find(isnan(VsItomo) | isnan(VpItomo));
-                VpItomo(ind_nan)=NaN; 
+                VpItomo(ind_nan)=NaN;
                 VsItomo(ind_nan)=NaN;
             catch
                 fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -371,7 +370,6 @@ for ix=Xmidselec
     if swip==1
         dir_rep_ind = [dir_rep_inv,'/',num2str(XmidT(ix),xmidformat),'_reports'];
     end
-
     
     %% %% %%
     
@@ -420,7 +418,7 @@ for ix=Xmidselec
         hold on; cm_saturation(map0sat);
         hh=dashline(f,f,2,2,2,2,'color',[0 0 1],'linewidth',5);
         set(hh,'visible','off');
-%         dashline(v./dx,1./v,2,2,2,2,'color',[0 0 1],'linewidth',5);
+        %         dashline(v./dx,1./v,2,2,2,2,'color',[0 0 1],'linewidth',5);
         if plotlamlim==1 && sampling==1
             if auto_resamp == 1
                 max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -428,7 +426,6 @@ for ix=Xmidselec
                 max_resamp_xmid = max(resampvec);
             end
             dashline(f,f*max_resamp_xmid,2,2,2,2,'color',[0 0 1],'linewidth',3);
-%             dashline(f,f*max(resampvec),2,2,2,2,'color',[0 0 1],'linewidth',5);
         end
         if Flogscale==1
             set(gca,'xscale','log');
@@ -474,7 +471,7 @@ for ix=Xmidselec
                 
                 plot(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},'.','linewidth',1.5,'markersize',7,'color',col);
                 if eb==1
-                    if str2double(matrelease(1:4))>2014
+                    if str2double(matrelease(1:4))>2014 && Flogscale~=1
                         han=terrorbar(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1},1,'units');
                         set(han,'LineWidth',1.5,'Color',col)
                     else
@@ -502,10 +499,11 @@ for ix=Xmidselec
         % Standard deviation file name
         filestd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
             'VmsStd.',modeltype]);
+        % Get min and max std from ridge search
         filemin=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
-            'VmsMin.',modeltype]);
+            'VmsMin.ridge']);
         filemax=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
-            'VmsMax.',modeltype]);
+            'VmsMax.ridge']);
         if strcmp(modeltype,'best')==1
             filestd=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),extens,'.',...
                 'VmsStd.layered']);
@@ -526,7 +524,7 @@ for ix=Xmidselec
                     num2str(XmidT(ix),xmidformat),' m\n']);
             end
             vpsw=[]; vssw=[]; rhosw=[];
-            vpstd=[]; vsstd=[]; rhostd=[];
+            vpstd=[]; vsstd_ok=[]; rhostd=[];
         else
             
             %%% Create velocity file in gpdc format %%%
@@ -535,37 +533,47 @@ for ix=Xmidselec
             modvel=dlmread(filevel,'',1,0);
             moddepth=[0;cumsum(modvel(:,1))];
             if exist(filemin,'file')==2 && exist(filemax,'file')==2
-                modmin=dlmread(filemin,'',1,0);
-                modmax=dlmread(filemax,'',1,0);
-                modstd=modmax;
+                modmin = dlmread(filemin,'',1,0);
+                modmax = dlmread(filemax,'',1,0);
+                modstd = modmax;
                 %%% A checker !
-                modstd(:,3) = max([abs(modmax(:,3)-modvel(:,3)),abs(modmin(:,3)-modvel(:,3))],[],2);
+                %                 modstd(:,3) = max([abs(modmax(:,3)-modvel(:,3)),abs(modmin(:,3)-modvel(:,3))],[],2);
+                modstd(:,2) = (modmax(:,2)-modmin(:,2));  
+                modstd(:,3) = (modmax(:,3)-modmin(:,3));
             elseif exist(filestd,'file')==2
                 modstd=dlmread(filestd,'',1,0);
             else
                 modstd = modvel;
                 modstd(:,2:4) = modstd(:,2:4).*0.2;
             end
-            depthstd=[0;modstd(:,1)];
+            depthstd=[0;cumsum(modstd(:,1))];
             
             if maxdepth>moddepth(end)
                 moddepth(end)=maxdepth;
+                depthstd(end)=maxdepth;
             else
                 modvel=modvel(moddepth<maxdepth,:);
-                modstd=modstd(moddepth<maxdepth,:);
+                modstd=modstd(depthstd<maxdepth,:);
+                modmin=modmin(depthstd<maxdepth,:);
+                modmax=modmax(depthstd<maxdepth,:);
                 moddepth=[0;cumsum(modvel(:,1))];
-                depthstd=depthstd(1:length(moddepth));
+                depthstd=[0;cumsum(modstd(:,1))];
             end
             thick=modvel(:,1);
             vpsw=modvel(:,2);
             vssw=modvel(:,3);
             rhosw=modvel(:,4);
             
-            depthstd(end)=0;
             vpstd=modstd(:,2);
             vsstd=modstd(:,3);
             rhostd=modstd(:,4);
             vsstd_perc=100*(vsstd./vssw);
+            
+            if exist(filemin,'file')==2 && exist(filemax,'file')==2
+                vsstd_min = modmin(:,3);
+                vsstd_max = modmax(:,3);
+            end
+            vsstd_ok = vsstd;
             
             %%% Replace VP from SWIP with VP from tomo file if required %%%
             
@@ -599,7 +607,7 @@ for ix=Xmidselec
                             num2str(XmidT(ix),xmidformat),' m\n']);
                     end
                     vpsw=[]; vssw=[]; rhosw=[];
-                    vpstd=[]; vsstd=[]; rhostd=[];
+                    vpstd=[]; vsstd_ok=[]; rhostd=[];
                 end
             end
             
@@ -680,7 +688,7 @@ for ix=Xmidselec
                 fprintf('\n  No Vp or Vs from tomo for this Xmid\n');
             end
             vptomo=[]; vstomo=[];
-            vpstd=[]; vsstd=[];
+            vpstd=[]; vsstd_ok=[];
         end
         
         %%% Compute and plot theoretical dispersion %%%
@@ -774,126 +782,131 @@ for ix=Xmidselec
     
     %% %% %%
     
-    %%%%% Get Depth Of Investigation (DOI) %%%%%
-    if swip==1
-        flipvsstd = flipud([vsstd;vsstd(end)]);
-    end
+    %%%%% Get Depth Of Investigation (DOI) %%%%%    
     
     if plotDOI==1 % Empirical DOI (Lmax*doifact)
         DOI(ix)=lmaxpick(ix)*doifact;
-    
+        
     elseif plotDOI==2 % DOI from VS standard deviation threshold
-        if exist('vsstd','var')==1 && isempty(vsstd)==0
+        if exist('vsstd_ok','var')==1 && isempty(vsstd_ok)==0
             flipmoddepth = flipud(moddepth);
+            flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
             indhsd = find(flipvsstd<std_mask,1,'first');
-            if isempty(indhsd) || indhsd == 1
+            if isempty(indhsd) || indhsd <= 2
                 indhsd = find(flipvsstd<flipvsstd(1),1,'first');
+%                 indmax = find(flipvsstd==max(flipvsstd),1);
+%                 indhsd_all = find(flipvsstd<std_mask);
+%                 indhsd = find(indhsd_all>indmax,1,'first');
+                if isempty(indhsd) || indhsd <= 2
+                    indhsd = find(flipvsstd~=flipvsstd(1),1,'first');
+                end
             end
             hsdtmp=flipmoddepth(indhsd-2);
-%             flipmoddepth = flipud(moddepth);
-%             flipvsstd = flipud([vsstd_perc;vsstd_perc(end)]);
-%             flipvssw = flipud([vssw;vssw(end)]);
-%             ind_hsdtmp = find(flipvssw/flipvssw(1)>0.95,1,'last');
-%             hsdtmp2 = flipmoddepth(ind_hsdtmp);
-%             
-%             if sum(vsstd)~=0 % Case more than one model is in the error bars
-%                 indhsd = find(flipvsstd<std_mask & flipmoddepth>0.15*max(flipmoddepth),1,'first');
-%                 if indhsd ~= 1 % Case there are some VsSTD < std_mask
-%                     hsdtmp=flipmoddepth(indhsd-2);
-%                 elseif indhsd==1 % Case deepest VsSTD < std_mask
-%                     hsdtmp=0;
-%                     %                             indhsd = find(flipvsstd<std_mask & flipmoddepth<hsdtmp2,1,'first');
-%                     %                             hsdtmp = flipmoddepth(indhsd);
-%                 else % Case all VsSTD > std_mask
-%                     hsdtmp=[];
-%                 end
-%             else % Only one model => VsSTD=0
-%                 hsdtmp=hsdtmp2;
-%             end
-%             if isempty(hsdtmp)==1 % Case all VsSTD > std_mask
-%                 hsdtmp=moddepth(find(vsstd_perc<=median(vsstd_perc),1,'first'));
-%             elseif hsdtmp==0 % Case deepest VsSTD < std_mask
-%                 indhsd=find(flipvsstd>=std_mask & flipmoddepth>0.175*max(flipmoddepth),1,'last');
-%                 if isempty(indhsd)
-%                     hsdtmp=moddepth(find(flipvsstd==max(flipvsstd(flipmoddepth>0.175*max(flipmoddepth))) & flipmoddepth>0.175*max(flipmoddepth),1,'last'));
-%                     %                             gradvsstd = gradient(flipvsstd);
-%                     %                             gradvsstd(abs(gradvsstd)<0.01)=0;
-%                     %                             firstsign = gradvsstd(find(gradvsstd~=0,1,'first'));
-%                     %                             %                             hsdtmp=flipmoddepth(round(find(sign(gradvsstd)==0-sign(firstsign),1,'first')/1.5));
-%                     %
-%                     %                             hsdtmp = hsdtmp2;
-%                 else
-%                     hsdtmp=flipmoddepth(indhsd-2);
-%                 end
-%                 if isempty(hsdtmp)==1
-%                     hsdtmp=flipmoddepth(1);
-%                 end
-%             end
-%             if hsdtmp>lmaxpick(ix)*doifact
-%                 hsdtmp=lmaxpick(ix)*doifact; % Fix higher limit to lmaxpick(ix)*doifact
-%             end
             DOI(ix)=hsdtmp;
         else
             DOI(ix)=maxdepth;
         end
-    
-    elseif plotDOI==3 % DOI from VS standard deviation median (experimental)       
-        flipmoddepth=flipud(moddepth);
-        flipvssw=flipud([vssw;vssw(end)]);
-        diff_flipvs=diff(flipvssw);
-        flipvsstd=flipud([vsstd_perc;vsstd_perc(end)]);
-        diff_flipvsstd=[diff(flipvsstd);0]./flipvsstd;
-        %                 mean_diff_flipvs=mean(abs(diff_flipvs));
-        %                 hsdtmp=flipmoddepth(find(abs(diff_flipvs)>0.66*mean_diff_flipvs,1,'first')+2);
-        hsdtmp=flipmoddepth(find(abs(diff_flipvsstd)>0.0005,1,'first')-1);
         
-        if isempty(hsdtmp)==1
-            hsdtmp=0;
-        end
-        DOI(ix)=hsdtmp;
-        
-        %% TEST
-    elseif plotDOI == 4 % DOI from VS standard deviation threshold (xp)
-        if exist('vsstd','var') == 1 && isempty(vsstd) == 0
-            flipmoddepth = flipud(moddepth);
-            flipvsstd_test = (vsstd_perc/100).*log10(vsstd);
-            flipvsstd = flipud([flipvsstd_test;flipvsstd_test(end)]);
-            if sum(vsstd) ~= 0 % Case more than one model is in the error bars
-                indhsd = find(flipvsstd>std_mask,1,'last');
-                if indhsd~=1 % Case there are some VsSTD < std_mask
-                    hsdtmp=flipmoddepth(indhsd-1);
-                elseif indhsd==1 % Case deepest VsSTD < std_mask
-                    hsdtmp=0;
-                else % Case all VsSTD > std_mask
-                    hsdtmp=[];
+    elseif plotDOI==3 % DOI from VS standard deviation median (experimental)
+        if exist('vsstd_ok','var')==1 && isempty(vsstd_ok)==0
+            flipmoddepth=flipud(moddepth);
+            flipvssw=flipud([vssw;vssw(end)]);
+            flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
+            ind_hsdtmp = find(flipvssw/flipvssw(1)>0.95,1,'last');
+            hsdtmp = flipmoddepth(ind_hsdtmp);
+            ind_std = find(flipvsstd < std_mask);
+            
+            if ~isempty(ind_std > ind_hsdtmp) && any(flipvsstd(flipmoddepth> lmaxpick(ix)/10) > std_mask)
+                ind_max = find(flipvsstd == max(flipvsstd(flipmoddepth> lmaxpick(ix)/10)),1,'last');
+                ind_hsdtmp = ind_std(find(ind_std > ind_max,1,'first'))-1;
+                if flipmoddepth(ind_hsdtmp) > lmaxpick(ix)/10 || ind_hsdtmp < 0.66*length(flipmoddepth)
+                    hsdtmp = flipmoddepth(ind_hsdtmp);
                 end
-            else % Only one model => VsSTD=0
-                hsdtmp=lmaxpick(ix)*doifact; % Fix higher limit to lmaxpick(ix)*doifact
-            end
-            if isempty(hsdtmp)==1 % Case all VsSTD > std_mask
-                hsdtmp=moddepth(find(vsstd_perc<=median(vsstd_perc),1,'first')-1);
-            elseif hsdtmp==0 % Case deepest VsSTD < std_mask
-                indhsd=find(flipvsstd>=std_mask & flipmoddepth>1,1,'last');
-                if isempty(indhsd)
-                    gradvsstd = gradient(flipvsstd);
-                    gradvsstd(abs(gradvsstd)<0.01)=0;
-                    firstsign = gradvsstd(find(gradvsstd~=0,1,'first'));
-                    hsdtmp=flipmoddepth(round(find(sign(gradvsstd)==0-sign(firstsign),1,'first')/1.5));
+            else
+                ind_hsdtmp = find(flipvsstd == max(flipvsstd(flipmoddepth > lmaxpick(ix)/10)),1,'last');
+                if (flipmoddepth(ind_hsdtmp) > lmaxpick(ix)/10 || ind_hsdtmp <= 0.66*length(flipmoddepth)) && flipmoddepth(ind_hsdtmp) < 0.2*lmaxpick(ix)
+                    if flipvssw(ind_hsdtmp) < flipvssw(find(flipvssw/flipvssw(1)>0.95,1,'last'))
+                        hsdtmp = flipmoddepth(ind_hsdtmp);
+                    end
                 else
-                    hsdtmp=flipmoddepth(indhsd-2);
-                end
-                if isempty(hsdtmp)==1
-                    hsdtmp=flipmoddepth(1);
+                    hsdtmp = 0.2*lmaxpick(ix);
                 end
             end
-            if hsdtmp>lmaxpick(ix)*doifact
-                hsdtmp=lmaxpick(ix)*doifact; % Fix higher limit to lmaxpick(ix)*doifact
+            
+            if isempty(hsdtmp)==1
+                hsdtmp=0;
             end
             DOI(ix)=hsdtmp;
         else
             DOI(ix)=maxdepth;
         end
-        %%
+        
+    elseif plotDOI == 4 % DOI from VS standard deviation threshold (xp)
+        if exist('vsstd_ok','var') == 1 && isempty(vsstd_ok) == 0
+            flipmoddepth = flipud(moddepth);
+            flipvssw = flipud([vssw;vssw(end)]);
+            flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
+            flipvsstd_filt = mov_aver(flipvsstd',5,1,length(flipvsstd));
+            gradvsstd = mov_aver(gradient(flipvsstd_filt)',5,1,length(gradient(flipvsstd_filt)));
+            ind_nochange = find(flipvssw/flipvssw(1)>0.95,1,'last');
+            
+            if abs(mean(gradvsstd)) < 0.01
+                gradvsstd = gradvsstd - mean(gradvsstd);
+                gradvsstd(abs(gradvsstd)<0.025) = 0;
+            end
+            
+            ind_maxgrad = find(abs(gradvsstd)>0.01,1,'first');
+            ind_first_sign = find(sign(gradvsstd)~=0,1,'first');
+            first_sign = sign(gradvsstd(ind_first_sign));
+            ind_sign = find(sign(gradvsstd) ~= first_sign);
+            if isempty(ind_sign)
+                ind_sign = 1;
+            end
+            
+            ind_first_max = ind_sign(find(ind_sign > ind_maxgrad,1,'first'));
+            if isempty(ind_first_max)
+                ind_first_max = 1;
+            end
+            
+            ind_depth_min = length(flipmoddepth)-round(0.2*length(flipmoddepth));
+            ind_depth_min = max([ind_depth_min find(flipmoddepth > min(lmaxpick/10),1,'last')]);
+            ind_max = find(flipvsstd_filt == max(flipvsstd_filt(ind_nochange:end)));
+            
+            if isempty(find(flipvsstd_filt(ind_nochange:ind_depth_min) >= std_mask, 1)) % no std higher than std_mask
+                
+                if max(flipvsstd_filt(ind_nochange:ind_depth_min)) >= 0.5*std_mask && flipvsstd_filt(1) < max(flipvsstd_filt(ind_nochange:ind_depth_min))
+                    ind_hsdtmp_max = find(flipvsstd_filt <= 0.5*std_mask);
+                    ind_hsdtmp_max = ind_hsdtmp_max(find(ind_hsdtmp_max > ind_first_max & ind_hsdtmp_max < ind_depth_min,1,'first'));
+                    hsdtmp = flipmoddepth(ind_hsdtmp_max);
+                else
+                    ind_hsdtmp_max = round(0.5*(ind_max + ind_nochange));
+                    hsdtmp = flipmoddepth(ind_hsdtmp_max);
+                end
+                
+                if isempty(hsdtmp)
+                    hsdtmp = flipmoddepth(ind_first_max);
+                end
+                
+            else % some std higher than std_mask
+                
+                if flipvsstd_filt(1) < std_mask && first_sign==-1
+                    ind_sign2 = find(sign(gradvsstd) == first_sign);
+                    ind_second_max = ind_sign2(find(ind_sign2 > ind_first_max,1,'first'));
+                    hsdtmp = flipmoddepth(ind_second_max);
+                else
+                    ind_hsdtmp_max = find(flipvsstd_filt <= std_mask);
+                    ind_hsdtmp_max = ind_hsdtmp_max(find(ind_hsdtmp_max > ind_first_max,1,'first'));
+                    hsdtmp = flipmoddepth(ind_hsdtmp_max);
+                end
+            end
+            
+            if isempty(hsdtmp)==1
+                hsdtmp=0;
+            end
+            DOI(ix)=hsdtmp;
+        else
+            DOI(ix)=maxdepth;
+        end
     end
     
     %% %% %%
@@ -929,9 +942,8 @@ for ix=Xmidselec
         
         %%%% From SWIP inversion results %%%%
         
-        %%% NEED TO UPDATE MODELS PLOT WITH STDMIN AND STDMAX %%%
-               
         if swip==1 && isempty(vssw)==0
+            %%
             % Plot Vs
             [VSplot,Zplot]=stair2plot(vssw,moddepth);
             f1=plot_curv(showplot,VSplot,Zplot,[],'-',[1 0 0],[],1,1,...
@@ -940,53 +952,63 @@ for ix=Xmidselec
             hold on
             
             % Plot VsSTD envelope on same plot
-            if plot1dstd==1 
+            if plot1dstd==1
                 depthstdcalc=[0;diff(vssw)<0;0];
                 depthstdcalc(depthstdcalc==0)=-1;
                 if errstd>0
-                    vsstd=vssw*errstd/100;
+                    vsstd_plot=vssw*errstd/100;
                     depthstdup=sort(moddepth+depthstdcalc.*moddepth*errstd/100);
                     depthstddown=sort(moddepth-depthstdcalc.*moddepth*errstd/100);
+                    [VSstdplotup,Zplotup]=stair2plot(vssw+vsstd_plot,depthstdup);
+                    [VSstdplotdown,Zplotdown]=stair2plot(vssw-vsstd_plot,depthstddown);
                 else
-                    depthstdup=sort(moddepth+depthstdcalc.*depthstd);
-                    depthstddown=sort(moddepth-depthstdcalc.*depthstd);
+                    if exist(filemin,'file')==2 && exist(filemax,'file')==2
+                        [VSstdplotup,Zplotup]=stair2plot(vsstd_max,depthstd);
+                        [VSstdplotdown,Zplotdown]=stair2plot(vsstd_min,depthstd);
+                    else
+                        [VSstdplotup,Zplotup]=stair2plot(vsstd_ok,depthstd);
+                        [VSstdplotdown,Zplotdown]=stair2plot(vsstd_ok,depthstd);
+                        VSstdplotup = VSplot + VSstdplotup;
+                        VSstdplotdown = VSplot - VSstdplotdown;
+                    end
                 end
-                depthstdup(end)=maxdepth;
-                depthstddown(end)=maxdepth;
-                [~,Zplotup]=stair2plot(vsstd,depthstdup);
-                [VSstdplot,Zplotdown]=stair2plot(flipud(flipvsstd(1:end-1)),depthstddown);
+                dashline(VSstdplotup,Zplotup,2,2,2,2,'color',[1,0,0],'linewidth',2);
+                dashline(VSstdplotdown,Zplotdown,2,2,2,2,'color',[1,0,0],'linewidth',2);
                 
-                dashline(VSplot+VSstdplot,Zplotup,2,2,2,2,'color',[1,0,0],'linewidth',2);
-                dashline(VSplot-VSstdplot,Zplotdown,2,2,2,2,'color',[1,0,0],'linewidth',2);
+                if isempty(vsMAX)
+                    xlim([0 max(VSstdplotup)]);
+                end
             end
-            
+            %%
             % Plot Vp on same plot
-            if plot1dvp==1 
+            if plot1dvp==1
                 [VPplot,Zplot]=stair2plot(vpsw,moddepth);
                 plot(VPplot,Zplot,'m-','linewidth',2);
                 xlabel('V (m/s)');
                 
                 % Plot VpSTD envelope on same plot
-                if plot1dstd==1 
+                if plot1dstd==1
                     depthstdcalc=[0;diff(vpsw)<0;0];
                     depthstdcalc(depthstdcalc==0)=-1;
                     if errstd>0
                         vpstd=vpsw*errstd/100;
                         depthstdup=sort(moddepth+depthstdcalc.*moddepth*errstd/100);
                         depthstddown=sort(moddepth-depthstdcalc.*moddepth*errstd/100);
+                        [VPstdplotup,Zplotup]=stair2plot(vpsw+vpstd,depthstdup);
+                        [VPstdplotdown,Zplotdown]=stair2plot(vpsw-vpstd,depthstddown);
                     else
-                        depthstdup=sort(moddepth+depthstdcalc.*depthstd);
-                        depthstddown=sort(moddepth-depthstdcalc.*depthstd);
+                        [VPstdplotup,Zplotup]=stair2plot(vpstd,depthstd);
+                        [VPstdplotdown,Zplotdown]=stair2plot(vpstd,depthstd);
+                        VPstdplotup = VPplot + VPstdplotup;
+                        VPstdplotdown = VPplot - VPstdplotdown;
                     end
-                    depthstdup(end)=maxdepth;
-                    depthstddown(end)=maxdepth;
-                    depthstdup(end)=maxdepth;
-                    depthstddown(end)=maxdepth;
-                    [~,Zplotup]=stair2plot(vpstd,depthstdup);
-                    [VPstdplot,Zplotdown]=stair2plot(vpstd,depthstddown);
                     
-                    dashline(VPplot+VPstdplot,Zplotup,2,2,2,2,'color','m','linewidth',2);
-                    dashline(VPplot-VPstdplot,Zplotdown,2,2,2,2,'color','m','linewidth',2);
+                    dashline(VPstdplotup,Zplotup,2,2,2,2,'color','m','linewidth',2);
+                    dashline(VPstdplotdown,Zplotdown,2,2,2,2,'color','m','linewidth',2);
+                    
+                    if isempty(vsMAX)
+                        xlim([0 max(VPstdplotup)]);
+                    end
                 end
             end
         end
@@ -1020,41 +1042,43 @@ for ix=Xmidselec
             end
             
             % Plot VsSTD envelope on same plot
-            if plot1dstd==1 && errstd>0 
+            if plot1dstd==1 && errstd>0
                 depthstdcalc=[0;diff(vsuserok)<0;0];
                 depthstdcalc(depthstdcalc==0)=-1;
-                vsstduser=vsuserok*errstd/100;
+                
+                vsstd_plot=vsuserok*errstd/100;
                 depthstdup=sort(moddepthuser+depthstdcalc.*moddepthuser*errstd/100);
                 depthstddown=sort(moddepthuser-depthstdcalc.*moddepthuser*errstd/100);
-                depthstdup(end)=maxdepth;
-                depthstddown(end)=maxdepth;
-                [~,Zplotup]=stair2plot(vsstduser,depthstdup);
-                [VSstduserplot,Zplotdown]=stair2plot(vsstduser,depthstddown);
+                [VSstdplotup,Zplotup]=stair2plot(vsuserok+vsstd_plot,depthstdup);
+                [VSstdplotdown,Zplotdown]=stair2plot(vsuserok-vsstd_plot,depthstddown);
                 
-                dashline(VSplotuser+VSstduserplot,Zplotup,2,2,2,2,'color','b','linewidth',2);
-                dashline(VSplotuser-VSstduserplot,Zplotdown,2,2,2,2,'color','b','linewidth',2);
+                dashline(VSstdplotup,Zplotup,2,2,2,2,'color',[0,0,1],'linewidth',2);
+                dashline(VSstdplotdown,Zplotdown,2,2,2,2,'color',[0,0,1],'linewidth',2);  
             end
             
             % Plot Vp on same plot
-            if plot1dvp==1 
+            if plot1dvp==1
                 [VPplotuser,Zplotuser]=stair2plot(vpuserok,moddepthuser);
                 plot(VPplotuser,Zplotuser,'c-','linewidth',2);
                 xlabel('V (m/s)');
                 
                 % Plot VpSTD envelope on same plot
-                if plot1dstd==1 && errstd>0 % Plot VpSTD on same plot
+                if plot1dstd==1 && errstd>0
                     depthstdcalc=[0;diff(vpuserok)<0;0];
                     depthstdcalc(depthstdcalc==0)=-1;
+                    
                     vpstd=vpuserok*errstd/100;
                     depthstdup=sort(moddepthuser+depthstdcalc.*moddepthuser*errstd/100);
                     depthstddown=sort(moddepthuser-depthstdcalc.*moddepthuser*errstd/100);
-                    depthstdup(end)=maxdepth;
-                    depthstddown(end)=maxdepth;
-                    [~,Zplotup]=stair2plot(vpstd,depthstdup);
-                    [VPstduserplot,Zplotdown]=stair2plot(vpstd,depthstddown);
+                    [VPstdplotup,Zplotup]=stair2plot(vpuserok+vpstd,depthstdup);
+                    [VPstdplotdown,Zplotdown]=stair2plot(vpuserok-vpstd,depthstddown);
                     
-                    dashline(VPplotuser+VPstduserplot,Zplotup,2,2,2,2,'color','c','linewidth',2);
-                    dashline(VPplotuser-VPstduserplot,Zplotdown,2,2,2,2,'color','c','linewidth',2);
+                    dashline(VPstdplotup,Zplotup,2,2,2,2,'color','c','linewidth',2);
+                    dashline(VPstdplotdown,Zplotdown,2,2,2,2,'color','c','linewidth',2);
+                    
+                    if isempty(vsMAX)
+                        xlim([0 max(VPstdplotup)]);
+                    end
                 end
             end
         end
@@ -1073,7 +1097,7 @@ for ix=Xmidselec
             end
             
             % Plot VsSTD envelope on same plot
-            if plot1dstd==1 
+            if plot1dstd==1
                 if errstd>0
                     dashline(vstomo+vstomo*errstd/100,cumsum(ztomo),2,2,2,2,'color',[0 0.75 0],'linewidth',2);
                     dashline(vstomo-vstomo*errstd/100,cumsum(ztomo),2,2,2,2,'color',[0 0.75 0],'linewidth',2);
@@ -1083,12 +1107,12 @@ for ix=Xmidselec
             end
             
             % Plot Vp on same plot
-            if plot1dvp==1 
+            if plot1dvp==1
                 plot(vptomo,cumsum(ztomo),'g-','linewidth',2);
                 xlabel('V (m/s)');
                 
                 % Plot VpSTD envelope on same plot
-                if plot1dstd==1 
+                if plot1dstd==1
                     if errstd>0
                         dashline(vptomo+vptomo*errstd/100,cumsum(ztomo),2,2,2,2,'color','g','linewidth',2);
                         dashline(vptomo-vptomo*errstd/100,cumsum(ztomo),2,2,2,2,'color','g','linewidth',2);
@@ -1130,27 +1154,31 @@ for ix=Xmidselec
                 0,fs,'Vp (m/s)',depthtitle,[],[vpMIN vpMAX],[dpMIN dpMAX],[],...
                 vpticks,dticks,[],[],[],[0 0 24 18],sizeax,0);
             hold on
-            
+
             % Plot VpSTD envelope on same plot
-            if plot1dstd==1 
+            if plot1dstd==1
                 depthstdcalc=[0;diff(vpsw)<0;0];
                 depthstdcalc(depthstdcalc==0)=-1;
                 if errstd>0
                     vpstd=vpsw*errstd/100;
                     depthstdup=sort(moddepth+depthstdcalc.*moddepth*errstd/100);
                     depthstddown=sort(moddepth-depthstdcalc.*moddepth*errstd/100);
+                    [VPstdplotup,Zplotup]=stair2plot(vpsw+vpstd,depthstdup);
+                    [VPstdplotdown,Zplotdown]=stair2plot(vpsw-vpstd,depthstddown);
                 else
-                    depthstdup=sort(moddepth+depthstdcalc.*depthstd);
-                    depthstddown=sort(moddepth-depthstdcalc.*depthstd);
+                    [VPstdplotup,Zplotup]=stair2plot(vpstd,depthstd);
+                    [VPstdplotdown,Zplotdown]=stair2plot(vpstd,depthstd);
+                    VPstdplotup = VPplot + VPstdplotup;
+                    VPstdplotdown = VPplot - VPstdplotdown;
                 end
-                depthstdup(end)=maxdepth;
-                depthstddown(end)=maxdepth;
-                [~,Zplotup]=stair2plot(vpstd,depthstdup);
-                [VPstdplot,Zplotdown]=stair2plot(vpstd,depthstddown);
                 
-                dashline(VPplot+VPstdplot,Zplotup,2,2,2,2,'color',[1,0,0],'linewidth',2);
-                dashline(VPplot-VPstdplot,Zplotdown,2,2,2,2,'color',[1,0,0],'linewidth',2);
-            end
+                dashline(VPstdplotup,Zplotup,2,2,2,2,'color','r','linewidth',2);
+                dashline(VPstdplotdown,Zplotdown,2,2,2,2,'color','r','linewidth',2);
+                
+                if isempty(vpMAX)
+                    xlim([0 max(VPstdplotup)]);
+                end
+            end  
         end
         
         %%%% From user defined models %%%%
@@ -1167,20 +1195,23 @@ for ix=Xmidselec
                 hold on
             end
             
-            % Plot VsSTD envelope on same plot
-            if plot1dstd==1 && errstd>0 
+            % Plot VpSTD envelope on same plot
+            if plot1dstd==1 && errstd>0
                 depthstdcalc=[0;diff(vpuserok)<0;0];
                 depthstdcalc(depthstdcalc==0)=-1;
+                
                 vpstd=vpuserok*errstd/100;
                 depthstdup=sort(moddepthuser+depthstdcalc.*moddepthuser*errstd/100);
                 depthstddown=sort(moddepthuser-depthstdcalc.*moddepthuser*errstd/100);
-                depthstdup(end)=maxdepth;
-                depthstddown(end)=maxdepth;
-                [~,Zplotup]=stair2plot(vpstd,depthstdup);
-                [VPstduserplot,Zplotdown]=stair2plot(vpstd,depthstddown);
+                [VPstdplotup,Zplotup]=stair2plot(vpuserok+vpstd,depthstdup);
+                [VPstdplotdown,Zplotdown]=stair2plot(vpuserok-vpstd,depthstddown);
                 
-                dashline(VPplotuser+VPstduserplot,Zplotup,2,2,2,2,'color','b','linewidth',2);
-                dashline(VPplotuser-VPstduserplot,Zplotdown,2,2,2,2,'color','b','linewidth',2);
+                dashline(VPstdplotup,Zplotup,2,2,2,2,'color','b','linewidth',2);
+                dashline(VPstdplotdown,Zplotdown,2,2,2,2,'color','b','linewidth',2);
+                
+                if isempty(vpMAX)
+                    xlim([0 max(VPstdplotup)]);
+                end
             end
         end
         
@@ -1198,7 +1229,7 @@ for ix=Xmidselec
             end
             
             % Plot VpSTD envelope on same plot
-            if plot1dstd==1 
+            if plot1dstd==1
                 if errstd>0
                     plot(vptomo+vptomo*errstd/100,cumsum(ztomo),'--','color',...
                         [0 0.75 0],'linewidth',2);

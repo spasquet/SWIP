@@ -45,7 +45,7 @@ savexzv    = 1;     % Save 2D models in .xzv ASCII file (=1) or not (=0)
 
 %%% Figure display and output settings
 imgform    = 'png'; % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
-imgres     = 250;   % Fig. resolution when saving as raster
+imgres     = 200;   % Fig. resolution when saving as raster
 fs         = 16;    % Fig. font size
 concat     = 1;     % Save indiv. and merged figures (=2), merged figure (=1) or indiv. figures (=0)
 cbpos      = 1;     % Colorbar on the right (=1) or at the bottom (=2)
@@ -74,7 +74,7 @@ plotDOI    = 0;     % Plot DOI estimated from wavelength (=1), from VsSTD (=2) o
 maskDOI    = 2;     % Mask below DOI from wavelength (=1), from VsSTD (=2) or not (=0)
 transpa    = 1;     % Transparency mask under DOI (=1) or not (=0)
 doifact    = 0.66;  % DOI factor (DOI = Lmax*fact)
-std_mask   = 15;    % VsSTD limit (%) to apply mask (used if plotDOI = 2)
+std_mask   = 400;   % VsSTD limit (m/s) to apply mask (used if plotDOI = 2)
 dpMAX      = [];    % Max. depth (m)
 plotiso    = 0;     % Plot specific isocontours on all plots (>0) or not (=0)
 %%% Vp (=1), Vs (=2), StdVs (=3), Vp/Vs (=4), Poisson's ratio (=5), auxiliary data (=6)

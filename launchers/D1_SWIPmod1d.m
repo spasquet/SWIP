@@ -53,7 +53,7 @@ showplot   = 0;     % Show plots before saving (=1) or not (=0)
 
 %%% Figure display and output settings
 imgform    = 'png'; % Fig. file format ('pdf', 'png', 'jpeg', 'tiff' or 'fig')
-imgres     = 250;   % Fig. resolution (dpi) when saving as raster
+imgres     = 200;   % Fig. resolution (dpi) when saving as raster
 fs         = 16;    % Fig. font size
 concat     = 1;     % Save indiv. and merged figures (=2), merged figure (=1) or indiv. figures (=0)
 
