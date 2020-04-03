@@ -20,7 +20,7 @@
 \title{\vspace{5cm}\Huge{\textbf{SWIP User's Guide}}}
 \author{\Large{Sylvain Pasquet} (\url{pasquet.syl@gmail.com})}
 
-\date{\LARGE{Version 2.1: March 2020}\\[2ex]
+\date{\LARGE{Version 2.2: April 2020}\\[2ex]
 \large\url{https://github.com/SWIPdev/SWIP/releases}}
 
 
@@ -40,10 +40,10 @@ Pasquet, S., Bodet, L., 2017. SWIP: An integrated workflow for surface-wave disp
 If you have experience on how to install and compile codes under a Linux environment, follow these quick installation instructions. More detailed instructions can be found in §\ref{sec:detailedinstruc}.
 \begin{enumerate}[leftmargin=*]
 \setlength\itemsep{2ex}
-\item Install {\MATLAB} (version <= 2014a recommended).
+\item Install {\MATLAB}.
 \item Download {\SWIP} at \url{https://github.com/SWIPdev/SWIP/releases} and add the content of the archive to your {\MATLAB} path.
-\item (Windows only) Install {\Cygwin} (32 bits recommended, \url{http://www.cygwin.com/setup-x86.exe}).
-\item (Mac OS only) Install \textbf{Xcode}, \textbf{Homebrew} and \textbf{gnu-tar}.
+\item (Windows user only) Install {\Cygwin} (32 bits recommended, \url{http://www.cygwin.com/setup-x86.exe}).
+\item (Mac OS user only) Install \textbf{Xcode}, \textbf{Homebrew} and \textbf{gnu-tar}.
 \item Install {\SeismicUnix} (\url{https://github.com/JohnWStockwellJr/SeisUnix}).
 \item Install {\Geopsy} (\url{http://www.geopsy.org/download.php}).
 \item Install {\SU} extra binaries located in \verb|SWIP/src|.
@@ -91,9 +91,11 @@ Look at the \textbf{Known problems} section if you encounter issues during insta
 \subsection{First steps}
 Get the latest version of {\SWIP} available at \url{https://github.com/SWIPdev/SWIP/releases}. Download the zipped file \verb|SWIP-x.x.zip| or the gzipped tarfile \verb|SWIP-x.x.tar.gz| containing the source codes for {\SWIP} (the "x.x" is the current release number).
 
-If not already installed, install {\MATLAB} on your computer (no extra toolbox is required). A change of graphics engine in {\MATLAB} 2014b and higher can cause problems with figures output (slow figure display, huge output file size). To avoid those problems, I recommend using an older version of {\MATLAB}.
+If not already installed, install {\MATLAB} on your computer (no extra toolbox is required).
 
-To download an older version, you need to create a Mathworks account (\url{http://www.mathworks.com}) and download the selected release (\url{http://fr.mathworks.com/downloads/select_release?mode=gwylf}). If you are using a network license, just create an account using your institution email. For a standalone license, you will need to associate it with your Mathworks account in the License Center (\textit{Associate License} on the top right of the screen). When installing {\MATLAB}, you will just need to login to your Mathworks account and provide the path of the license file to activate it.
+%A change of graphics engine in {\MATLAB} 2014b and higher can cause problems with figures output (slow figure display, huge output file size). To avoid those problems, I recommend using an older version of {\MATLAB}. Some recent modifications in SWIP (>=2.2) 
+
+%To download an older version, you need to create a Mathworks account (\url{http://www.mathworks.com}) and download the selected release (\url{http://fr.mathworks.com/downloads/select_release?mode=gwylf}). If you are using a network license, just create an account using your institution email. For a standalone license, you will need to associate it with your Mathworks account in the License Center (\textit{Associate License} on the top right of the screen). When installing {\MATLAB}, you will just need to login to your Mathworks account and provide the path of the license file to activate it.
 
 Once {\MATLAB} is installed, you will need to extract the content of the {\SWIP} archive file in your {\MATLAB} path (referred later as \verb|/your/MATLAB/path|) and give {\MATLAB} access to the contents of this folder. To decompress the gzipped tarfile, use the command \verb|tar -xzf SWIP_xx.tar.gz| in the terminal if you are under Linux or Mac, or use a software like 7zip if you are under Windows. In {\MATLAB}, go in \textit{File->Set Path->Add with Subfolders} to select the \verb|SWIP| folder, then \textit{Save} and \textit{Close}.
 
@@ -114,8 +116,8 @@ Before installing {\SeismicUnix} and/or {\Geopsy}, you need to make sure that th
 \verb|gcc|\\
 \verb|g++-multilib|\\
 \verb|gfortran|\\
-\verb|qt4-qmake|\\
-\verb|libqt4-dev|\\
+\verb|qt4-qmake| (or qt5 for {\Geopsy}>=3)\\
+\verb|libqt4-dev| (or qt5 for {\Geopsy}>=3)\\
 \verb|liblapack-dev|\\
 \verb|libfftw3-dev|\\
 \verb|zlib1g-dev|
@@ -514,9 +516,9 @@ Some options and parameters are not yet described in this manual. Refer to the c
 \subsubsection{Creating your project folder}
 Before starting, you need to create a project folder (referred later as \verb|projdir|) in which seismic data will be processed with {\SWIP}. You need to copy the 5 module launchers of {\SWIP} located in \verb|/your/MATLAB/path/SWIP/launchers| into your project folder.
 
-\textbf{!! Don't create \verb|projdir| in your {\MATLAB} path !!}
+!! Never create \verb|projdir| in your {\MATLAB} path !!
 
-\textbf{!! Don't work in a path containing spaces or accents in one of the folder names !!}
+\textbf{!! Never work in a path containing spaces or accents in one of the folder names !!}
 
 \subsubsection{Converting field data in SU format}
 \label{sec:seg2su}
