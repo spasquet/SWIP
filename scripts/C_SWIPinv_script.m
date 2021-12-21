@@ -504,6 +504,19 @@ for ix=Xmidselec
             KOsort=test<nmodeinv(ix);
             OKsort=OKsort(I);
             KOsort=KOsort(I);
+            if sum(OKsort) == 0
+                OKsort=false(size(missort));
+                OKsort(end-1:end)=true;
+                KOsort=false(size(missort));
+                KOsort(1:end-1)=true;
+            end
+        elseif nbest<0 % Test             
+%             thres_misfit = 10^(log10(min(missort))+(nbest/100)*log10(min(missort)));
+            thres_misfit = abs(nbest);
+            OKsort=false(size(missort));
+            OKsort(missort<=thres_misfit) = true;
+            KOsort=false(size(missort));
+            KOsort(missort>thres_misfit)=true;            
         else % Arbitrary number of models
             OKsort=false(size(missort));
             OKsort(end-nbest+1:end)=true;
@@ -521,129 +534,187 @@ for ix=Xmidselec
         fprintf(['\n  Minimum misfit = ',num2str(min(missort)),'\n']);
         if nbest==0
             fprintf(['\n  ',num2str(nmod(ix)),' models fit within the error bars\n']);
+        elseif nbest<0
+            fprintf(['\n  ',num2str(nmod(ix)),' models have misfit lower than %1.2f\n'],-nbest);
         else
             fprintf(['\n  The best ',num2str(nmod(ix)),' models have been selected\n']);
         end
+        
         if nmod(ix)==0 % Go to next Xmid if no models selected
-            fprintf('\n  Export best model only\n');
-            % Export calculated models from binary report files
-            matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
-            VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
-            VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
-            RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
-            
-            % Loop over all runs
-            for n=1:inv_set.nrun(ix)
-                fprintf(['\n      Run ',num2str(n),'\n']);
-                vsfile=fullfile(dir_rep_ind,['vs',num2str(n),'.txt']);
-                vpfile=fullfile(dir_rep_ind,['vp',num2str(n),'.txt']);
-                rhofile=fullfile(dir_rep_ind,['rho',num2str(n),'.txt']);
-                [VSall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                    readmodel(vsfile,nmaxmod(ix),n); % Read file
-                [VPall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                    readmodel(vpfile,nmaxmod(ix),n); % Read file
-                [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                    readmodel(rhofile,nmaxmod(ix),n); % Read file
+            export_gpdc=0;
+            while export_gpdc<5
+                try % Try reading reports (random crash probably due to memory lag)
+                    fprintf('\n  Export best model only\n');
+                    % Export calculated models from binary report files
+                    matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
+                    VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
+                    VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
+                    RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
+                    
+                    % Loop over all runs
+                    for n=1:inv_set.nrun(ix)
+                        fprintf(['\n      Run ',num2str(n),'\n']);
+                        vsfile=fullfile(dir_rep_ind,['vs',num2str(n),'.txt']);
+                        vpfile=fullfile(dir_rep_ind,['vp',num2str(n),'.txt']);
+                        rhofile=fullfile(dir_rep_ind,['rho',num2str(n),'.txt']);
+                        [VSall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                            readmodel(vsfile,nmaxmod(ix),n); % Read file
+                        [VPall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                            readmodel(vpfile,nmaxmod(ix),n); % Read file
+                        [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                            readmodel(rhofile,nmaxmod(ix),n); % Read file
+                    end
+                    
+                    % Read models
+                    dim=ndims(VSall{1});
+                    VS=cat(dim,VSall{:,1}); % All Vs
+                    VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
+                    VS=VS(:,I);
+                    VP=cat(dim,VPall{:,1}); % All Vp
+                    VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
+                    VP=VP(:,I);
+                    RHO=cat(dim,RHOall{:,1}); % All Rho
+                    RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
+                    RHO=RHO(:,I);
+                    ZALL=cat(dim,VSall{:,2}); % All depth
+                    ZALL(end,:)=maxdepth;
+                    Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
+                    THbest=diff(Zbest);
+                    THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
+                    ZALL=ZALL(:,I);
+                    THALL=diff(ZALL);
+                    THALL=round(THALL(1:2:end,:)*1e6)/1e6; % All thickness
+                    
+%                     % Read models
+%                     dim=ndims(VSall{1});
+%                     VS=cat(dim,VSall{:,1}); % All Vs
+%                     VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
+%                     VP=cat(dim,VPall{:,1}); % All Vp
+%                     VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
+%                     RHO=cat(dim,RHOall{:,1}); % All Rho
+%                     RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
+%                     ZALL=cat(dim,VSall{:,2}); % All depth
+%                     ZALL(end,:)=maxdepth;
+%                     Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
+%                     THbest=diff(Zbest);
+%                     THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
+                    
+                    % Best model
+                    nameDINbest=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
+                        extens,'.Vms.best']); % Best model
+                    % Save best model
+                    dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
+                    
+                    fprintf('\n  **********************************************************');
+                    fprintf('\n  **********************************************************\n');
+                                        
+                    % Save settings in .mat file
+                    inv_set.nmod(ix)=nmod(ix);
+                    save(matfileinv,'-append','inv_set');
+                    
+                    export_gpdc=10; % Success !
+                    delete(fullfile(dir_rep_ind,'*.report')); % Delete temp file
+                    continue
+                    
+                catch
+                    export_gpdc=export_gpdc+1; % Try again
+                end
+                delete(fullfile(dir_rep_ind,'*.txt')); % Delete temp file
             end
-            delete(fullfile(dir_rep_ind,'*.txt'),fullfile(dir_rep_ind,'*.report')); % Delete temp file
-            
-            % Read models
-            dim=ndims(VSall{1});
-            VS=cat(dim,VSall{:,1}); % All Vs
-            VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
-            VP=cat(dim,VPall{:,1}); % All Vp
-            VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
-            RHO=cat(dim,RHOall{:,1}); % All Rho
-            RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
-            ZALL=cat(dim,VSall{:,2}); % All depth
-            ZALL(end,:)=maxdepth;
-            Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
-            THbest=diff(Zbest);
-            THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
-
-            % Best model
-            nameDINbest=fullfile(dir_rep_ind,[num2str(XmidT(ix),xmidformat),...
-                extens,'.Vms.best']); % Best model
-             % Save best model
-            dinsave(nameDINbest,THbest,VPbest(1:2:end),VSbest(1:2:end),RHObest(1:2:end));
-            
-            fprintf('\n  **********************************************************');
-            fprintf('\n  **********************************************************\n');
-            
-            delete(fullfile(dir_rep_ind,'*.report'));
-            
-            % Save settings in .mat file
-            inv_set.nmod(ix)=nmod(ix);
-            save(matfileinv,'-append','inv_set');
-            continue
+                    
+            if export_gpdc==5 % Only 5 tries, after that go to next Xmid
+                fprintf('\n  Unable to read reports after 5 attempts - Go to next Xmid\n\n');
+                delete(fullfile(dir_rep_ind,'*.report')); % Delete temp file
+                continue
+            end
         end
+
         
         %% %% %%
         
         %%%% Read all models %%%%
         
+        export_gpdc=0;
         fprintf('\n  Reading all calculated models\n');
-        % Export calculated models from binary report files
-        matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
-        VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
-        VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
-        RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
-        
-        % Loop over all runs
-        for n=1:inv_set.nrun(ix)
-            fprintf(['\n      Run ',num2str(n),'\n']);
-            vsfile=fullfile(dir_rep_ind,['vs',num2str(n),'.txt']);
-            vpfile=fullfile(dir_rep_ind,['vp',num2str(n),'.txt']);
-            rhofile=fullfile(dir_rep_ind,['rho',num2str(n),'.txt']);
-            [VSall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                readmodel(vsfile,nmaxmod(ix),n); % Read file
-            [VPall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                readmodel(vpfile,nmaxmod(ix),n); % Read file
-            [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
-                readmodel(rhofile,nmaxmod(ix),n); % Read file
+        while export_gpdc<5
+            try % Try reading reports (random crash probably due to memory lag)
+                % Export calculated models from binary report files
+                matgpdcreport(dir_rep_ind,1,inv_set.nrun(ix),nmodeinv(ix),nmaxmod(ix),wave);
+                VSall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vs cell array
+                VPall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Vp cell array
+                RHOall=cell(nmaxmod(ix)*inv_set.nrun(ix),2); % Depth vs Density cell array
+                
+                % Loop over all runs
+                for n=1:inv_set.nrun(ix)
+                    fprintf(['\n      Run ',num2str(n),'\n']);
+                    vsfile=fullfile(dir_rep_ind,['vs',num2str(n),'.txt']);
+                    vpfile=fullfile(dir_rep_ind,['vp',num2str(n),'.txt']);
+                    rhofile=fullfile(dir_rep_ind,['rho',num2str(n),'.txt']);
+                    [VSall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                        readmodel(vsfile,nmaxmod(ix),n); % Read file
+                    [VPall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                        readmodel(vpfile,nmaxmod(ix),n); % Read file
+                    [RHOall(1+(n-1)*nmaxmod(ix):(n-1)*nmaxmod(ix)+nmaxmod(ix),:)]=...
+                        readmodel(rhofile,nmaxmod(ix),n); % Read file
+                end
+                
+                % Read models
+                dim=ndims(VSall{1});
+                VS=cat(dim,VSall{:,1}); % All Vs
+                VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
+                VS=VS(:,I);
+                VP=cat(dim,VPall{:,1}); % All Vp
+                VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
+                VP=VP(:,I);
+                RHO=cat(dim,RHOall{:,1}); % All Rho
+                RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
+                RHO=RHO(:,I);
+                ZALL=cat(dim,VSall{:,2}); % All depth
+                ZALL(end,:)=maxdepth;
+                Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
+                THbest=diff(Zbest);
+                THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
+                ZALL=ZALL(:,I);
+                THALL=diff(ZALL);
+                THALL=round(THALL(1:2:end,:)*1e6)/1e6; % All thickness
+                
+                vsmax = ceil(max(VS(:)/10))*10;
+                if isempty(vsMIN) || isempty(vsMAX)
+                    vsMIN = 0;
+                    vsMAX = vsmax;
+                end
+                
+                nC(ix)=length(THALL(:,1)); % nb of layers
+                
+                % Get selected and rejected models
+                VSin=VS(:,OKsort);
+                VPin=VP(:,OKsort);
+                VPout=VP(:,KOsort);
+                RHOin=RHO(:,OKsort);
+                RHOout=RHO(:,KOsort);
+                Zin=ZALL(:,OKsort);
+                THin=THALL(:,OKsort);
+                VSout=VS(:,KOsort);
+                Zout=ZALL(:,KOsort);
+                
+                % Save settings in .mat file
+                inv_set.nC(ix)=nC(ix);
+                inv_set.nmod(ix)=nmod(ix);
+                inv_set.minmis(ix)=minmis(ix);
+                save(matfileinv,'-append','inv_set');
+                
+                export_gpdc=10; % Success !
+                delete(fullfile(dir_rep_ind,'*.report')); % Delete temp file
+            catch
+                export_gpdc=export_gpdc+1; % Try again
+            end
+            delete(fullfile(dir_rep_ind,'*.txt')); % Delete temp file
         end
-        delete(fullfile(dir_rep_ind,'*.txt'),fullfile(dir_rep_ind,'*.report')); % Delete temp file
         
-        % Read models
-        dim=ndims(VSall{1});
-        VS=cat(dim,VSall{:,1}); % All Vs
-        VSbest=VS(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vs
-        VS=VS(:,I);
-        VP=cat(dim,VPall{:,1}); % All Vp
-        VPbest=VP(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Vp
-        VP=VP(:,I);
-        RHO=cat(dim,RHOall{:,1}); % All Rho
-        RHObest=RHO(:,(nmaxmod(ix)*(bestrun-1))+1); % Best Rho
-        RHO=RHO(:,I);
-        ZALL=cat(dim,VSall{:,2}); % All depth
-        ZALL(end,:)=maxdepth;
-        Zbest=ZALL(:,(nmaxmod(ix)*(bestrun-1))+1); % Best depth
-        THbest=diff(Zbest);
-        THbest=round(THbest(1:2:end)*1e6)/1e6; % Best thickness
-        ZALL=ZALL(:,I);
-        THALL=diff(ZALL);
-        THALL=round(THALL(1:2:end,:)*1e6)/1e6; % All thickness
-        
-        vsmax = ceil(max(VS(:)/10))*10;
-        
-        nC(ix)=length(THALL(:,1)); % nb of layers
-        
-        % Get selected and rejected models
-        VSin=VS(:,OKsort);
-        VPin=VP(:,OKsort);
-        VPout=VP(:,KOsort);
-        RHOin=RHO(:,OKsort);
-        RHOout=RHO(:,KOsort);
-        Zin=ZALL(:,OKsort);
-        THin=THALL(:,OKsort);
-        VSout=VS(:,KOsort);
-        Zout=ZALL(:,KOsort);
-        
-        % Save settings in .mat file
-        inv_set.nC(ix)=nC(ix);
-        inv_set.nmod(ix)=nmod(ix);
-        inv_set.minmis(ix)=minmis(ix);
-        save(matfileinv,'-append','inv_set');
+        if export_gpdc==5 % Only 5 tries, after that go to next Xmid
+            fprintf('\n  Unable to read reports after 5 attempts - Go to next Xmid\n\n');
+            continue
+        end
         
         %% %% %%
         
@@ -794,7 +865,7 @@ for ix=Xmidselec
                 VPridge_min=VSridge; VPridge_max=VSridge;
                 RHOridge_min=VSridge; RHOridge_max=VSridge;
                 % Count number of model per cell
-                a_std = 0.1; % Keep cells with at least(1-a_std)*std models
+                a_std = 0.01; % Keep cells with at least(1-a_std)*std models
                 for jj=1:nZ
                     NN(jj,:)=histc(IVsR(:,jj),velocityS);
                     VSridge(jj)=mean(velocityS(NN(jj,:)==max(NN(jj,:))));                   
@@ -849,7 +920,7 @@ for ix=Xmidselec
             
             %%% Gaussian weighting models %%%
             
-            if weightcalc==1 && nmod(ix)>1
+            if weightcalc==1 && nmod(ix)>2
                 % Gaussian windowing for best model selection
                 dgauss=0.1;
                 meanmis=mean(misin);
@@ -867,7 +938,7 @@ for ix=Xmidselec
                         COEF(flag1)=coef(gg)/length(flag1);
                     end
                     step(flagg)=abs(sum(COEF)-1);
-                    if step(flagg)>step(flagg-1)
+                    if step(flagg)>step(flagg-1) || flagg == 1000
                         invers=0;
                         dgauss=dgauss/0.75;
                         t=min(misin):dgauss:max(misin)+dgauss;
@@ -963,7 +1034,7 @@ for ix=Xmidselec
             dinsave(nameDINsmstd,repmat(dz,1,length(ZZ)),IVPstd,IVSstd,IRHOstd);
             dinsave(nameDINsmmin,repmat(dz,1,length(ZZ)),IVPmin,IVSmin,IRHOmin);
             dinsave(nameDINsmmax,repmat(dz,1,length(ZZ)),IVPmax,IVSmax,IRHOmax);
-            if weightcalc==1 && nmod(ix)>1
+            if weightcalc==1 && nmod(ix)>2
                 dinsave(nameDINlayw,THweight,VPweight(1:2:end),VSweight(1:2:end),RHOweight(1:2:end));
                 dinsave(nameDINsmw,repmat(dz,1,length(ZZ)),IVPweight,IVSweight,IRHOweight);
             end
@@ -978,13 +1049,13 @@ for ix=Xmidselec
             str1='Average layered model';
             h3=plot(IVSmean,ZZ,'r-','linewidth',1.5);
             str3='Average smooth model';
-            if weightcalc==1 && nmod(ix)>1
+            if weightcalc==1 && nmod(ix)>2
                 h4=plot(VSweight,Zweight,'c-','linewidth',1.5);
                 str4='Weighted layered model';
                 h6=plot(IVSweight,ZZ,'m-','linewidth',1.5);
                 str6='Weighted smooth model';
             end
-            if ridgecalc==1 && nmod(ix)>1
+            if ridgecalc==1 && nmod(ix)>2
                 h7=plot(VSridge,ZZ,'g-','linewidth',1.5);
                 str7='Ridge model';
                 dashline(VSridge_min,ZZ,2,2,2,2,'color','k','linewidth',1.5);
@@ -1004,7 +1075,7 @@ for ix=Xmidselec
             end
             
             set(c,'visible','off');
-            if (weightcalc==0 || (weightcalc==1 && nmod(ix)==1)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)==1))
+            if (weightcalc==0 || (weightcalc==1 && nmod(ix)<=2)) && (ridgecalc==0 || (ridgecalc==1 && nmod(ix)<=2))
                 h_legend=legend([h0,h1,h3],str0,str1,str3);
             elseif weightcalc==1 && ridgecalc==0
                 h_legend=legend([h0,h1,h3,h4,h6],str0,str1,str3,str4,str6);

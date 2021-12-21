@@ -417,24 +417,20 @@ end
 if ~exist('auto_resamp','var') || isempty(auto_resamp)
     auto_resamp = 1;
 end
+
+max_resamp_win = maxwinsize.*10.^(1./sqrt(0.5*maxwinsize));
+min_resamp_win = mean([vmin vmax])./(maxwinsize.*10.^(1./sqrt(0.5*maxwinsize)));
+
 % Default maximum resampling wavelength (power law depending on window size)
 if isempty(max_resamp) == 1
-    max_resamp_win = maxwinsize.*10.^(1./sqrt(0.5*maxwinsize));
     max_resamp = max(max_resamp_win);
     auto_resamp = 1;
-else
-    max_resamp_win = maxwinsize.*10.^(1./sqrt(0.5*maxwinsize));
-%     max_resamp_win = ones(size(maxwinsize))*max_resamp;
 end
 
 % Default minimum resampling frequency (power law depending on window size)
 if isempty(min_resamp) == 1
-    min_resamp_win = mean([vmin vmax])./(maxwinsize.*10.^(1./sqrt(0.5*maxwinsize)));
     min_resamp = min(min_resamp_win);
     auto_resamp = 1;
-else
-    min_resamp_win = mean([vmin vmax])./(maxwinsize.*10.^(1./sqrt(0.5*maxwinsize)));
-%     min_resamp_win = ones(size(maxwinsize))*min_resamp;
 end
 
 % Default resampling vector
@@ -623,7 +619,7 @@ while i<length(Xmidselec)
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.su']);                    
                     [seismomat,xseis,tseis,ntr]=matwind(sufileOK,Sselec(ks),Gmin(ix,jw),Gmax(ix,jw),xsca,...
                         winsize(jw),seismofile,0,mute,tmin1,tmin2,tmax1,tmax2);
-                    
+                                        
                     if stack==2 % Alt. method (xp)
                         if ((strcmp(side,'L')==1 || strcmp(side,'B')==1) && XmidT(ix)>Sselec(ks))
                             seismofile_left=[seismofile_left,' ',seismofile];
@@ -643,11 +639,11 @@ while i<length(Xmidselec)
                     dspfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.dsp']);
                     [dspmat,f,v]=matpomegal(seismofile,1,nray,fmin,fmax,vmin,vmax,...
-                        flip,xsca,tsca,normalize,dspfile,0);
+                        flip,xsca,tsca,0,dspfile,0);
                     % Spectrogram calculation on shot gather and saving in .spec file
                     specfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']);
-                    [specmat,fspec,xspec]=matspecfx(seismofile,xsca,specfile,0);
+                    [specmat,fspec,xspec]=matspecfx(seismofile,xsca,specfile,0,normalize);
                     specfile_all=[specfile_all,' ',specfile]; % Concat. file names
                     % Get example seismogram (shortest offset available, left side in priority)
                     if strcmp(side,'L')==1
@@ -676,7 +672,7 @@ while i<length(Xmidselec)
                             % Search for cut-off frequency in single spectrogram
                             specstruct=dir(fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                                 num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']));
-                            flimsing=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,fminpick);
+                            flimsing=fmin_search(freqlim,specstruct,dir_dat_xmid,dt,specampmin,fminpick);
                         else
                             flimsing=[];
                         end
@@ -700,7 +696,7 @@ while i<length(Xmidselec)
                                 set(gca,'xscale','log');
                             end
                             sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-                            if cb_disp==1
+                            if cb_disp==1 && str2double(matrelease(1:4))<=2014
                                 sizeax=sizeax{2};
                             end
                             file1=fullfile(dir_img_xmid_single,[num2str(XmidT(ix),xmidformat),...
@@ -721,7 +717,8 @@ while i<length(Xmidselec)
                             set(findobj(fig2,'Type','Axes'),'ActivePositionProperty','Position');
                             if cb_disp==1
                                 axeok=findobj(fig2,'Type','Axes');
-                                set(axeok(2),'position',[sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
+%                                 set(axeok(2),'position',[sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
+                                set(axeok(1),'position',[sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
                             else
                                 set(findobj(fig2,'Type','Axes'),'position',...
                                     [sizeax(1),sizeax(2),sizeax(3),sizeax(4)/3]);
@@ -789,7 +786,7 @@ while i<length(Xmidselec)
                                 % Search for cut-off frequency all stacked spectrograms
                                 specstruct=dir(fullfile(dir_dat_xmid,...
                                     [num2str(XmidT(ix),xmidformat),'.*.spec']));
-                                flimsing=fmin_search(specstruct,dir_dat_xmid,dt,specampmin,fminpick);
+                                flimsing=fmin_search(freqlim,specstruct,dir_dat_xmid,dt,specampmin,fminpick);
                             else
                                 flimsing=[];
                             end
@@ -812,7 +809,7 @@ while i<length(Xmidselec)
                                 set(gca,'xscale','log');
                             end
                             sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-                            if cb_disp==1
+                            if cb_disp==1 && str2double(matrelease(1:4))<=2014
                                 sizeax=sizeax{2};
                             end
                             file1=fullfile(dir_img_xmid_stack,[num2str(XmidT(ix),xmidformat),...
@@ -864,7 +861,7 @@ while i<length(Xmidselec)
                     [dspmat_new,f_new,v_new]=matpomegal(seisfile_sum_new,1,nray,fmin,fmax,vmin,vmax,...
                         flip,xsca,tsca,normalize,dspfile_sum_new,0);
                     % Spectrogram calculation on composite shot gather and saving in .spec file
-                    [specmat_new,fspec_new,xspec_new]=matspecfx(seisfile_sum_new,xsca,specfile_sum_new,0);
+                    [specmat_new,fspec_new,xspec_new]=matspecfx(seisfile_sum_new,xsca,specfile_sum_new,0,normalize);
                 end
             end
         end
@@ -876,8 +873,33 @@ while i<length(Xmidselec)
     
     if (sum(nshot(ix,:))>0 && exist(dspfile_sum,'file')==2) || isempty(dt)==1
         
+        % Search for cut-off frequency on composite spectrogram
+        %         if (calc==1 || target==1 || pick==1 || plotdisp==1 || plotpckdisp==1 || plotspec==1) && freqlim>=1
+        if calc == 1
+            if stack==2 % Alt. method (xp)
+                specstruct=dir(specfile_sum_new);
+            else
+                specstruct=dir(specfile_sum);
+                dispstruct=dir(dspfile_sum);
+            end
+            [dspmat,f,v]=dsp2dat(dspfile_sum,flip,0);
+            %         [flim(ix),~,specmat_all]=fmin_search(freqlim,specstruct,dir_dat,dt,specampmin,fminpick);
+            [flim(ix),specmat_all]=fmin_search_disp(dispstruct,dir_dat,f,fminpick);
+            
+            specamp_mean = nanmean(specmat_all,2);
+            specamp_std = nanstd(specmat_all,2);
+        end
+        
+        if plotflim==1
+            flimsing=flim(ix);
+        else
+            flimsing=[];
+        end
+        
         if calc==1 || plotstkdisp==1
-            matop(dspfile_sum,'norm',flip); % Normalize final dispersion image
+            if normalize > 0
+                matop(dspfile_sum,'norm',flip); % Normalize final dispersion image
+            end
             
             if stack==2
                 matop(dspfile_sum_new,'norm',flip); % Normalize final dispersion image
@@ -896,7 +918,10 @@ while i<length(Xmidselec)
                 end
                 
                 if length(maxwinsize_ok) > 1
-                    gauss_weight = stack_weight_lam_new(f,v,maxwinsize_ok);
+                    if ~exist('a','var') || isempty(a)
+                        a = 1.5;
+                    end
+                    gauss_weight = stack_weight_lam_new(f,v,maxwinsize_ok,a);
                     dspmat_weight_win_gaussed = gauss_weight.*dspmat_weight_win;
                     dspmat_weight = sum(dspmat_weight_win_gaussed,3)./sum(gauss_weight,3); % Weighted stack all window sizes
                     dspmat_weight = bsxfun(@rdivide,dspmat_weight,max(dspmat_weight,[],2));
@@ -932,7 +957,7 @@ while i<length(Xmidselec)
 %                          set(gca,'xscale','log');
 %                      end
 %                      sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-%                      if cb_disp==1
+%                      if cb_disp==1 && str2double(matrelease(1:4))<=2014
 %                          sizeax=sizeax{2};
 %                      end
 %                 end
@@ -957,7 +982,7 @@ while i<length(Xmidselec)
 %                     set(gca,'xscale','log');
 %                 end
 %                 sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-%                 if cb_disp==1
+%                 if cb_disp==1 && str2double(matrelease(1:4))<=2014
 %                     sizeax=sizeax{2};
 %                 end
 %                 
@@ -991,22 +1016,6 @@ while i<length(Xmidselec)
                 matop(dspfile_sum_new,'norm',flip); % Normalize final dispersion image
             end
             copyfile(seismofileOK,seisfile_sum); % Example of shot gather
-        end
-        
-        % Search for cut-off frequency on composite spectrogram
-        if (calc==1 || target==1 || pick==1 || plotdisp==1 || plotpckdisp==1 || plotspec==1) && freqlim==1
-            if stack==2 % Alt. method (xp)
-                specstruct=dir(specfile_sum_new);
-            else
-                specstruct=dir(specfile_sum);
-            end
-            [flim(ix),~]=fmin_search(specstruct,dir_dat,dt,specampmin,fminpick);
-        end
-        
-        if plotflim==1
-            flimsing=flim(ix);
-        else
-            flimsing=[];
         end
         
         if stack==2 % Alt. method (xp)
@@ -1103,7 +1112,7 @@ while i<length(Xmidselec)
                     set(gca,'xscale','log');
                 end
                 sizeax=get(findobj(fig1,'Type','Axes'),'Position');
-                if cb_disp==1
+                if cb_disp==1 && str2double(matrelease(1:4))<=2014
                     sizeax=sizeax{2};
                 end
                 file1=fullfile(dir_img_disp,[num2str(XmidT(ix),xmidformat),'.disp_new.',imgform]);
@@ -1261,11 +1270,16 @@ while i<length(Xmidselec)
                     end
                     dashline(f,f*max_resamp_xmid,3,3,3,3,'color',[0 0 0],'linewidth',3);
                 end
+                
                 % Window positions during picking
                 set(fig2,'name',figname,'numbertitle','off');
-%                 set(gcf,'units','normalized','outerposition',[0 0 1 1]); % Full screen left
-                set(gcf,'units','normalized','outerposition',[0.5 0.5 0.5 0.5]); % 1/4 screen left bottom
-%                 set(gcf,'units','normalized','outerposition',[0.65 0.5 0.35 0.5]); % 1/4 screen right top
+                MP = get(0, 'MonitorPositions');
+                if size(MP, 1) == 1  % Single monitor
+                    set(gcf,'units','normalized','outerposition',[0.75 0.75 0.25 0.25]); % 1/4 screen top left
+                else
+                    set(gcf,'units','normalized','outerposition',[1 0.5 0.5 0.5]); % second monitor, 1/4 screen top right
+                end
+                
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
@@ -1286,21 +1300,36 @@ while i<length(Xmidselec)
             end
             modenext=modeinit;
             while isempty(modenext)==0
-                % Plot current dispersion image
+                
                 filepick=fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),...
                     '.M',num2str(modenext),'.pvc']);
+%                 [specmat,fspec,xspec]=spec2dat(specfile_sum,0);
+%                 
+%                 % Plot mean spectral amplitude
+%                 pos2 = [0.1 0.1 0.8 0.1];
+%                 figure(1);
+%                 ax(2) = subplot(2,1,2);
+%                 ax(2).Position = pos2;
+%                 plot_curv(1,f,specamp_mean,[],'.','r',2,0,0,0,16,'Frequency (Hz)','Mean norm. amplitude',[],...
+%                     [fMIN fMAX],[specamp_mean(2)-specamp_std(2) max(specamp_mean)+specamp_std(2)],[],fticks,[],[],specamp_mean(2)+specamp_std(2),flimsing,[],[],[],[],[]);
+%                 set(gca,'yscale','log','FontSize',16);
+                
+                % Plot current dispersion image
+%                 pos1= [0.1 0.25 0.8 0.7];
+%                 ax(1) = subplot(2,1,1);
+%                 ax(1).Position = pos1;
                 if mappicklog==0
                     [fig1,h1,~,h0]=plot_img(1,f,v2,-dspmat2',mappick,axetop,axerev,0,16,...
-                        freqtitle_long,'Phase velocity (m/s)',...
+                        [],'Phase velocity (m/s)',...
                         'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
-                        [],fticks,Vphticks,[],[],[],[],[],[],[],0);
+                        [],[],Vphticks,[],[],flimsing,[],[],[],[],0);
                 else
                     dspmatinv2=1./(1-dspmat2);
                     dspmatinv2(isinf(dspmatinv2))=max(max(dspmatinv2(isinf(dspmatinv2)==0)));
                     [fig1,h1,~,h0]=plot_img_log(1,f,v2,-dspmatinv2',flipud(mappick),axetop,axerev,0,16,...
-                        freqtitle_long,'Phase velocity (m/s)',...
+                        [],'Phase velocity (m/s)',...
                         '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
-                        [1 length(mappick)],fticks,Vphticks,[],[],[],[],[],[],[],0);
+                        [1 length(mappick)],[],Vphticks,[],[],flimsing,[],[],[],[],0);
                 end
                 hold on; cm_saturation(mappicksat);
                 if sampling==1
@@ -1320,14 +1349,20 @@ while i<length(Xmidselec)
                         ht = text(f(abs(v_plot-v_max_plot) == min(abs(v_plot-v_max_plot))),v_max_plot,num2str(lambda_plot),'fontsize',16);
                     end
                 end
+                
                 % Window positions during picking
                 set(fig1,'name',['Xmid = ',num2str(XmidT(ix)),' m'],'numbertitle','off');
-%                 set(gcf,'units','normalized','outerposition',[0.3 0 1 1]); % Full screen right
-                set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.5 0.5]); % % 1/4 screen left top
-%                 set(gcf,'units','normalized','outerposition',[-0.02 -0.02 0.6 1]); % % 1/2 screen left
+                MP = get(0, 'MonitorPositions');
+                if size(MP, 1) == 1  % Single monitor
+                    set(gcf,'units','normalized','outerposition',[0 0 0.75 0.75]); % 3/4 screen bottom left
+                else
+                    set(gcf,'units','normalized','outerposition',[0.2 0 1 1]); % First monitor, full screen
+                end
+                
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
+                set(gca,'xticklabel',[])
                 pvcstruct=dir(fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),'.*.pvc']));
                 % Plot current dispersion curves if existing
                 for ip=1:length(pvcstruct)
@@ -1362,7 +1397,7 @@ while i<length(Xmidselec)
                     delete(filepick);
                 end
             end
-            if exist('dspmatprev','var')==1
+            if exist('dspmatprev','var')==1 && ishandle(fig2)
                 close(fig2);
             end
             dspmatprev=dspmat2; % Store current dispersion matrix to show along next one
@@ -1494,7 +1529,7 @@ while i<length(Xmidselec)
                 pvcstruct=dir(fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),'.*.pvc']));
                 if isempty(pvcstruct)==0
                     % Convert .pvc in .target
-                    if freqlim == 1
+                    if freqlim >= 1
                         lmpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,...
                             sampling,resampvec,flim(ix),maxerrrat);
                     elseif auto_resamp == 1
@@ -1705,24 +1740,25 @@ while i<length(Xmidselec)
                 end
             end
             
-            % Plot mode pseudo-section when picking
-            if pick==1 && Xlength>1
-                figure(100); close(100);
-                if sum(sum(isnan(vph2dobs{modeinit+1})))==numel(vph2dobs{modeinit+1})
-                    continue
-                end
-                if sampling==0
-                    f1=plot_img(100,XmidT,resampvec,vph2dobs{modeinit+1},map1,0,0,cbpos,fs,'X (m)',...
-                        freqtitle_short,'Vph_{obs} (m/s)',[xMIN xMAX],[0 max(resampvec)],...
-                        [],xticks,fticks,[],[],[],[],[60 0 40 12],[],1,0);
-                else
-                    f1=plot_img(100,XmidT,resampvec,vph2dobs{modeinit+1},map1,1,1,cbpos,fs,'X (m)',...
-                        lamtitle,'Vph_{obs} (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
-                        [],xticks,lticks,[],[],[],[],[60 0 40 12],[],1,0);
-                end
-                hold on
-                plot(XmidT(ix),0,'r.','markersize',25);
-            end
+%             % Plot mode pseudo-section when picking
+%             if pick==1 && Xlength>1
+%                 figure(100); close(100);
+%                 if sum(sum(isnan(vph2dobs{modeinit+1})))==numel(vph2dobs{modeinit+1})
+%                     continue
+%                 end
+%                 if sampling==0
+%                     f1=plot_img(100,XmidT,resampvec,vph2dobs{modeinit+1},map1,0,0,cbpos,fs,'X (m)',...
+%                         freqtitle_short,'Vph_{obs} (m/s)',[xMIN xMAX],[0 max(resampvec)],...
+%                         [],xticks,fticks,[],[],[],[],[60 0 20 12],[],1,0);
+%                 else
+%                     f1=plot_img(100,XmidT,resampvec,vph2dobs{modeinit+1},map1,1,1,cbpos,fs,'X (m)',...
+%                         lamtitle,'Vph_{obs} (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
+%                         [],xticks,lticks,[],[],[],[],[60 0 20 12],[],1,0);
+%                 end
+%                 hold on
+%                 plot(XmidT(ix),0,'r.','markersize',25);
+%                 fig1;
+%             end
             
             % Save 1D image with dispersion curves at the end of main loop
             if plot1dobs==1 && ishandle(4)==1 && (ix==Xmidselec(find(Xmidselec(sum(nshot(Xmidselec,:)>0,2)),1,'last')) || (pick==1 && xmidprev==-1))
@@ -1901,7 +1937,7 @@ while i<length(Xmidselec)
         xmidparam.Gmax(ix,:)=Gmax(ix,:);
         save(matfile,'-append','xmidparam');
     end
-    if freqlim==1
+    if freqlim>=1
         xmidparam.flim(ix,:)=flim(ix,:);
         save(matfile,'-append','xmidparam');
     end
@@ -1959,9 +1995,18 @@ if plot2dobs==1 && Xlength>1
             flagprint=1;
         end
         fprintf(['\n      Mode ',num2str(ip-1),'\n']);
-        resampvecplot = resampvec(resampvec<=ceil(max(max_resamp_win)));
-        vphplot = vph2dobs{ip}(resampvec<=ceil(max(max_resamp_win)),:);
-        errplot = err2dobs{ip}(resampvec<=ceil(max(max_resamp_win)),:);
+        
+        if auto_resamp == 1
+            resampvecplot = resampvec(resampvec<=ceil(max(max_resamp_win)));
+            vphplot = vph2dobs{ip}(resampvec<=ceil(max(max_resamp_win)),:);
+            errplot = err2dobs{ip}(resampvec<=ceil(max(max_resamp_win)),:);
+        else
+            resampvecplot = resampvec;
+            vphplot = vph2dobs{ip};
+            errplot = err2dobs{ip};
+        end
+        
+        
         if ~any(~isnan(vphplot(end,:)))
             vphplot(end,:) = [];
             errplot(end,:) = [];

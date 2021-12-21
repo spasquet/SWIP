@@ -4,7 +4,7 @@ function [fig,han1,han2,han3,c]=plot_img(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,
 %%% S. Pasquet - V17.05.15
 %
 % plot_img(h,X,Y,Z,map,axetop,axerev,cb,fs,xtitle,ytitle,ztitle,xlimit,ylimit,zlimit,...
-%    xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
+%     xticks,yticks,zticks,xline,yline,isoline,sizefig,sizeax,vertex,blocky)
 %
 % h -> Figure handle
 % X, Y -> vector of length N & M of meshgrid matrix of size N-by-M
@@ -42,6 +42,8 @@ set(fig,'Units','centimeters');
 if exist('fs','var')==1 && isempty(fs)~=1
     set(fig,'DefaultTextFontSize',fs,'DefaultAxesFontSize',fs);
     set(gca,'FontSize',fs);
+else
+    fs = get(gca,'FontSize');
 end
 
 % Colormap
@@ -182,9 +184,9 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
     end
     ticklength=get(c,'TickLength');
     if str2double(matrelease(1:4))<=2014
-        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2);
+        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2,'TickDir','out');
     else
-        set(c,'LineWidth',1.5,'box','on');
+        set(c,'LineWidth',1.5,'box','on','TickDir','out','FontSize',fs);
     end
 %     if cb==2 && axetop==0
 %         cbpos = get(cbhandle,'position');
@@ -215,9 +217,9 @@ if exist('isoline','var')==1 && isempty(isoline)~=1
     end
     for i = 1:length(isoline)
         if mod(i,2) == 0
-            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',1);
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'color',[0 0 0],'linewidth',1);
         else
-            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'k','linewidth',0.5);
+            [cs,hc]=contour(X,Y,Z,[isoline(i) isoline(i)],'color',[0 0 0],'linewidth',0.5);
         end
     end
 %     clabel(cs, hc, 'Color', 'k', 'Rotation', 0);

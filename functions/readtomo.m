@@ -108,13 +108,19 @@ if exist('X','var')==1 && isempty(X)==0 && exist('Z','var')==1 && isempty(Z)==0
             VelI2(:,i)= vtemp2;
             VelI2_std(:,i)= vtemp2_std;
         end
-        VelI = interp2(XI2,ZI2,VelI2,XI,ZI);
-        VelI_std = interp2(XI2,ZI2,VelI2_std,XI,ZI);
+        F = scatteredInterpolant(XI2(:),ZI2(:),VelI2(:),'natural','linear');
+        VelI = F(XI,ZI);
+        F = scatteredInterpolant(XI2(:),ZI2(:),VelI2_std(:),'natural','linear');
+        VelI_std = F(XI,ZI);
+%         VelI = interp2(XI2,ZI2,VelI2,XI,ZI);
+%         VelI_std = interp2(XI2,ZI2,VelI2_std,XI,ZI);
 %         plot_img([],XI2,ZI2,Vel');
 %         plot_img([],XI2,ZI2,VelI2);
 %         plot_img([],XI,ZI,VelI);
     else
-        VelI = interp2(Xv',Zv',Vel',XI,ZI);
+        F = scatteredInterpolant(bb(:,1),bb(:,2),bb(:,3),'natural','none');
+        VelI = F(XI,ZI);
+%         VelI = interp2(Xv',Zv',Vel',XI,ZI);
         VelI_std = 0.1*VelI;
     end
 else

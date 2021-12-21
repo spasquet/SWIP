@@ -57,9 +57,10 @@ fprintf('\n  C : Open colormap editor\n');
 while button==1
     i=i+1;
     try
-    [Fpick,Vpick,button]=ginput(1);
+        [Fpick,Vpick,button]=ginput(1);
     catch
         closefig=1;
+        close all;
         if isempty(Vi)==1
             Vsave=0;
             fprintf('\n  No picks - Go to next Xmid\n');
@@ -269,7 +270,7 @@ while button==1
             delete(h0); clear h0;
         end
         continue
-    elseif button~=1;
+    elseif button~=1
         button=1; i=i-1;
         continue
     end

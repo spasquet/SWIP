@@ -32,9 +32,11 @@
 
 \newpage
 \section{Theoretical background}
-The theory behind {\SWIP} has been published in GEOPHYSICS in 2017. You can find the article in \verb|SWIP/docs/publi| or at \url{https://library.seg.org/doi/abs/10.1190/geo2016-0625.1}. Please use the following citation to refer to {\SWIP} in your publications:
+The theory behind {\SWIP} has been published in GEOPHYSICS in 2017. Additionnal Multiwindow weighted stacking of surface wave was included in SWIP in 2020, following a second paper also published in GEOPHYSICS. You can find both articles in \verb|SWIP/docs/publi| or at \url{https://doi.org/10.1190/geo2016-0625.1} and \url{https://doi.org/10.1190/geo2020-0096.1}. Please use the following citations to refer to {\SWIP} in your publications:
 
 Pasquet, S., Bodet, L., 2017. SWIP: An integrated workflow for surface-wave dispersion inversion and profiling. Geophysics 82(6), WB47–WB61.
+
+Pasquet, S., Wang, W., Chen, P., Flinchum, B.A., 2020. Multiwindow weighted stacking of surface-wave dispersion. Geophysics 86, EN39–EN50.
 
 \section{Quick installation instructions}
 If you have experience on how to install and compile codes under a Linux environment, follow these quick installation instructions. More detailed instructions can be found in §\ref{sec:detailedinstruc}.
@@ -57,7 +59,7 @@ Here is a quick tutorial to run {\SWIP} and reproduce the figures presented in t
 \setlength\itemsep{2ex}
 \item In \verb|your_working_folder|, extract the content of the \verb|yellowstone.tar.gz| file located in \verb|SWIP/docs/example|.
 
-\item Download the raw seismic data at \url{http://wycehg.wygisc.org/sharedData/poleMtnGeophysics/Yellowstone/OPTA_072016_1/Seismic.zip} and extract the content of the archive in \verb|your_working_folder/yellowstone|.
+\item Download the raw seismic data at \url{https://doi.org/10.15786/M21S3V} and extract the content of the archive in \verb|your_working_folder/yellowstone|.
 
 \item In {\MATLAB}, go in the extracted folder \verb|your_working_folder/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|yellowstone.su| file provided in the archive (once you've checked that, keep only one {\SU} file in the \verb|your_working_folder/yellowstone| folder). If you are using {\SWIP} in {\Cygwin}, the \verb|yellowstone.su| file provided in the archive will not work, so you will have to use the one created with \verb|seg2su|.
 

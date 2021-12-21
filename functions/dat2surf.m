@@ -1,4 +1,4 @@
-function [XX,YY,ZZ,DATA_depth,XX_loc,topo_interp]=dat2surf(filename,dx,dz,utm_start,utm_end,zshift)
+function [XX,YY,ZZ,DATA_depth,XX_loc,topo_interp,DEPTH]=dat2surf(filename,dx,dz,utm_start,utm_end,zshift)
 
 if exist('zshift','var')==0 || isempty(zshift)==1
     zshift = 0;
@@ -45,9 +45,9 @@ if exist('utm_start','var')==0 || isempty(utm_start)==1
     end
     topo_interp = interp1(uniq_x,topo,x);
     
-    [XX,ZZ] = meshgrid(x,depth);
+    [XX,DEPTH] = meshgrid(x,depth);
     F2 = scatteredInterpolant(X,z_tmp,DATA,'natural','none');
-    DATA_depth=F2(XX,ZZ);   
+    DATA_depth=F2(XX,DEPTH);   
 else
     if exist('utm_end','var')==0 || isempty(utm_end)==1
         data_type = 2;
@@ -57,7 +57,7 @@ else
     % Read file
     [DATA,X,Z] = readtomo(filename,1,[],[],100);
     
-    if all(isnan(DATA(1,:)))
+    if all(isnan(DATA(1,:))) && length(unique(Z(1,:)))==1
         newdata = 0;
     else
         newdata = 1;
@@ -96,9 +96,9 @@ else
     end
     topo_interp = interp1(unique(X),topo,x);
 
-    [XX,ZZ] = meshgrid(x,depth);
+    [XX,DEPTH] = meshgrid(x,depth);
     F2 = scatteredInterpolant(X(z_tmp<=0),z_tmp(z_tmp<=0),DATA(z_tmp<=0),'natural','none');
-    DATA_depth=F2(XX,ZZ);
+    DATA_depth=F2(XX,DEPTH);
 end
 XX_loc = XX;
 
@@ -113,7 +113,7 @@ if data_type==2
     Y_UTM = pt(:,2);
     if zshift == 1
         Z_UTM_interp = interp1(aa(:,1),aa(:,4),x);
-        shift_z = mean(Z_UTM_interp - topo_interp);% + 3;
+        shift_z = median(Z_UTM_interp - topo_interp);% + 3
     end
 else
     % Calculate UTM coordinates and new grid
@@ -121,8 +121,8 @@ else
 end
 
 [XX,~] = meshgrid(X_UTM,depth);
-[YY,ZZ] = meshgrid(Y_UTM,depth);
-ZZ = repmat(topo_interp,length(depth),1)+ZZ;
+[YY,DEPTH] = meshgrid(Y_UTM,depth);
+ZZ = repmat(topo_interp,length(depth),1)+DEPTH;
 if zshift == 1
     ZZ = ZZ+shift_z;
 end

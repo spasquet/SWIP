@@ -8,7 +8,7 @@ if exist('norm','var')==0 || isempty(norm)==1
     norm=1;
 end
 
-if norm==1
+if norm>0
     com1=sprintf('suspecfx < %s | suop op=norm > %s',...
         seismofile,specfile);
 else
@@ -46,4 +46,5 @@ specmat=load([specfile,'.dat']);
 if datsave==0
     delete([specfile,'.dat']);
 end
+
 end

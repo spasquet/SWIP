@@ -27,7 +27,8 @@ for i=b1:b2
     if test == 0
         velout(i)=median(vel(i:i+npts-1));
     else
-        if abs(median(vel(i:i+npts-1))-velout(i))>abs(median(vel(i:i+npts-1))-std(vel(i:i+npts-1)))
+        % abs(median(vel(i:i+npts-1))-velout(i))>abs(median(vel(i:i+npts-1))-2*std(vel(i:i+npts-1)))
+        if abs(median(vel(i:i+npts-1))-velout(i))>abs(0.75*std(vel(i:i+npts-1)))
             velout(i)=median(vel(i:i+npts-1));
         end
     end

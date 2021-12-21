@@ -387,7 +387,7 @@ for ix=Xmidselec
         % Check existence of dispersion image file
         dspfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.dsp']);
         dspfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.weight.dsp']);
-        if exist(dspfile_sum_new,'file')==2 && stack==3
+        if exist(dspfile_sum_new,'file')==2
             dspfile_sum = dspfile_sum_new;
         end
         

@@ -44,6 +44,10 @@ end
 if exist('one_shot','var')==0 || isempty(one_shot)==1
     one_shot=0;
 end
+% WSSW default value for a
+if exist('a','var')==0 || isempty(a)==1
+    a=3;
+end
 
 % P-omega transform settings (used if calc=1 or calc=2)
 % Space scaling factor (X=X/xsca) (used if calc=1 or calc=2)

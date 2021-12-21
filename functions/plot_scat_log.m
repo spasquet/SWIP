@@ -43,6 +43,8 @@ set(fig,'Units','centimeters');
 if exist('fs','var')==1 && isempty(fs)~=1
     set(fig,'DefaultTextFontSize',fs,'DefaultAxesFontSize',fs);
     set(gca,'FontSize',fs);
+else
+    fs = get(gca,'FontSize');
 end
 
 % Colormap
@@ -193,7 +195,7 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb==1
         end
         zticks=10.^(mn+rng*(ztickslog-1)/(length(map)-1));
         if abs(min(zticks))<1
-            prec = -log10(abs(min(zticks)));
+            prec = round(-log10(abs(min(zticks))));
         else
             prec = 0;
         end
@@ -219,9 +221,9 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb==1
     end
     ticklength=get(c,'TickLength');
     if str2double(matrelease(1:4))<=2014
-        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2);
+        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2,'TickDir','out');
     else
-        set(c,'LineWidth',1.5,'box','on');
+        set(c,'LineWidth',1.5,'box','on','TickDir','out','FontSize',fs);
     end
 else
     c=[];

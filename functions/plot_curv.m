@@ -41,6 +41,8 @@ set(fig,'Units','centimeters');
 if exist('fs','var')==1 && isempty(fs)~=1
     set(fig,'DefaultTextFontSize',fs,'DefaultAxesFontSize',fs);
     set(gca,'FontSize',fs);
+else
+    fs = get(gca,'FontSize');
 end
 
 if (size(X,1)>1 && size(Y,1)>1) && (size(X,2)>1 && size(Y,2)>1)
@@ -160,17 +162,17 @@ if exist('vertex','var')==1 && isempty(vertex)~=1
 end
 
 % Plot X axis on top or bottom
-if exist('axetop','var')==1 && isempty(axetop)~=1 && axetop==0
-    set(gca,'XAxisLocation','bottom');
-else
+if exist('axetop','var')==1 && isempty(axetop)~=1 && axetop==1
     set(gca,'XAxisLocation','top');
+else
+    set(gca,'XAxisLocation','bottom');
 end
 
 % Plot Y axis pointing up or down
-if exist('axerev','var')==1 && isempty(axerev)~=1 && axerev==0
-    set(gca,'YDir','normal');
-else
+if exist('axerev','var')==1 && isempty(axerev)~=1 && axerev==1
     set(gca,'YDir','reverse');
+else
+    set(gca,'YDir','normal');
 end
 
 % Write titles
@@ -231,10 +233,21 @@ if exist('cb','var')==1 && isempty(cb)~=1 && cb~=0
     end
     if exist('zticks','var')==1 && isempty(zticks)~=1
         if cb==2
-            set(c,'XTick',zticks);
+            if str2double(matrelease(1:4))<=2014
+                ticklength=get(c,'TickLength');
+                set(c,'XTick',zticks,'TickLength',[ticklength(1)/3 ticklength(2)]);
+            else
+                set(c,'XTick',zticks);
+            end
         else
             set(c,'YTick',zticks);
         end
+    end
+    ticklength=get(c,'TickLength');
+    if str2double(matrelease(1:4))<=2014
+        set(c,'LineWidth',1.5,'box','on','TickLength',ticklength*2,'TickDir','out');
+    else
+        set(c,'LineWidth',1.5,'box','on','TickDir','out','FontSize',fs);
     end
     if exist('zlimit','var')==1 && isempty(zlimit)~=1
         caxis(zlimit);

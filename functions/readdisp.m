@@ -77,7 +77,7 @@ else
                 veltmp=[];
             end
             if fwd~=1 && isempty(veltmp)==0
-                if nbest==0 % Select models within the error bars
+                if nbest<=0 % Select models within the error bars
                     if nn==1
                         freqcalprev=freqcal*0;
                     end

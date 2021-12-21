@@ -9,7 +9,7 @@ com1=sprintf(['supomegal < %s coord=%d nray=%d fmin=%d fmax=%d',...
     sufile,coord,nray,fmin,fmax,vmin,vmax,flip,xsca,tsca,dspfile);
 unix(com1);
 
-if norm==1
+if norm>0
     matop(dspfile,'norm',flip);
 end
 

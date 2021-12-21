@@ -3,8 +3,8 @@ function [Xi,Zi,Vi]=plot_xzv(filevel,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
 
 %%% S. Pasquet - V17.01.26
 % Quick plot of 2D models from X,Z,V ASCII file
-% plot_xzv(filevel,mask,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
-%     vsticks,vtitle,isoline,blocky,vertex,imgform,imgres,ISOvel2,filevel2)
+% plot_xzv(filevel,logscale,xLIM,xticks,zLIM,zticks,vLIM,...
+%     vsticks,vtitle,isoline,blocky,vertex,imgform,imgres,ISOvel2,filevel2,mask)
 
 
 if exist('mask','var')==0 || isempty(mask)==1

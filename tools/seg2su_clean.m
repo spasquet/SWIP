@@ -248,29 +248,29 @@ if length(fldr_raw)==nfile
                     nsx(nroll)=i;
                     ngx(nroll)=length(gx{i});
                     gx1(nroll)=gx{i}(1);
-                    dgx(nroll)=median(diff(gx{i}));
+                    dgx(nroll)=nanmedian(diff(gx{i}));
                 else
                     nsx(nroll)=i-1;
                     ngx(nroll)=length(gx{i-1});
                     gx1(nroll)=gx{i-1}(1);
-                    dgx(nroll)=median(diff(gx{i-1}));
+                    dgx(nroll)=nanmedian(diff(gx{i-1}));
                 end
                 sx1(nroll)=sx(1);
-                dsx(nroll)=median(diff(sx(1:nsx(nroll))));
+                dsx(nroll)=nanmedian(diff(sx(1:nsx(nroll))));
             else
                 if i==NSX
                     nsx(nroll)=i-sum(nsx(1:nroll-1));
                     ngx(nroll)=length(gx{i});
                     gx1(nroll)=gx{i}(1);
-                    dgx(nroll)=median(diff(gx{i}));
+                    dgx(nroll)=nanmedian(diff(gx{i}));
                 else
                     nsx(nroll)=i-1-sum(nsx(1:nroll-1));
                     ngx(nroll)=length(gx{i-1});
                     gx1(nroll)=gx{i-1}(1);
-                    dgx(nroll)=median(diff(gx{i-1}));
+                    dgx(nroll)=nanmedian(diff(gx{i-1}));
                 end
                 sx1(nroll)=sx(sum(nsx(1:nroll-1))+1);
-                dsx(nroll)=median(diff(sx(1+nsx(nroll-1):nsx(nroll-1)+nsx(nroll))));
+                dsx(nroll)=nanmedian(diff(sx(1+nsx(nroll-1):nsx(nroll-1)+nsx(nroll))));
             end
             fprintf(['\n   ',num2str(nsx(nroll)),' shot(s)']);
             all_shots = sx(1+sum(nsx(1:nroll-1)):nsx(nroll)+sum(nsx(1:nroll-1)));
