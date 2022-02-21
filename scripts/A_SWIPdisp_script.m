@@ -2035,11 +2035,11 @@ if plot2dobs==1 && Xlength>1
         if sampling==0
             f1=plot_img(showplot,XmidT,resampvecplot,errplot,map1,0,0,cbpos,fs,'X (m)',...
                 freqtitle_short,'V_\phi err. (m/s)',[xMIN xMAX],[0 max(resampvecplot)],...
-                [0 vphMAX/2],xticks,fticks,[],[],[],[vphMAX/4],[0 0 24 12],[],vertex,3);
+                [vphMIN vphMAX/2],xticks,fticks,[],[],[],[vphMAX/4],[0 0 24 12],[],vertex,3);
         else
             f1=plot_img(showplot,XmidT,resampvecplot,errplot,map1,1,1,cbpos,fs,'X (m)',...
                 lamtitle,'V_\phi err. (m/s)',[xMIN xMAX],[lamMIN lamMAX],...
-                [0 vphMAX/2],xticks,lticks,[],[],[],[vphMAX/4],[0 0 24 12],[],vertex,3);
+                [vphMIN vphMAX/2],xticks,lticks,[],[],[],[vphMAX/4],[0 0 24 12],[],vertex,3);
         end
         hold on
         file1=fullfile(dir_img,['Vpherr.M',num2str(ip-1),'.',imgform]);

@@ -284,7 +284,7 @@ if exist('imgform','var')==0 || isempty(imgform)==1
 end
 % Fig. resolution (dpi) when saving as raster
 if exist('imgres','var')==0 || isempty(imgres)==1
-    imgres=200;
+    imgres=100;
 end
 % Fig. font size (reduce by 40% with fs=40 => fs=16 in AI) (max=40)
 if exist('fs','var')==0 || isempty(fs)==1

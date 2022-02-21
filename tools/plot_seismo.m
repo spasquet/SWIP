@@ -56,7 +56,9 @@ for i=1:length(fldr)
     fig=plot_wiggle(showplot,-seismomat_norm',xseis/xsca,tseis*1000,scal,clip,perc,...
         fs,'Gx (m)','Time (ms)',[xMIN xMAX],[tMIN tMAX],xticks,tticks,imgsize,[]);
     file1=[num2str(fldr(i)),'.seismo.',imgform];
-    save_fig(fig,file1,imgform,imgres,1);
+%     save_fig(fig,file1,imgform,imgres,1);
+    export_fig(file1);
+
 end
 
 end
