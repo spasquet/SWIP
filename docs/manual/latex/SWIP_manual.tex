@@ -20,8 +20,8 @@
 \title{\vspace{5cm}\Huge{\textbf{SWIP User's Guide}}}
 \author{\Large{Sylvain Pasquet} (\url{pasquet.syl@gmail.com})}
 
-\date{\LARGE{Version 2.2: April 2020}\\[2ex]
-\large\url{https://github.com/SWIPdev/SWIP/releases}}
+\date{\LARGE{Version 2.3 WSL: May 2022}\\[2ex]
+\large\url{https://github.com/SWIPdev/SWIP/}}
 
 
 \begin{document}
@@ -44,7 +44,7 @@ If you have experience on how to install and compile codes under a Linux environ
 \setlength\itemsep{2ex}
 \item Install {\MATLAB}.
 \item Download {\SWIP} at \url{https://github.com/SWIPdev/SWIP/releases} and add the content of the archive to your {\MATLAB} path.
-\item (Windows user only) Install {\Cygwin} (32 bits recommended, \url{http://www.cygwin.com/setup-x86.exe}).
+\item (Windows user only) Install WSL (Windows 10 and higher, \url{https://pureinfotech.com/install-wsl-windows-11/}) or {\Cygwin} (prior to Windows 10, 32 bits recommended, \url{http://www.cygwin.com/setup-x86.exe}).
 \item (Mac OS user only) Install \textbf{Xcode}, \textbf{Homebrew} and \textbf{gnu-tar}.
 \item Install {\SeismicUnix} (\url{https://github.com/JohnWStockwellJr/SeisUnix}).
 \item Install {\Geopsy} (\url{http://www.geopsy.org/download.php}).
@@ -61,7 +61,7 @@ Here is a quick tutorial to run {\SWIP} and reproduce the figures presented in t
 
 \item Download the raw seismic data at \url{https://doi.org/10.15786/M21S3V} and extract the content of the archive in \verb|your_working_folder/yellowstone|.
 
-\item In {\MATLAB}, go in the extracted folder \verb|your_working_folder/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|yellowstone.su| file provided in the archive (once you've checked that, keep only one {\SU} file in the \verb|your_working_folder/yellowstone| folder). If you are using {\SWIP} in {\Cygwin}, the \verb|yellowstone.su| file provided in the archive will not work, so you will have to use the one created with \verb|seg2su|.
+\item In {\MATLAB}, go in the extracted folder \verb|your_working_folder/yellowstone| and run the function \verb|seg2su| to create the {\SU} file \verb|swip_profile.su|. Select the \verb|yellowstone/Seismic/Seismic| folder when asked for SEG2 files, then keep a scaling factor of 100 in order to have centimetric precision. Two deployments should be detected, the first one with 2 shots and 240 geophones, the second with 23 shots and 239 geophones (the last trace was killed after the first two shots). Keep this configuration and select the elevation file \verb|OPTA_072016_1_topo.txt| located in the \verb|yellowstone/Seismic| folder. You should obtain a 144.9~Mo file identical to the \verb|yellowstone.su| file provided in the archive (once you've checked that, keep only one {\SU} file in the \verb|your_working_folder/yellowstone| folder). Note that if you are using {\SWIP} in {\Cygwin}, the \verb|yellowstone.su| file provided in the archive will not work, so you will have to use the one created with \verb|seg2su|.
 
 \item Open the script launcher \verb|A_SWIPdisp.m| in {\MATLAB} and run it without changing any parameter (it might take about 45 min to run through the whole line). It will compute dispersion along the acquisition line, with a 31-trace window and shots located on both sides of the window with offset ranging between 0 and 20 traces. It will also re-sample in wavelength the dispersion curves located in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.pick| and save target files required for the inversion in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.targ|. Finally, it will plot and save 1D data figures (windowed shot gather, composite spectrogram and stacked dispersion image with and without picks) in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/1D_data|. The 2D pseudo-section of picked phase velocity will also be saved in \verb|yellowstone/W31_31.dW1.dS0_20.B/file.img/|.
 
@@ -248,8 +248,138 @@ It means there is a conflict between Ubuntu QT libraries and {\MATLAB} QT libari
 \verb|sudo apt install xfonts-100dpi|
 
 \clearpage
+\subsection{Install on Windows 10 and higher}
+{\SWIP} has been successfully installed on Windows 11 using the Windows Subsystem for Linux which can compile and execute SU binaries. Note that using WSL will slow down computation of dispersion images compared to using a standard Linux distro.
+
+\subsubsection{WSL}
+\label{sec:wsl}
+Install Windows Subsystem for Linux following the following instructions :
+
+\url{https://pureinfotech.com/install-wsl-windows-11/}
+
+I have not tried it with WSL1, but I suspect it will not work, so make sure you have WSL2 installed:
+
+\verb|wsl -l -v|
+
+\subsubsection{Prerequisites}
+Before installing {\SeismicUnix} and/or {\Geopsy}, you need to make sure that the following libraries and packages are installed on your WSL distro. To install them, type \verb|sudo apt install packagename| in the WSL Ubuntu terminal with the following package names.
+
+\verb|gedit|\\
+\verb|build-essential|\\
+\verb|g++-multilib|\\
+\verb|gcc-multilib|\\
+\verb|gfortran|\\
+\verb|libx11-dev|\\
+\verb|libxt-dev|\\
+
+You will also need W window server in Windows 11 to be installed. You can download Xming and install it on your computer:
+\url{https://sourceforge.net/projects/xming/}
+
+\subsubsection{Seismic Unix}
+\label{subsec:WinSU}
+\textit{The installation of {\SeismicUnix} ({\SU}) is only necessary to handle seismic data in order to compute, stack and pick dispersion images. If you have your own software for picking dispersion curves and just want to use {\SWIP} to invert them, you can skip the installation of {\SU}.}
+
+Then following instructions are mainly copied from the {\SeismicUnix} \verb|Installation_Instructions| file (\url{https://github.com/JohnWStockwellJr/SeisUnix/tree/master/src}). Refer to it for more detailed instructions.
+
+Download the latest stable version of {\SU} at \url{https://github.com/JohnWStockwellJr/SeisUnix}
+
+You can follow the instructions from this page to install SU on Windows 11 with WSL :
+\url{https://suwindows10.blogspot.com/2016/08/how-to-install-seismic-unix-su-on.html}
+
+In the WSL Ubuntu terminal, create a folder that will contain all the {\SU} codes (referred later as \verb|/your/SU/path|).
+
+Examples of \verb|/your/SU/path| folder:
+
+\verb|/usr/local/SU|\\
+\verb|/home/yourusername/SU|\\
+\verb|/opt/SU|
+
+Decompress the gzipped tarfile \verb|cwp_su_all_xx.tgz| (the "xx" is the current release number) in \verb|/your/SU/path|, the folder \verb|/your/SU/path/src| will appear, containing all of the source code. To decompress the file, use the command \verb|tar -xzf cwp_su_all_xx.tgz| in the terminal.
+
+In order to set the necessary environment variable and the binaries path, open the file \verb|.profile| located in \verb|/home/yourusername| with a text editor (type \verb|ls -la| in the terminal to see it) and add the following lines at the end of the file:
+
+\verb|export CWPROOT=/your/SU/path|\\
+\verb|PATH=$PATH:/your/SU/path/bin|\\
+\verb|export PATH|
+
+Run \verb|source .profile| in the terminal and check if these variables are correctly set by typing \verb|echo $CWPROOT| and \verb|echo $PATH|.
+
+In \verb|/your/SU/path/src/configs|, select the file \verb|Makefile.config_Linux_x86_64| corresponding to your configuration, rename it \verb|Makefile.config| and copy it in \verb|/your/SU/path/src| to replace the existing \verb|Makefile.config|. Then, go in \verb|/your/SU/path/src| by typing \verb|cd /your/SU/path/src| in the terminal. You will then compile the codes by typing:
+
+\verb|make install| => install the basic {\SU} codes\\
+\verb|make xtinstall| => install the X windows codes (not necessary for {\SWIP})\\
+\verb|make xminstall| => install the Motif based codes (not necessary for {\SWIP})
+
+If you have to recompile along the way, type:
+
+\verb|make remake| => recompile the basic {\SU} codes\\
+\verb|make xtinstall| => recompile the X windows based codes (not necessary for {\SWIP})\\
+\verb|make xminstall| to recompile the Motif based codes (not necessary for {\SWIP})
+
+Finally, type the command \verb|sukeyword -o| to check if {\SU} is correctly installed.
+
+When finished, run updates and upgrades of Ubuntu:
+\verb|sudo apt update|
+\verb|sudo apt upgrade|
+
+\subsubsection{SU extra binaries}
+Two extra codes, non-available in the default {\SU} release, are required to run {\SWIP}. The first one, \verb|supomegal|, computes the $p-\omega$ transform of a shot gather in the $x-t$ domain in order to retrieve a dispersion image in the $v-f$ domain. The second one, \verb|seg2segy|, allow to convert SEG2 files usually obtained on the field in SEGY files which can then be converted in the {\SU} files required to use {\SWIP} (for more details, see section \ref{sec:seg2su}).
+
+To install these codes, follow these steps in the WSL Ubuntu terminal:
+
+Go in the \verb|SWIP/src| folder by typing: \verb|cd /your/MATLAB/path/SWIP/src|
+
+(in the Ubuntu terminal, your default MATLAB folder will be in \verb|/mnt/c/Users/-your username-/Documents/MATLAB|)
+
+Assign "execute" permission to the \verb|configure| file by typing: \verb|chmod +x configure|
+
+Compile and install the codes by typing: \verb|./configure|
+
+Type the commands \verb|supomegal| and \verb|seg2segy| in the terminal to check if they are correctly installed.
+
+!! \verb|supomegal| might not compile correctly with older versions of {\SU} (error with \verb|cwp_cexp|) !!
+
+\subsubsection{Geopsy}
+Download the latest Windows version of {\Geopsy} at \url{http://www.geopsy.org/download.php}.
+
+Execute the file \verb|geopsypack-nnitems-src-xx.exe| and follow the instructions to install {\Geopsy} in \verb|/your/Geopsy/path| (with the latest versions, just unpack the downloaded archive content in \verb|/your/Geopsy/path|).
+
+Example of \verb|/your/Geopsy/path| folder:
+
+\verb|C:\Program Files (x86)\Geopsy.org| (default)
+
+\subsubsection{Setup environment variables}
+The final step before using {\SWIP} under Windows is to make sure that the environment variables are correctly set up. The following details correspond to a Windows 11 distribution, it might be slightly different for other versions.
+
+Right click on \textit{Start Menu -> System -> Advanced system settings -> Environment variables}
+
+In the top list, select the variable PATH and click on Modify. Add a new line to the list, with the following value:
+
+\verb|/your/Geopsy/path/bin|\\ (make sure you use backslash \ for these path)
+
+Relog your session and check if the environment variables are correctly setup by typing \verb|[~,m]=unix_cmd('seg2segy')| in the {\MATLAB} prompt. The following message should be displayed in the command window: \verb|Usage: seg2segy first-seg2file number-of-files [shot-number]|
+
+
+\subsubsection{Additionnal packages}
+\label{subsec:WinExtra}
+Some additional packages can be installed to concatenate figure results and produce publication ready final figures (otherwise {\SWIP} produces separate figures). {\ImageMagick} is used to crop and concatenate raster (PNG, JPEG,...) images in order to create figure panels ready for publications. {\pdfcrop} cuts the extra edges around PDF created by {\MATLAB}, while {\PDFjam} is used to concatenate PDF images.
+
+Install {\ImageMagick} by typing in the WSL terminal: \verb|sudo apt install imagemagick|\\
+Install {\PDFjam} by typing in the WSL terminal: \verb|sudo apt install pdfjam|\\
+Install {\pdfcrop} by typing in the WSL terminal: \verb|sudo apt install texlive-extra-utils|
+
+\subsubsection{Known problems}
+\begin{itemize}
+\setlength\itemsep{2ex}
+\setlength{\parindent}{5ex}
+\item Accessing files stored in the Windows partition is slow when using WSL binaries. So dispersion curve computation will be slower than on a normal Linux machine.
+
+\end{itemize}
+
+\clearpage
 \subsection{Install on Mac OS X}
 {\SWIP} was succesfully installed on El Capitan. It should also work on other versions of Mac OS X.
+
 \subsubsection{Prerequisites}
 Before installing {\SeismicUnix} and/or {\Geopsy}, you need to install \textbf{Xcode} which contains the "make" command necessary to compile {\SU} codes. When trying to install {\SU}, it should download it directly, if not, go to \url{https://itunes.apple.com/us/app/xcode/id497799835?mt=12}.
 
@@ -348,10 +478,8 @@ Then to install {\ImageMagick}, run:
 Then you need to make a shortcut of that \verb|matlab| file and run {\MATLAB} with it. If you run your classical {\MATLAB} shortcut, it won't find the correct PATH.
 
 \clearpage
-\subsection{Install on Windows}
-{\SWIP} has been successfully installed on Windows 7 and Windows 10. The procedure should be very similar on other Windows versions. As mentioned earlier, the Linux-like environment {\Cygwin} is currently required to run {\SeismicUnix} on Windows. However, I don't recommend running {\SWIP} on Windows since the use of a 32 bit version of {\Cygwin} considerably slows down the computation of dispersion images (cf. \ref{sec:cygwin}).
-
-Windows 10 is now able to run Bash and compile Linux binaries with the Windows Subsystem for Linux (\url{https://msdn.microsoft.com/en-us/commandline/wsl/about}). I have not tried it but we should be able to run {\SeismicUnix} without any third party software like {\Cygwin}.
+\subsection{Install on Windows 8 or lower}
+{\SWIP} has been successfully installed on Windows 7. As mentioned earlier, the Linux-like environment {\Cygwin} is currently required to run {\SeismicUnix} on Windows. However, I don't recommend running {\SWIP} on Windows since the use of a 32 bit version of {\Cygwin} considerably slows down the computation of dispersion images (cf. \ref{sec:cygwin}).
 
 \subsubsection{Cygwin}
 \label{sec:cygwin}
@@ -511,7 +639,7 @@ You can also modify the installation folder (referred later as \verb|your\tex\pa
 
 \clearpage
 \section{How to use {\SWIP} (in details)}
-Some options and parameters are not yet described in this manual. Refer to the comments in the scripts and launchers for more details, or send me an email.
+Some options and parameters are not yet described in this manual, or might be deprecated. Refer to the comments in the scripts and launchers for more details, or send me an email.
 
 %%%%%
 \subsection{Project creation}
