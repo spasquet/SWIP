@@ -1,0 +1,28 @@
+# Makefile for ...cwp/main
+# Just say "make" and copy seg2segy in $CWPROOT\bin
+
+include $(CWPROOT)/src/Makefile.config
+
+# Uncomment the following line for 64 bit machines
+CFLAGS = -m32
+
+LFLAGS = $(PRELFLAGS) -Bstatic   $(POSTLFLAGS)
+
+PROGS =			\
+	$B/seg2segy	\
+
+
+INSTALL:	$(PROGS)
+	@-rm -f INSTALL
+	@touch $@
+
+$(PROGS):	$(CTARGET)
+	$(CC) -v $(CFLAGS) $(@F).c $(LFLAGS) -o $@
+	$(MCHMODLINE)
+	@echo $(@F) installed in $B
+remake:
+	@-rm -f $(PROGS) INSTALL
+	@$(MAKE) INSTALL
+
+clean	::
+	rm -f *.o *.a junk* $(PROGS)
