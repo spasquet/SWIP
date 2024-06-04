@@ -86,7 +86,7 @@ if exist('errbar','var')==1 && isempty(errbar)~=1
                 set(gca,'yscale','log');
             end
             hold on;
-            herrorbars=terrorbar(X,Y,errbar,1,'units');
+            herrorbars=terrorbar(X,Y,errbar,0.1,'norm');
             set(herrorbars,'Color',col,'linewidth',lw);
         else
             han1=errorbar(X,Y,errbar,symb,'Color',col,'linewidth',lw,'markersize',markersize);

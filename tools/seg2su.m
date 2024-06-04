@@ -6,10 +6,10 @@ clear all; clc; close all;
 %-----------------------%
 % START OF INITIALIZATION
 
-profilename  = 'swip_profile'; % Name of the profile
+% profilename  = 'naizin_SN_2_1999'; % Name of the profile
 % newrectime   = 0.8;           % New recording length (add zeros at the end of each trace)
 colx         = 1;              % Column for X position (in topofile) -- Leave empty or comment for default
-colz         = 2;              % Column for Z position (in topofile) -- Leave empty or comment for default
+colz         = 4;              % Column for Z position (in topofile) -- Leave empty or comment for default
 
 % trace_selec  = [1 48];
 % xshift       = -192;
@@ -21,17 +21,17 @@ stack        = 0;
 check        = 0; % 1 check position only, 2 check t0 only, 3 check both
 t0_shift     = 0;
 
-n_stack_theo = 4;
-dS_theo      = 10;
+n_stack_theo = 1;
+dS_theo      = 1;
 
-gx_sing   = [0:2.5:237.5]; % Single geophone positions
+% gx_sing   = [48:1:95]; % Single geophone positions
 
-sx_sing     = [0:10:100 112.5 120:10:230 237.5]; % Auradé T1
+% sx_sing     = [0:10:100 112.5 120:10:230 237.5]; % Auradé T1
 % sx_sing      = [0:10:230 237.5]; % Single shot positions
 
-sx_theo      = sort(repmat(sx_sing,1,n_stack_theo)); % All theoretical shots (with stacks)
+% sx_theo      = sort(repmat(sx_sing,1,n_stack_theo)); % All theoretical shots (with stacks)
 % sx_theo     = [sx_theo(1:find(sx_theo == 73,1,'first')) 73 sx_theo(find(sx_theo == 73,1,'first')+1:end)];
-sx_theo([1 5 9 17 21 26 37 41 46 49 51 53 54 65 67 69 73 76 77 86 91 94]) = []; % Bad shots to remove
+% sx_theo([1 5 9 17 21 26 37 41 46 49 51 53 54 65 67 69 73 76 77 86 91 94]) = []; % Bad shots to remove
 
 % END OF INITIALIZATION
 %-----------------------%
@@ -64,7 +64,7 @@ if dir_seg==0
     return
 end
 
-seg2struct=[dir(fullfile(dir_seg,'*sg2'));dir(fullfile(dir_seg,'*seg2'));dir(fullfile(dir_seg,'*dat'))];
+seg2struct=[dir(fullfile(dir_seg,'*SG2'));dir(fullfile(dir_seg,'*sg2'));dir(fullfile(dir_seg,'*seg2'));dir(fullfile(dir_seg,'*dat'))];
 nseg2=length(seg2struct);
 segystruct=[dir(fullfile(dir_seg,'*segy'));dir(fullfile(dir_seg,'*sgy'))];
 nsegy=length(segystruct);
@@ -80,6 +80,10 @@ elseif nseg2>0 && nsegy>0
     fprintf('\n   Keep only one format in the folder and re-run script');
     fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     return
+end
+
+if ~exist('profilename','var') || isempty(profilename)
+    [~,profilename] = fileparts(dir_seg);
 end
 
 xsca=1;
@@ -485,7 +489,7 @@ if flagtopo==1 || flagtopo==2
                 X_lin=[min(X_raw):min(dgx)/2:ceil(max(topo(:,colx)))];
                 Z_lin=interp1(topo(~isnan(topo(:,colz)),colx),topo(~isnan(topo(:,colz)),colz),X_lin,'linear','extrap');
                 [dist_curv,X_curv]=arclength(X_lin,Z_lin);
-                X_curv=[0;cumsum(X_curv)];
+                X_curv=[0;cumsum(X_curv)] + min(X_raw);
                 X = round(xsca*interp1(X_curv,X_lin,X_raw,'linear','extrap'))/xsca;
                 Z = round(xsca*interp1(X_lin,Z_lin,X,'linear','extrap'))/xsca;
                 [dist_curv2,X_curv2]=arclength(X,Z);

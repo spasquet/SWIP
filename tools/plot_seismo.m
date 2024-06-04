@@ -17,7 +17,7 @@ else
 end
 
 run('SWIP_defaultsettings')
-% keyboard
+
 if exist('fldr','var')==0 || isempty(fldr)==1
     % Get fldr in case two shots at the same position
     com1=sprintf('sugethw < %s key=fldr output=geom | uniq',fullfile(seismopath,seismofile));
@@ -44,11 +44,11 @@ if xsca == 0
    xsca = 1; 
 end
 
-tMIN = -20;
-tMAX = 200;
+% tMIN = -100;
+% tMAX = 1000;
 
 for i=1:length(fldr)
-    com1=sprintf('suwind < %s key=fldr min=%d max=%d > tmp.su',fullfile(seismopath,seismofile),fldr(i),fldr(i));
+    com1=sprintf('suwind < %s key=fldr min=%d max=%d > %s',fullfile(seismopath,seismofile),fldr(i),fldr(i),fullfile(seismopath,'tmp.su'));
     unix(com1);
     [seismomat,tseis,xseis]=seismo2dat(fullfile(seismopath,'tmp.su'),0);
     seismomat_norm = bsxfun(@rdivide,seismomat,max(abs(seismomat),[],2));

@@ -710,7 +710,7 @@ for ix=Xmidselec
         
         if plot2dmod==1 || savexzv>0
             if (plotDOI==0 || maskDOI==0) && input_vel==1
-                indf(ix)=round(maxdepth/dz);
+                indf(ix)=round(dpMAX/dz);
             end
             % Empirical DOI (Lmax*doifact)
             if (plotDOI==1 || maskDOI==1) && input_vel==1
@@ -908,6 +908,80 @@ for ix=Xmidselec
                 end
                 if maskDOI==4
                     indf(ix)=round((hsdtmp)/dz);
+                end  
+            end
+            
+            % DOI from max VS standard deviation
+            if (plotDOI==6 || maskDOI==6) && input_vel==1
+                if exist('vsstd_ok','var')==1 && isempty(vsstd_ok)==0
+                    flipmoddepth = flipud(moddepth);
+                    flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
+                    indhsd = find(flipvsstd==max(flipvsstd),1,'first');
+                    if indhsd <= 2
+                        indhsd = find(flipvsstd<median(flipvsstd)-0.5*std(flipvsstd),1,'first');
+                    elseif isempty(indhsd)
+                        if ix>1 && ~isnan(DOI(ix-1))
+                            indhsd = find(abs(flipmoddepth-(zround(ix)-DOI(ix-1))) == min(abs(flipmoddepth-(zround(ix)-DOI(ix-1)))))+2;
+                        else
+                            indhsd = find(flipvsstd<median(flipvsstd)-0.75*std(flipvsstd),1,'first');
+                        end
+                    end
+                    if isempty(indhsd) || indhsd <= 2
+                        indhsd = find(flipvsstd~=flipvsstd(1),1,'first');
+                    end
+                    
+                    hsdtmp=flipmoddepth(indhsd-2);
+                    if plotDOI==6 || maskDOI==6
+                        DOI(ix)=zround(ix)-hsdtmp;
+                    end
+                    if maskDOI==6
+                        indf(ix)=round((hsdtmp)/dz);
+                    end
+                else
+                    if plotDOI==6 || maskDOI==6
+                        DOI(ix)=zround(ix)-maxdepth;
+                    end
+                    if maskDOI==6
+                        indf(ix)=round((maxdepth)/dz);
+                    end
+                end
+            end
+            
+            % DOI from max VS standard deviation
+            if (plotDOI==7 || maskDOI==7) && input_vel==1
+                if exist('vsstd_ok','var')==1 && isempty(vsstd_ok)==0
+                    flipmoddepth = flipud(moddepth);
+                    flipvsstd = flipud([vsstd_ok;vsstd_ok(end)]);
+                    indhsd = find(flipvsstd<=0.9*median(flipvsstd),1,'first');
+                    
+                    
+%                     if indhsd <= 2
+%                         indhsd = find(flipvsstd<median(flipvsstd)-0.5*std(flipvsstd),1,'first');
+%                     elseif isempty(indhsd)
+%                         if ix>1 && ~isnan(DOI(ix-1))
+%                             indhsd = find(abs(flipmoddepth-(zround(ix)-DOI(ix-1))) == min(abs(flipmoddepth-(zround(ix)-DOI(ix-1)))))+2;
+%                         else
+%                             indhsd = find(flipvsstd<median(flipvsstd)-0.75*std(flipvsstd),1,'first');
+%                         end
+%                     end
+                    if isempty(indhsd) || indhsd <= 2
+                        indhsd = find(flipvsstd~=flipvsstd(1),1,'first');
+                    end
+                    
+                    hsdtmp=flipmoddepth(indhsd-2);
+                    if plotDOI==7 || maskDOI==7
+                        DOI(ix)=zround(ix)-hsdtmp;
+                    end
+                    if maskDOI==7
+                        indf(ix)=round((hsdtmp)/dz);
+                    end
+                else
+                    if plotDOI==7 || maskDOI==7
+                        DOI(ix)=zround(ix)-maxdepth;
+                    end
+                    if maskDOI==7
+                        indf(ix)=round((maxdepth)/dz);
+                    end
                 end
             end
             
@@ -1031,34 +1105,34 @@ if input_vel==1
     %     DOI = DOI_old; ind = indf_old;
     
     if any(~isnan(DOI))
-        npoints_med = 15;
+        npoints_med = 9;
         npoints_aver = 3;
-%         DOI(~isnan(DOI)) = mov_aver(DOI(~isnan(DOI))',npoints-2,1,length(DOI(~isnan(DOI))));
+        
+        %         DOI(~isnan(DOI)) = mov_aver(DOI(~isnan(DOI))',npoints-2,1,length(DOI(~isnan(DOI))));
         DOI(~isnan(DOI)) = median_filt(DOI(~isnan(DOI))',npoints_med,1,length(DOI(~isnan(DOI))),1);
         DOI(~isnan(DOI)) = mov_aver(DOI(~isnan(DOI))',npoints_aver,1,length(DOI(~isnan(DOI))));
-%         indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',npoints-2,1,length(indf(~isnan(DOI)))));
-        indf(~isnan(DOI)) = round(median_filt(indf(~isnan(DOI))',npoints_med,1,length(indf(~isnan(DOI))),1));
-        indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',npoints_aver,1,length(indf(~isnan(DOI)))));
+        
+        %         indf(~isnan(DOI)) = round(mov_aver(indf(~isnan(DOI))',npoints-2,1,length(indf(~isnan(DOI)))));
+        indf(~isnan(DOI)) = median_filt(indf(~isnan(DOI))',npoints_med,1,length(indf(~isnan(DOI))),1);
+        indf(~isnan(DOI)) = ceil(mov_aver(indf(~isnan(DOI))',npoints_aver,1,length(indf(~isnan(DOI)))));
     end
-    
-    %     f1=plot_img([],XmidT,depth,vsstdmat.*maskmat,map7,axetop,0,cbpos,fs,'Distance (m)',...
-    %         'Elevation (m)','Vs STD (%)',[xMIN xMAX],[zMIN zMAX],...
-    %         [stdMIN stdMAX],xticks,zticks,stdticks,[],[],stdISO,[25 0 30 15],[],vertex,blocky);
-    %     if plottopo==1
-    %         hold on
-    %         plot(topo(:,1),topo(:,2),'k-','linewidth',2);
-    %     end
-    %     if input_vel==1 && length(find(isnan(DOI)==0))>1
-    %         hold on
-    %         dashline(XmidT,DOI_old,2,2,2,2,'color','k','linewidth',1.5);
-    %         dashline(XmidT,DOI,2,2,2,2,'color','r','linewidth',1.5);
-    %     end
         
     for ix = Xmidselec
-%         DOI(ix) = zround(ix) + depth(indf(ix));
         maskmat(1:indf(ix),ix) = ones(size(vs0(1:indf(ix))));
         maskmatvp(1:indf(ix),ix) = ones(size(vs0(1:indf(ix))));
     end
+    
+%     f1=plot_img([],XmidT,depth,vsstdmat.*maskmat,map7,axetop,0,cbpos,fs,'Distance (m)',...
+%         'Elevation (m)','Vs STD (%)',[],[],[],[],[],[],[],[],[],[25 0 30 15],[],vertex,1);
+%     if plottopo==1
+%         hold on
+%         plot(topo(:,1),topo(:,2),'k-','linewidth',2);
+%     end
+%     if input_vel==1 && length(find(isnan(DOI)==0))>1
+%         hold on
+%         %             dashline(XmidT,DOI_old,2,2,2,2,'color','k','linewidth',1.5);
+%         dashline(XmidT,DOI,2,2,2,2,'color','r','linewidth',1.5);
+%     end
 end
 
 if sum(modexist)==0 && (plot2dcal==1 || plot2dmod==1 || plothisto==1 || savexzv>0)

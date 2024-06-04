@@ -52,17 +52,19 @@ dz=tseis(2)-tseis(1);
 % xmx=max(max(seismomat));
 % xmn=min(min(seismomat));
 
-if scal == 0
+if isempty(scal) || scal == 0
     scal=1;
 end
-% seismomat=bsxfun(@rdivide,seismomat*dx,amx);
+seismomat=bsxfun(@rdivide,seismomat*dx/2,amx);
+% seismomat=bsxfun(@rdivide,seismomat,amx);
+
 
 npts=round(size(seismomat,1)*size(seismomat,2)*perc/100);
 allpts=sort(abs(reshape(seismomat,1,size(seismomat,1)*size(seismomat,2))));
 p=allpts(npts);
 
-seismomat=seismomat/p;
-seismomat = seismomat*dx;
+% seismomat=seismomat/p;
+% seismomat = seismomat*dx;
 
 % seismomat(seismomat>dx)=dx; 
 % seismomat(seismomat<-dx)=-dx;
