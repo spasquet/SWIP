@@ -1,6 +1,6 @@
 function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
 
-% S. Pasquet - V20.03.23
+% S. Pasquet - V22.05.04
 % matdinver execute dinver inversion through matlab
 
 % status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verbose)
@@ -15,21 +15,30 @@ function status=matdinver(targetfile,paramfile,nrun,itmax,ns0,ns,nr,dir_out,verb
 % next ns models
 % Handles dinver > 2
 
-version = geopsy_version();
+version_geopsy = geopsy_version();
 
 for j=1:nrun
-    fprintf(['\n      Run ',num2str(j),'\n']);
+   fprintf(['\n      Run ',num2str(j),'\n']);
     dlmwrite(fullfile(dir_out,'input.txt'),1);
         
-    if version == 2
+    if version_geopsy == 2
+%         com1=['dinver -i DispersionCurve -optimization -target ',targetfile,...
+%             ' -param ',paramfile,' -itmax ',num2str(itmax),' -ns0 ',...
+%             num2str(ns0),' -ns ',num2str(ns),' -nr ',num2str(nr),' -f -nobugreport -o ',...
+%             fullfile(dir_out,['run_0',num2str(j),'.report']),' < ',fullfile(dir_out,'input.txt')];
+
         com1=['dinver -i DispersionCurve -optimization -target ',targetfile,...
             ' -param ',paramfile,' -itmax ',num2str(itmax),' -ns0 ',...
             num2str(ns0),' -ns ',num2str(ns),' -nr ',num2str(nr),' -f -nobugreport -o ',...
-            fullfile(dir_out,['run_0',num2str(j),'.report']),' < ',fullfile(dir_out,'input.txt')];
+            fullfile(dir_out,['run_0',num2str(j),'.report'])];
     else
+%         com1=['dinver -i DispersionCurve -optimization -target ',targetfile,...
+%             ' -param ',paramfile,' -ns0 ',num2str(ns0),' -ns ',num2str(ns*itmax+ns0),' -nr ',num2str(nr),' -f -nobugreport -o ',...
+%             fullfile(dir_out,['run_0',num2str(j),'.report']),' < ',fullfile(dir_out,'input.txt')];
+
         com1=['dinver -i DispersionCurve -optimization -target ',targetfile,...
             ' -param ',paramfile,' -ns0 ',num2str(ns0),' -ns ',num2str(ns*itmax+ns0),' -nr ',num2str(nr),' -f -nobugreport -o ',...
-            fullfile(dir_out,['run_0',num2str(j),'.report']),' < ',fullfile(dir_out,'input.txt')];
+            fullfile(dir_out,['run_0',num2str(j),'.report'])];
     end
     
     if verbose==0
@@ -44,7 +53,7 @@ for j=1:nrun
             fprintf('\n      Invalid working directory name');
             fprintf('\n   Remove special characters and spaces');
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
-    elseif isempty(strfind(din_err,'parameters'))==0
+        elseif isempty(strfind(din_err,'parameters'))==0
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   Invalid .param file');
             fprintf('\n     Go to next Xmid');
@@ -53,7 +62,7 @@ for j=1:nrun
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   Invalid .target file');
             fprintf('\n     Go to next Xmid');
-            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!\n\n');   
+            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!\n\n');
         end
         break
     end

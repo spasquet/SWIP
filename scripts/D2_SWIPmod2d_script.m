@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D2 : SWIPmod2d.m
-%%% S. Pasquet - V20.04.03
+%%% S. Pasquet - V22.05.04
 %%% SWIPmod2d.m plots observed, calculated and residual pseudo-sections
 %%% It also plots Vp, Vs, Vp/Vs, Poisson's ratio and auxiliary data 2D sections
 
@@ -400,8 +400,8 @@ vsstdmat=vpmat; maskmat=vpmat;
 maskmatvp=vpmat;
 
 % Check if image concatenation functions are installed
-[testimgmgck,~]=unix('which montage');
-[testpdfjam,~]=unix('which pdfjam');
+[testimgmgck,~]=unix_cmd('which montage');
+[testpdfjam,~]=unix_cmd('which pdfjam');
 testplot=((testpdfjam==0 && strcmp(imgform,'pdf')==1) || (testimgmgck==0 && strcmp(imgform,'pdf')==0 && strcmp(imgform,'fig')==0));
 if concat == 0
     testplot = 0;
@@ -1337,9 +1337,13 @@ if sum(modexist)>0
             %%% Concatenate figures %%%
             
             if testplot==1 && plot2dcal==1 && input_vel~=2
+                fileobs_unix = unix_wsl_path(fileobs,wsl);
+                filecal_unix = unix_wsl_path(filecal,wsl);
+                fileaux_unix = unix_wsl_path(fileaux,wsl);
                 panel1=fullfile(dir_img_inv_2d,['Vph_Obs_Cal_Res','.M',num2str(ip-1),'.',avertype,...
                     '.',modeltype,'.',imgform]);
-                cat_img([fileobs,' ',filecal,' ',fileaux],imgform,1,[],panel1,1);
+                panel1_unix = unix_wsl_path(panel1,wsl);
+                cat_img([fileobs_unix,' ',filecal_unix,' ',fileaux_unix],imgform,1,[],panel1_unix,1);
                 delete(fileobs,filecal,fileaux);
             end
             
@@ -1365,10 +1369,11 @@ if sum(modexist)>0
                 columns=ceil(nmodeinv/2);
             end
             panel2=fullfile(dir_img_inv_2d,['HistRes.',avertype,'.',modeltype,'.',imgform]);
-            cat_img(fullfile(dir_img_inv_2d,['HistRes','.M*.',avertype,...
-                '.',modeltype,'.',imgform]),imgform,columns,[],panel2,1);
-            delete(fullfile(dir_img_inv_2d,['HistRes','.M*.',avertype,...
-                '.',modeltype,'.',imgform]));
+            panel2_unix = unix_wsl_path(panel2,wsl);
+            histres_file = fullfile(dir_img_inv_2d,['HistRes','.M*.',avertype,'.',modeltype,'.',imgform]);
+            histres_file_unix = unix_wsl_path(histres_file,wsl);
+            cat_img(histres_file_unix,imgform,columns,[],panel2_unix,1);
+            delete(histres_file);
         end
         
         % Residuals phase velocities
@@ -1541,6 +1546,8 @@ if sum(modexist)>0
         
         filevs=fullfile(dir_img_inv_2d,['VS.',avertype,...
             '.',modeltype,'.',imgform]);
+        filevs_unix = unix_wsl_path(filevs,wsl);
+
         if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
             %             save_fig(f1,filevs,imgform,imgres,1,1-testplot);
             export_fig(filevs,strcat('-r',num2str(imgres)));
@@ -1551,17 +1558,17 @@ if sum(modexist)>0
             showplot=showplot+1;
         end
         if testimgmgck==0 && transpa == 1
+            filevsmask_unix = unix_wsl_path(filevsmask,wsl);
             if input_vel ~= 2
-                unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
+                unix_cmd(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask_unix,filevsmask_unix));
                 if cbpos == 1
-                    unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevs,filevs));
+                    unix_cmd(sprintf('composite %s %s -gravity West %s',filevsmask_unix,filevs_unix,filevs_unix));
                 else
-                    unix(sprintf('composite %s %s -gravity NorthWest %s',filevsmask,filevs,filevs));
+                    unix_cmd(sprintf('composite %s %s -gravity NorthWest %s',filevsmask_unix,filevs_unix,filevs_unix));
                 end
-            end
             delete(filevsmask);
         end
-        fprintf(['\n      Saved as ',filevs,'\n']);
+        fprintf(['\n      Saved as ',filevs_unix,'\n']);
         
         %%
         %%%% Saving Vp section %%%%
@@ -1594,6 +1601,7 @@ if sum(modexist)>0
         
         filevp=fullfile(dir_img_inv_2d,['VP.',avertype,...
             '.',modeltype,'.',imgform]);
+        filevp_unix = unix_wsl_path(filevp,wsl);
         %         save_fig(f1,filevp,imgform,imgres,1,1-testplot);
         export_fig(filevp,strcat('-r',num2str(imgres)));
         if showplot==0
@@ -1601,7 +1609,7 @@ if sum(modexist)>0
         else
             showplot=showplot+1;
         end
-        fprintf(['\n      Saved as ',filevp,'\n']);
+        fprintf(['\n      Saved as ',filevp_unix,'\n']);
         
         %%
         %%%% Saving VsStd section %%%%
@@ -1627,6 +1635,7 @@ if sum(modexist)>0
             end
             filestd=fullfile(dir_img_inv_2d,['VSstd.',avertype,...
                 '.',modeltype,'.',imgform]);
+            filestd_unix = unix_wsl_path(filestd,wsl);
             %             save_fig(f1,filestd,imgform,imgres,1,1-testplot);
             export_fig(f1,filestd,strcat('-r',num2str(imgres)));
             if showplot==0
@@ -1634,7 +1643,7 @@ if sum(modexist)>0
             else
                 showplot=showplot+1;
             end
-            fprintf(['\n      Saved as ',filestd,'\n']);
+            fprintf(['\n      Saved as ',filestd_unix,'\n']);
             
             
             f1=plot_img(showplot,X_plot,depth,vsmat,map5,axetop,0,cbpos,fs,'Distance (m)',...
@@ -1650,6 +1659,7 @@ if sum(modexist)>0
             end
             filevs2=fullfile(dir_img_inv_2d,['VS2.',avertype,...
                 '.',modeltype,'.',imgform]);
+            filevs2_unix = unix_wsl_path(filevs2,wsl);
             if input_vel==1 || (input_vel==2 && isempty(VsItomo)==0)
                 %                 save_fig(f1,filevs2,imgform,imgres,1,1-testplot);
                 export_fig(filevs2,strcat('-r',num2str(imgres)));
@@ -1660,7 +1670,7 @@ if sum(modexist)>0
             else
                 showplot=showplot+1;
             end
-            fprintf(['\n      Saved as ',filevs2,'\n']);
+            fprintf(['\n      Saved as ',filevs2_unix,'\n']);
         end
         
         %%
@@ -1730,6 +1740,7 @@ if sum(modexist)>0
             end
             filevpvs=fullfile(dir_img_inv_2d,['VPVS.',avertype,...
                 '.',modeltype,'.',imgform]);
+            filevpvs_unix = unix_wsl_path(filevpvs,wsl);
             %             save_fig(f1,filevpvs,imgform,imgres,1,1-testplot);
             export_fig(filevpvs,strcat('-r',num2str(imgres)));
             if showplot==0
@@ -1738,17 +1749,18 @@ if sum(modexist)>0
                 showplot=showplot+1;
             end
             if testimgmgck==0 && transpa == 1
+                filevsmask_unix = unix_wsl_path(filevsmask,wsl);
                 if input_vel ~= 2
-                    unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
+                    unix_cmd(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask_unix,filevsmask_unix));
                     if cbpos == 1
-                        unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevpvs,filevpvs));
+                        unix_cmd(sprintf('composite %s %s -gravity West %s',filevsmask_unix,filevpvs_unix,filevpvs_unix));
                     else
-                        unix(sprintf('composite %s %s -gravity NorthWest %s',filevsmask,filevpvs,filevpvs));
+                        unix_cmd(sprintf('composite %s %s -gravity NorthWest %s',filevsmask_unix,filevpvs_unix,filevpvs_unix));
                     end
                 end
                 delete(filevsmask);
             end
-            fprintf(['\n      Saved as ',filevpvs,'\n']);
+            fprintf(['\n      Saved as ',filevpvs_unix,'\n']);
         end
         
         %%
@@ -1819,6 +1831,7 @@ if sum(modexist)>0
             end
             filevptvs=fullfile(dir_img_inv_2d,['VPtVS.',avertype,...
                 '.',modeltype,'.',imgform]);
+            filevptvs_unix = unix_wsl_path(filevptvs,wsl);
             %             save_fig(f1,filevpvs,imgform,imgres,1,1-testplot);
             export_fig(filevptvs,strcat('-r',num2str(imgres)));
             if showplot==0
@@ -1828,16 +1841,17 @@ if sum(modexist)>0
             end
             if testimgmgck==0 && transpa == 1
                 if input_vel ~= 2
-                    unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
+                    filevsmask_unix = unix_wsl_path(filevsmask,wsl);
+                    unix_cmd(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
                     if cbpos == 1
-                        unix(sprintf('composite %s %s -gravity West %s',filevsmask,filevptvs,filevptvs));
+                        unix_cmd(sprintf('composite %s %s -gravity West %s',filevsmask_unix,filevptvs_unix,filevptvs_unix));
                     else
-                        unix(sprintf('composite %s %s -gravity NorthWest %s',filevsmask,filevptvs,filevptvs));
+                        unix_cmd(sprintf('composite %s %s -gravity NorthWest %s',filevsmask_unix,filevptvs_unix,filevptvs_unix));
                     end
                 end
                 delete(filevsmask);
             end
-            fprintf(['\n      Saved as ',filevptvs,'\n']);
+            fprintf(['\n      Saved as ',filevptvs_unix,'\n']);
         end
         
         %%
@@ -1907,6 +1921,7 @@ if sum(modexist)>0
             end
             filepois=fullfile(dir_img_inv_2d,['Poisson.',avertype,...
                 '.',modeltype,'.',imgform]);
+            filepois_unix = unix_wsl_path(filepois,wsl);
             %             save_fig(f1,filepois,imgform,imgres,1,1-testplot);
             export_fig(filepois,strcat('-r',num2str(imgres)));
             if showplot==0
@@ -1915,17 +1930,18 @@ if sum(modexist)>0
                 showplot=showplot+1;
             end
             if testimgmgck==0 && transpa == 1
+                filevsmask_unix = unix_wsl_path(filevsmask,wsl);
                 if input_vel ~= 2
-                    unix(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask,filevsmask));
+                    unix_cmd(sprintf('convert %s -alpha set -background none -channel A -evaluate multiply 0.75 +channel %s',filevsmask_unix,filevsmask_unix));
                     if cbpos == 1
-                        unix(sprintf('composite %s %s -gravity West %s',filevsmask,filepois,filepois));
+                        unix_cmd(sprintf('composite %s %s -gravity West %s',filevsmask_unix,filepois_unix,filepois_unix));
                     else
-                        unix(sprintf('composite %s %s -gravity NorthWest %s',filevsmask,filepois,filepois));
+                        unix_cmd(sprintf('composite %s %s -gravity NorthWest %s',filevsmask_unix,filepois_unix,filepois_unix));
                     end
                 end
                 delete(filevsmask);
             end
-            fprintf(['\n      Saved as ',filepois,'\n']);
+            fprintf(['\n      Saved as ',filepois_unix,'\n']);
         end
         %%
         
@@ -1939,17 +1955,20 @@ if sum(modexist)>0
                     dispmsg=1;
                 end
                 panel3=fullfile(dir_img_inv_2d,['VP_VS_Pois.',avertype,'.',modeltype,'.',imgform]);
-                cat_img([filevp,' ',filevs,' ',filepois],imgform,1,[],panel3,dispmsg);
-                fprintf(['\n      Saved as ',panel3,'\n']);
+                panel3_unix = unix_wsl_path(panel3,wsl);
+                cat_img([filevp_unix,' ',filevs_unix,' ',filepois_unix],imgform,1,[],panel3_unix,dispmsg);
+                fprintf(['\n      Saved as ',panel3_unix,'\n']);
                 
                 panel4=fullfile(dir_img_inv_2d,['VP_VS_VPVS.',avertype,'.',modeltype,'.',imgform]);
-                cat_img([filevp,' ',filevs,' ',filevpvs],imgform,1,[],panel4,dispmsg);
-                fprintf(['\n      Saved as ',panel4,'\n']);
+                panel4_unix = unix_wsl_path(panel4,wsl);
+                cat_img([filevp_unix,' ',filevs_unix,' ',filevpvs_unix],imgform,1,[],panel4_unix,dispmsg);
+                fprintf(['\n      Saved as ',panel4_unix,'\n']);
             end
             if input_vel==1
                 panel5=fullfile(dir_img_inv_2d,['VSstd_VS.',avertype,'.',modeltype,'.',imgform]);
-                cat_img([filestd,' ',filevs2],imgform,1,[],panel5,1);
-                fprintf(['\n      Saved as ',panel5,'\n']);
+                panel5_unix = unix_wsl_path(panel5,wsl);
+                cat_img([filestd_unix,' ',filevs2_unix],imgform,1,[],panel5_unix,1);
+                fprintf(['\n      Saved as ',panel5_unix,'\n']);
             end
         end
     end
@@ -1968,6 +1987,7 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
             auxmat(isnan(maskmat)==1)=NaN;
         end
     end
+    fileAUX_unix = unix_wsl_path(fileAUX,wsl);
     if input_vel==2 || (input_vel==1 && sum(modexist)>0)
         % Plot auxiliary data section
         if exist('sizeax','var')~=1
@@ -2015,17 +2035,21 @@ if plot2dmod==1 && exist('auxmat','var')==1 && input_aux==1 && isempty(auxmat)==
     if testplot==1
         if (input_vel==1 && sum(modexist)>0) || (input_vel==2 && isempty(VsItomo)==0)
             panel6=fullfile(dir_img_inv_2d,['VP_VS_Pois_Aux.',avertype,'.',modeltype,'.',imgform]);
-            cat_img([filevp,' ',filevs,' ',filepois,' ',fileAUX],imgform,1,[],panel6,1);
+            panel6_unix = unix_wsl_path(panel6,wsl);
+            cat_img([filevp_unix,' ',filevs_unix,' ',filepois_unix,' ',fileAUX_unix],imgform,1,[],panel6_unix,1);
             delete(panel3);
             panel7=fullfile(dir_img_inv_2d,['VP_VS_VPVS_Aux.',avertype,'.',modeltype,'.',imgform]);
-            cat_img([filevp,' ',filevs,' ',filevpvs,' ',fileAUX],imgform,1,[],panel7,1);
+            panel7_unix = unix_wsl_path(panel7,wsl);
+            cat_img([filevp_unix,' ',filevs_unix,' ',filevpvs_unix,' ',fileAUX_unix],imgform,1,[],panel7_unix,1);
             delete(panel4);
         elseif input_vel==2 && isempty(VpItomo)==0 && isempty(VsItomo)==1
             panel8=fullfile(dir_img_inv_2d,['Aux_VP.',avertype,'.',modeltype,'.',imgform]);
-            cat_img([fileAUX,' ',filevp],imgform,1,[],panel8,1);
+            panel8_unix = unix_wsl_path(panel8,wsl);
+            cat_img([fileAUX_unix,' ',filevp_unix],imgform,1,[],panel8_unix,1);
         elseif input_vel==2 && isempty(VpItomo)==0 && isempty(VsItomo)==0
             panel9=fullfile(dir_img_inv_2d,['Aux_VP_VS.',avertype,'.',modeltype,'.',imgform]);
-            cat_img([fileAUX,' ',filevp,' ',filevs],imgform,1,[],panel9,1);
+            panel9_unix = unix_wsl_path(panel9,wsl);
+            cat_img([fileAUX_unix,' ',filevp_unix,' ',filevs_unix],imgform,1,[],panel9_unix,1);
         end
     end
 end

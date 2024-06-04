@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE D1 : SWIPmod1d.m
-%%% S. Pasquet - V20.04.03
+%%% S. Pasquet - V22.05.04
 %%% SWIPmod1d.m plots observed and calculated dispersion for each Xmid
 %%% It also plots 1D Vp, Vs, Vp/Vs and Poisson's ratio models
 
@@ -338,8 +338,8 @@ if isempty(maxmodeinv)==1
 end
 
 % Check if image concatenation functions are installed
-[testimgmgck,~]=unix('which montage');
-[testpdfjam,~]=unix('which pdfjam');
+[testimgmgck,~]=unix_cmd('which montage');
+[testpdfjam,~]=unix_cmd('which pdfjam');
 testplot=((testpdfjam==0 && strcmp(imgform,'pdf')==1) || (testimgmgck==0 && strcmp(imgform,'pdf')==0 && strcmp(imgform,'fig')==0));
 if concat == 0
     testplot = 0;
@@ -410,7 +410,7 @@ for ix=Xmidselec
             end
         else
             % Plot empty figure with correct axis
-            f1=plot_curv(showplot,NaN,NaN,[],'.',[0 0 0],[],axetop,axerev,...
+            f1=plot_curv(showplot,[0 1],[0 1],[],'.',[0 0 0],[],axetop,axerev,...
                 0,fs,freqtitle_long,'Phase velocity (m/s)',[],...
                 [fMIN fMAX],[VphMIN VphMAX],[],fticks,Vphticks,[],...
                 [],[],[0 0 24 18],[]);
@@ -1378,15 +1378,24 @@ for ix=Xmidselec
             %%% Concatenate figures %%%
             
             if testplot==1
+                file_vs_unix = unix_wsl_path(file_vs,wsl);
+                file_vp_unix = unix_wsl_path(file_vp,wsl);
+                file_vpvs_unix = unix_wsl_path(file_vpvs,wsl);
+                file_pois_unix = unix_wsl_path(file_pois,wsl);
+
                 filename_imgtmp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.mod1d.tmp.',imgform]);
+                filename_imgtmp_unix = unix_wsl_path(filename_imgtmp,wsl);
                 filename_imgtmp2=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.mod1d.tmp2.',imgform]);
+                filename_imgtmp2_unix = unix_wsl_path(filename_imgtmp2,wsl);
                 filename_panel=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.mod1d.final.',imgform]);
-                cat_img([file_vs,' ',file_vpvs],imgform,1,'west',filename_imgtmp,0);
-                cat_img([file_vp,' ',file_pois],imgform,1,'west',filename_imgtmp2,0);
-                cat_img([filename_imgtmp,' ',filename_imgtmp2],imgform,2,'west',filename_panel,1);
+                filename_panel_unix = unix_wsl_path(filename_panel,wsl);
+
+                cat_img([file_vs_unix,' ',file_vpvs_unix],imgform,1,'west',filename_imgtmp_unix,0);
+                cat_img([file_vp_unix,' ',file_pois_unix],imgform,1,'west',filename_imgtmp2_unix,0);
+                cat_img([filename_imgtmp_unix,' ',filename_imgtmp2_unix],imgform,2,'west',filename_panel_unix,1);
                 if concat==1
                     delete(file_vs,file_vp,file_vpvs,file_pois,filename_imgtmp,filename_imgtmp2);
                 end

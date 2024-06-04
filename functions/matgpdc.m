@@ -1,6 +1,6 @@
 function status=matgpdc(filevel,nmodemax,wave,nf,fmin,fmax,sampling,filedisp)
 
-% S. Pasquet - V16.11.18
+% S. Pasquet - V22.05.04
 % Forward dispersion curve calculation using gpdc
 % status=matgpdc(filevel,nmodemax,wave,nf,fmin,fmax,sampling,filedisp)
 

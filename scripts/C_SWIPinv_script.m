@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE C : SWIPinv.m
-%%% S. Pasquet - V20.04.03
+%%% S. Pasquet - V22.05.04
 %%% SWIPinv.m performs inversion of dispersion curves picked in module A
 %%% and select best models for each Xmid to build a pseudo-2D Vs section
 %%% It allows to plot all generated models and inversion parameters for 
@@ -273,8 +273,8 @@ else
 end
 
 % Check if image concatenation functions are installed
-[testimgmgck,~]=unix('which montage');
-[testpdfjam,~]=unix('which pdfjam');
+[testimgmgck,~]=unix_cmd('which montage');
+[testpdfjam,~]=unix_cmd('which pdfjam');
 testplot=((testpdfjam==0 && strcmp(imgform,'pdf')==1) || (testimgmgck==0 && strcmp(imgform,'pdf')==0 && strcmp(imgform,'fig')==0));
 if concat == 0
     testplot = 0;
@@ -1256,7 +1256,7 @@ for ix=Xmidselec
             % Get all filenames for all modes in one string
             filename_dspall=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.calcdisp.*.',imgform]);
-            
+            filename_dspall_unix = unix_wsl_path(filename_dspall,wsl);
             %% %% %%
             
             %%% Plot and save corresponding Vs models %%%
@@ -1369,13 +1369,17 @@ for ix=Xmidselec
             % Save figure
             filename_modall=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.mod1d.all.',imgform]);
+            filename_modall_unix = unix_wsl_path(filename_modall,wsl);
+
             save_fig(f4,filename_modall,imgform,imgres,1,1-testplot);
             close(f4); clear f4;
             
             filename_cbin=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.cbmisin.',imgform]);
+            filename_cbin_unix = unix_wsl_path(filename_cbin,wsl);
             filename_cbout=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                 '.cbmisout.',imgform]);
+            filename_cbout_unix = unix_wsl_path(filename_cbout,wsl);
             
             % Save colorbars in separate file for nice display
             if nmod(ix)>1
@@ -1412,63 +1416,66 @@ for ix=Xmidselec
             if strcmp(imgform,'fig')~=1 && testplot==1
                 fprintf('\n  Concatenate figures\n');
 
-                if strcmp(imgform,'pdf')~=1 % Resize raster images
+                if strcmp(imgform,'pdf')~=1 && ~ispc_wsl % Resize raster images 
                     if isunix==1
-                        [~,sizefig]=unix(['convert ',filename_dspall,' -format "%w,%h" info:']);
+                        [~,sizefig]=unix_cmd(['convert ',filename_dspall_unix,' -format "%w,%h" info:']);
                         sizefig=str2num(sizefig); sizefig=sizefig(1,:);
-                        [~,~]=unix(['convert ',filename_modall,' -gravity northeast -extent ',...
-                            num2str(sizefig(1)),'x',num2str(sizefig(2)),' ',filename_modall]);
+                        [~,~]=unix_cmd(['convert ',filename_dspall_unix,' -gravity northeast -extent ',...
+                            num2str(sizefig(1)),'x',num2str(sizefig(2)),' ',filename_dspall_unix]);
                     else
                         com1=['img_convert ',filename_dspall,' -format "%w,%h" info:'];
                         com1=strrep(com1,'\','/');
-                        [~,sizefig]=unix(com1);
+                        [~,sizefig]=unix_cmd(com1);
                         sizefig=str2num(sizefig); sizefig=sizefig(1,:);
-                        com1=['img_convert ',filename_modall,' -gravity northeast -extent ',...
-                            num2str(sizefig(1)),'x',num2str(sizefig(2)),' ',filename_modall];
+                        com1=['img_convert ',filename_modall_unix,' -gravity northeast -extent ',...
+                            num2str(sizefig(1)),'x',num2str(sizefig(2)),' ',filename_modall_unix];
                         com1=strrep(com1,'\','/');
-                        [~,~]=unix(com1);
+                        [~,~]=unix_cmd(com1);
                     end
                 end
                 
                 % Concatenate dispersion and 1D models
                 filename_imgtmp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
-                cat_img([filename_dspall,' ',filename_modall],imgform,colnb_tmp,'east',filename_imgtmp,0);
+                filename_imgtmp_unix = unix_wsl_path(filename_imgtmp,wsl);
+                cat_img([filename_dspall_unix,' ',filename_modall_unix],imgform,colnb_tmp,'east',filename_imgtmp_unix,0);
                 
                 
                 filename_cbtmp=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.cb.',imgform]);
+                filename_cbtmp_unix = unix_wsl_path(filename_cbtmp,wsl);
                 filename_panel=fullfile(dir_img_inv_1d,[num2str(XmidT(ix),xmidformat),...
                     '.invresults.',imgform]);
+                filename_panel_unix = unix_wsl_path(filename_panel,wsl);
                 if  nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
                     % Concatenate colorbars
                     if (cbpos==1 && colnb_tmp==nmodeinv(ix)+1) || (cbpos==2 && colnb_tmp>1)
-                        cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
+                        cat_img([filename_cbout_unix,' ',filename_cbin_unix],imgform,2,'center',filename_cbtmp_unix,0);
                     elseif (cbpos==1 && colnb_tmp<nmodeinv(ix)+1) || (cbpos==2 && colnb_tmp==1)
-                        cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
+                        cat_img([filename_cbout_unix,' ',filename_cbin_unix],imgform,1,'east',filename_cbtmp_unix,0);
                     end
                     % Resize raster
-                    if cbpos==2 && strcmp(imgform,'pdf')~=1
-                        if isunix==1
-                            [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
+                    if cbpos==2 && strcmp(imgform,'pdf')~=1 && ~ispc_wsl
+                        if isunix==1 || ispc_wsl==1
+                            [~,sizefig_cb]=unix_cmd(['convert ',filename_cbtmp_unix,' -format "%h" info:']);
                             sizefig_cb=str2double(sizefig_cb);
-                            [~,sizefig]=unix(['convert ',filename_imgtmp,' -format "%w" info:']);
+                            [~,sizefig]=unix_cmd(['convert ',filename_cbtmp_unix,' -format "%w" info:']);
                             sizefig=str2double(sizefig);
-                            [~,~]=unix(['convert ',filename_cbtmp,' -gravity center -extent ',...
-                                num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp]);
+                            [~,~]=unix_cmd(['convert ',filename_cbtmp_unix,' -gravity center -extent ',...
+                                num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp_unix]);
                         else
-                            com1=['img_convert ',filename_cbtmp,' -format "%h" info:'];
+                            com1=['img_convert ',filename_cbtmp_unix,' -format "%h" info:'];
                             com1=strrep(com1,'\','/');
-                            [~,sizefig_cb]=unix(com1);
+                            [~,sizefig_cb]=unix_cmd(com1);
                             sizefig_cb=str2double(sizefig_cb);
-                            com1=['img_convert ',filename_imgtmp,' -format "%w" info:'];
+                            com1=['img_convert ',filename_imgtmp_unix,' -format "%w" info:'];
                             com1=strrep(com1,'\','/');
-                            [~,sizefig]=unix(com1);
+                            [~,sizefig]=unix_cmd(com1);
                             sizefig=str2double(sizefig);
-                            com1=['img_convert ',filename_cbtmp,' -gravity center -extent ',...
-                                num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp];
+                            com1=['img_convert ',filename_cbtmp_unix,' -gravity center -extent ',...
+                                num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp_unix];
                             com1=strrep(com1,'\','/');
-                            [~,~]=unix(com1);
+                            [~,~]=unix_cmd(com1);
                         end
                     end
                 elseif nmod(ix)==1
@@ -1479,13 +1486,13 @@ for ix=Xmidselec
                 
                 % Concatenate all
                 if cbpos==1 && colnb_tmp==nmodeinv(ix)+1
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'south',filename_panel);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,2,'south',filename_panel_unix);
                 elseif cbpos==1 && colnb_tmp<nmodeinv(ix)+1
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'center',filename_panel);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,2,'center',filename_panel_unix);
                 elseif cbpos==2 && colnb_tmp==1
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'east',filename_panel);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,1,'east',filename_panel_unix);
                 else
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_panel);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,1,'center',filename_panel_unix);
                 end
                 if concat==1 % Delete single image files
                     if nmod(ix)>1 && nmod(ix)<inv_set.nrun(ix)*nmaxmod(ix)-1
@@ -1636,8 +1643,10 @@ for ix=Xmidselec
                     
                     filename_cbin=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                         '.cbmisin.',imgform]);
+                    filename_cbin_unix = unix_wsl_path(filename_cbin,wsl);
                     filename_cbout=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                         '.cbmisout.',imgform]);
+                    filename_cbout_unix = unix_wsl_path(filename_cbout,wsl);
                     
                     % Save colorbars
                     if i==1 && j==1
@@ -1683,41 +1692,44 @@ for ix=Xmidselec
                 % Concatenate parameter plots
                 filename_paramall=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.param.*.',imgform]);
+                filename_paramall_unix = unix_wsl_path(filename_paramall,wsl);
                 filename_imgtmp=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.imgtmp.',imgform]);
-                cat_img(filename_paramall,imgform,colnb_tmp,'east',filename_imgtmp,0);
+                filename_imgtmp_unix = unix_wsl_path(filename_imgtmp,wsl);
+                cat_img(filename_paramall_unix,imgform,colnb_tmp,'east',filename_imgtmp_unix,0);
                 
                 % Concatenate colorbars
                 filename_cbtmp=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.cb.',imgform]);
+                filename_cbtmp_unix = unix_wsl_path(filename_cbtmp,wsl);
                 if (cbpos==1 && colnb_tmp==length(np1)*length(np2)) || (cbpos==2 && colnb_tmp>1)
-                    cat_img([filename_cbout,' ',filename_cbin],imgform,2,'center',filename_cbtmp,0);
+                    cat_img([filename_cbout_unix,' ',filename_cbin_unix],imgform,2,'center',filename_cbtmp_unix,0);
                 elseif (cbpos==1 && colnb_tmp<length(np1)*length(np2)) || (cbpos==2 && colnb_tmp==1)
-                    cat_img([filename_cbout,' ',filename_cbin],imgform,1,'east',filename_cbtmp,0);
+                    cat_img([filename_cbout_unix,' ',filename_cbin_unix],imgform,1,'east',filename_cbtmp_unix,0);
                 end
                 
                 % Resize rasters
-                if cbpos==2 && strcmp(imgform,'pdf')~=1
-                    if isunix==1
-                        [~,sizefig_cb]=unix(['convert ',filename_cbtmp,' -format "%h" info:']);
+                if cbpos==2 && strcmp(imgform,'pdf')~=1 && ~ispc_wsl
+                    if isunix==1 || ispc_wsl==1
+                        [~,sizefig_cb]=unix_cmd(['convert ',filename_cbtmp_unix,' -format "%h" info:']);
                         sizefig_cb=str2double(sizefig_cb);
-                        [~,sizefig]=unix(['convert ',filename_imgtmp,' -format "%w" info:']);
+                        [~,sizefig]=unix_cmd(['convert ',filename_imgtmp_unix,' -format "%w" info:']);
                         sizefig=str2double(sizefig);
-                        [~,~]=unix(['convert ',filename_cbtmp,' -gravity center -extent ',...
-                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp]);
+                        [~,~]=unix_cmd(['convert ',filename_cbtmp_unix,' -gravity center -extent ',...
+                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp_unix]);
                     else
-                        com1=['img_convert ',filename_cbtmp,' -format "%h" info:'];
+                        com1=['img_convert ',filename_cbtmp_unix,' -format "%h" info:'];
                         com1=strrep(com1,'\','/');
-                        [~,sizefig_cb]=unix(com1);
+                        [~,sizefig_cb]=unix_cmd(com1);
                         sizefig_cb=str2double(sizefig_cb);
-                        com1=['img_convert ',filename_imgtmp,' -format "%w" info:'];
+                        com1=['img_convert ',filename_imgtmp_unix,' -format "%w" info:'];
                         com1=strrep(com1,'\','/');
-                        [~,sizefig]=unix(com1);
+                        [~,sizefig]=unix_cmd(com1);
                         sizefig=str2double(sizefig);
-                        com1=['img_convert ',filename_cbtmp,' -gravity center -extent ',...
-                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp];
+                        com1=['img_convert ',filename_cbtmp_unix,' -gravity center -extent ',...
+                            num2str(sizefig),'x',num2str(sizefig_cb),' ',filename_cbtmp_unix];
                         com1=strrep(com1,'\','/');
-                        [~,~]=unix(com1);
+                        [~,~]=unix_cmd(com1);
                     end
                 end
                 
@@ -1725,14 +1737,15 @@ for ix=Xmidselec
                 filename_param=fullfile(dir_img_inv_param,[num2str(XmidT(ix),xmidformat),...
                     '.param_',param1,num2str(np1(1)),'_',num2str(np1(end)),...
                     param2,num2str(np2(1)),'_',num2str(np2(end)),'.',imgform]);
+                filename_param_unix = unix_wsl_path(filename_param,wsl);
                 if cbpos==1 && colnb_tmp==length(np1)*length(np2)
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'south',filename_param);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,2,'south',filename_param_unix);
                 elseif cbpos==1 && colnb_tmp<length(np1)*length(np2)
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,2,'center',filename_param);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,2,'center',filename_param_unix);
                 elseif cbpos==2 && colnb_tmp==1
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'east',filename_param);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,1,'east',filename_param_unix);
                 else
-                    cat_img([filename_imgtmp,' ',filename_cbtmp],imgform,1,'center',filename_param);
+                    cat_img([filename_imgtmp_unix,' ',filename_cbtmp_unix],imgform,1,'center',filename_param_unix);
                 end
                 if concat==1 % Delete single image files
                     delete(filename_cbin,filename_cbout,filename_cbtmp,filename_imgtmp,filename_paramall);

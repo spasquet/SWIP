@@ -2,7 +2,7 @@ function paramname=mod2param(nlay,nsublay,thmin,thmax,shape,lvz,...
     Vpmin,Vpmax,Numin,Numax,Vsmin,Vsmax,Rhomin,Rhomax,...
     Vplink,Nulink,Vslink,Rholink,paramname)
 %
-% %% S. Pasquet - V16.11.18
+% %% S. Pasquet - V22.05.04
 % Create parameterization for dinver
 %
 % paramname=mod2param(nlay,nsublay,thmin,thmax,shape,lvz,Vpmin,Vpmax,Numin,Numax,...
@@ -378,11 +378,16 @@ else
         paramname=[paramname,'.param'];
     end
 end
+
 % Conversion in param
 if ismac == 1
     unix(['gtar czf ',paramname,' contents.xml']);
 elseif ispc == 1
-    unix(['tar czf ',paramname,' contents.xml --force-local']);
+    if ispc_wsl == 0
+        unix(['tar czf ',paramname,' contents.xml --force-local']);
+    else
+        unix(['tar -czf ',paramname,' "contents.xml"']);
+    end
 else
     unix(['tar czf ',paramname,' contents.xml']);
 end

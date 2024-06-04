@@ -1,4 +1,11 @@
 function sx_sing = shot_stack(sufile,check,t0_shift,n_stack_theo,dS_theo,xseis_theo,sx_theo)
+
+%%% S. Pasquet - V22.05.04
+% Stack shot files
+% sx_sing = shot_stack(sufile,check,t0_shift,n_stack_theo,dS_theo,xseis_theo,sx_theo)
+
+wsl = ispc_wsl;
+
 close all; drawnow;
 stack_norm = 0;
 j = 0;
@@ -20,7 +27,7 @@ else
 end
 
 % Get acquisition settings
-[~,hdrs] = unix(['sugethw < ',sufile,' key=fldr,delrt,dt,ns,sx,gx,tracf output=geom']);
+[~,hdrs] = unix_cmd(['sugethw < ',sufile,' key=fldr,delrt,dt,ns,sx,gx,tracf output=geom'],wsl);
 hdrs = str2num(hdrs);
 fldrall = hdrs(:,1);
 fldr_raw = unique(fldrall);
@@ -251,9 +258,9 @@ for i = start_i:length(fldr_raw)
         file1_tmp_bin = strcat('shot',num2str(j,'%03d'),'_stack_tmp.bin');
         file_head = strcat(num2str(ind_seismomat(1)),'_head.su');
         dlmwrite(file1_tmp_txt,seismomat_stack{j},'delimiter',' ');
-        [~,~] = unix(sprintf('a2b < %s > %s n1=%d',file1_tmp_txt,file1_tmp_bin,length(xseis)));
-        [~,~] = unix(sprintf('sustrip < %s head=%s > strip.su',file_raw,file_head));
-        [~,~] = unix(sprintf('supaste < %s ns=%i head=%s > %s',file1_tmp_bin,length(tseis),file_head,filestack));
+        [~,~] = unix_cmd(sprintf('a2b < %s > %s n1=%d',file1_tmp_txt,file1_tmp_bin,length(xseis)),wsl);
+        [~,~] = unix_cmd(sprintf('sustrip < %s head=%s > strip.su',file_raw,file_head),wsl);
+        [~,~] = unix_cmd(sprintf('supaste < %s ns=%i head=%s > %s',file1_tmp_bin,length(tseis),file_head,filestack),wsl);
         delete('strip.su',file1_tmp_txt,file1_tmp_bin,file_head);
 
         for k = 1:length(fldr_ok)
@@ -262,9 +269,9 @@ for i = start_i:length(fldr_raw)
         end
         
         if stack_norm == 1
-            unix(sprintf('sushw < %s key=sx,fldr a=%i,%i | suop op=norm > %s',filestack,sx_sing(j),j,filestack_tmp));
+            unix_cmd(sprintf('sushw < %s key=sx,fldr a=%i,%i | suop op=norm > %s',filestack,sx_sing(j),j,filestack_tmp),wsl);
         else
-            unix(sprintf('sushw < %s key=sx,fldr a=%i,%i > %s',filestack,sx_sing(j),j,filestack_tmp));
+            unix_cmd(sprintf('sushw < %s key=sx,fldr a=%i,%i > %s',filestack,sx_sing(j),j,filestack_tmp),wsl);
         end
         movefile(filestack_tmp,filestack);
 
@@ -370,9 +377,9 @@ for i = start_i:length(fldr_raw)
             file1_tmp_bin = strcat('shot',num2str(j,'%03d'),'_stack_tmp.bin');
             file_head = strcat(num2str(ind_seismomat(1)),'_head.su');
             dlmwrite(file1_tmp_txt,seismomat_stack{j},'delimiter',' ');
-            [~,~] = unix(sprintf('a2b < %s > %s n1=%d',file1_tmp_txt,file1_tmp_bin,length(xseis)));
-            [~,~] = unix(sprintf('sustrip < %s head=%s > strip.su',file_raw,file_head));
-            [~,~] = unix(sprintf('supaste < %s ns=%i head=%s > %s',file1_tmp_bin,length(tseis),file_head,filestack));
+            [~,~] = unix_cmd(sprintf('a2b < %s > %s n1=%d',file1_tmp_txt,file1_tmp_bin,length(xseis)),wsl);
+            [~,~] = unix_cmd(sprintf('sustrip < %s head=%s > strip.su',file_raw,file_head),wsl);
+            [~,~] = unix_cmd(sprintf('supaste < %s ns=%i head=%s > %s',file1_tmp_bin,length(tseis),file_head,filestack),wsl);
             delete('strip.su',file1_tmp_txt,file1_tmp_bin,file_head);
             
             for k = 1:length(fldr_ok)
@@ -381,9 +388,9 @@ for i = start_i:length(fldr_raw)
             end
             
             if stack_norm == 1
-                unix(sprintf('sushw < %s key=sx,fldr a=%i,%i | suop op=norm > %s',filestack,sx_sing(j),j,filestack_tmp));
+                unix_cmd(sprintf('sushw < %s key=sx,fldr a=%i,%i | suop op=norm > %s',filestack,sx_sing(j),j,filestack_tmp),wsl);
             else
-                unix(sprintf('sushw < %s key=sx,fldr a=%i,%i > %s',filestack,sx_sing(j),j,filestack_tmp));
+                unix_cmd(sprintf('sushw < %s key=sx,fldr a=%i,%i > %s',filestack,sx_sing(j),j,filestack_tmp),wsl);
             end
             movefile(filestack_tmp,filestack);
             
@@ -437,6 +444,6 @@ for i = start_i:length(fldr_raw)
     end
     fprintf('\n   --------------------\n');
 end
-unix(sprintf('cat shot*_stack.su > %s',sufile));
+unix_cmd(sprintf('cat shot*_stack.su > %s',sufile),wsl);
 delete('shot*_stack.su');
 close all;

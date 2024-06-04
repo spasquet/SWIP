@@ -1,8 +1,10 @@
 function matzip(compress,files,method,del,output,verbose)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V22.05.04
 % GZIP in matlab
 % matzip(compress,files,method,del,output,verbose)
+wsl = ispc_wsl;
+
 if nargin<5
     output=[];
 end
@@ -31,21 +33,21 @@ if compress==1
             delete(files);
         end
     elseif method==4
-        [~,~]=unix(['7z a -aoa ',output,' ',files]);
+        [~,~]=unix_cmd(['7z a -aoa ',output,' ',files],wsl);
         if del==1
-            [~,~]=unix(['rm -rf ',files]);
+            [~,~]=unix_cmd(['rm -rf ',files],wsl);
         end
     elseif method==5
         if del==1
-            [~,~]=unix(['gzip -f ',files]);
+            [~,~]=unix_cmd(['gzip -f ',files],wsl);
         else
-            [~,~]=unix(['gzip -k -f ',files]);
+            [~,~]=unix_cmd(['gzip -k -f ',files],wsl);
         end
     elseif method==6
         if del==1
-            [~,~]=unix(['bzip2 -f ',files]);
+            [~,~]=unix_cmd(['bzip2 -f ',files],wsl);
         else
-            [~,~]=unix(['bzip2 -k -f ',files]);
+            [~,~]=unix_cmd(['bzip2 -k -f ',files],wsl);
         end
     end
 elseif compress==0
@@ -65,21 +67,21 @@ elseif compress==0
             delete(files);
         end
     elseif method==4
-        [~,~]=unix(['7z e ',files]);
+        [~,~]=unix_cmd(['7z e ',files],wsl);
         if del==1
-            [~,~]=unix(['rm -rf ',files]);
+            [~,~]=unix_cmd(['rm -rf ',files],wsl);
         end
     elseif method==5
         if del==1
-            [~,~]=unix(['gunzip -f ',files]);
+            [~,~]=unix_cmd(['gunzip -f ',files],wsl);
         else
-            unix(['gunzip -k -f ',files]);
+            unix_cmd(['gunzip -k -f ',files],wsl);
         end
     elseif method==6
         if del==1
-            [~,~]=unix(['bunzip2 -f ',files]);
+            [~,~]=unix_cmd(['bunzip2 -f ',files],wsl);
         else
-            [~,~]=unix(['bunzip2 -k -f ',files]);
+            [~,~]=unix_cmd(['bunzip2 -k -f ',files],wsl);
         end
     end
 else

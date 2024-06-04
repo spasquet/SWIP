@@ -1,6 +1,6 @@
 function lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 
-%%% S. Pasquet - V20.03.23
+%%% S. Pasquet - V22.05.04
 % Convert .pvc ASCII file in .target dinver file
 % lmaxpick=pvc2targ(pvcstruct,dir_pick,nametarg,wave,sampling,resampvec,flim,maxerr)
 % Handles dinver > 2
@@ -133,7 +133,7 @@ if all(isnan(lmaxpick))
     fprintf('\n   No sample in the range of resampvec - Target file empty');
     fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
     fclose(fid0);
-    unix(['rm -rf ',nametarg]);
+    unix_cmd(['rm -rf ',nametarg]);
     return
 end
 
@@ -205,14 +205,29 @@ fclose(fid0);
 %     fclose(fid2);
 % end
 % Conversion in target
+
+% Conversion in param
 if ismac == 1
     unix(['gtar czf ',nametarg,' contents.xml']);
 elseif ispc == 1
-    unix(['tar czf ',nametarg,' contents.xml --force-local']);
+    if ispc_wsl == 0
+        unix(['tar czf ',nametarg,' contents.xml --force-local']);
+    else
+        unix(['tar -czf ',nametarg,' "contents.xml"']);
+    end
 else
     unix(['tar czf ',nametarg,' contents.xml']);
 end
 delete('contents.xml');
+
+% if ismac == 1
+%     unix(['gtar czf ',nametarg,' contents.xml']);
+% elseif ispc == 1 && ispc_wsl == 0
+%     unix(['tar czf ',nametarg,' contents.xml --force-local']);
+% else
+%     unix(['tar czf ',nametarg,' contents.xml']);
+% end
+% delete('contents.xml');
 
 nametarg=strrep(nametarg,'\','\\');
 fprintf(['\n  Target file saved as ',nametarg,'\n']);

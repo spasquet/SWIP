@@ -1,6 +1,6 @@
 %%% SURFACE-WAVE dispersion INVERSION & PROFILING (SWIP)
 %%% MODULE A : SWIPdisp.m
-%%% S. Pasquet - V18.11.26
+%%% S. Pasquet - V22.05.04
 %%% SWIPdisp.m performs windowing and stacking of surface-wave dispersion
 %%% It allows to pick dispersion curves and save figures of dispersion, 
 %%% spectrograms and shot gathers
@@ -370,9 +370,10 @@ end
 % Bandpass filter with SU
 if filt==1 && calc==1
     sufilefilt=[sufile,'.filt'];
+    sufilefilt_unix = unix_wsl_path(sufilefilt,wsl);
     com1=sprintf('sufilter < %s f=%d,%d,%d,%d amps=0,1,1,0 > %s',...
-        sufile,fcutlow,fcutlow+taper,fcuthigh-taper,fcuthigh,sufilefilt);
-    unix(com1);
+        sufile_unix,fcutlow,fcutlow+taper,fcuthigh-taper,fcuthigh,sufilefilt_unix);
+    unix_cmd(com1);
     sufileOK=sufilefilt;
 else
     if calc~=2
@@ -525,29 +526,36 @@ while i<length(Xmidselec)
         end
         % Stacked dispersion file name (delete if exists and calc=1)
         dspfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.dsp']);
+        dspfile_sum_unix = unix_wsl_path(dspfile_sum,wsl);
         if exist(dspfile_sum,'file')==2 && (calc==1 || plotstkdisp==1)
             delete(dspfile_sum);
         end
         % Stacked spectrogram file name
         specfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.spec']);
+        specfile_sum_unix = unix_wsl_path(specfile_sum,wsl);
         % Example of shot gather file name
         seisfile_sum=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum.su']);
+        seisfile_sum_unix = unix_wsl_path(seisfile_sum,wsl);
         % String containing all spectrogram file names
-        specfile_all=[];
+        specfile_all_unix=[];
         
         if stack==2  % Alternative method for extracting dispersion (experimental)
             % Stacked shot gather file name (delete if exists and calc=1)
             seisfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.su']);
+            seisfile_sum_new_unix = unix_wsl_path(seisfile_sum_new,wsl);
             dspfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.dsp']);
+            dspfile_sum_new_unix = unix_wsl_path(dspfile_sum_new,wsl);
             specfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.sum_new.spec']);
+            specfile_sum_new_unix = unix_wsl_path(specfile_sum_new,wsl);
             if exist(seisfile_sum_new,'file')==2 && (calc==1 || plotstkdisp==1)
                 delete(seisfile_sum_new);
             end
-            seismofile_left=[];
-            seismofile_right=[];
+            seismofile_left_unix=[];
+            seismofile_right_unix=[];
         elseif stack==3 % Weighted stacked dispersion
             % Weighted stacked dispersion file name (delete if exists and calc=1)
             dspfile_sum_new=fullfile(dir_dat,[num2str(XmidT(ix),xmidformat),'.weight.dsp']);
+            dspfile_sum_new_unix = unix_wsl_path(dspfile_sum_new,wsl);
             if exist(dspfile_sum_new,'file')==2 && (calc==1 || plotstkdisp==1)
                 delete(dspfile_sum_new);
             end
@@ -622,9 +630,9 @@ while i<length(Xmidselec)
                                         
                     if stack==2 % Alt. method (xp)
                         if ((strcmp(side,'L')==1 || strcmp(side,'B')==1) && XmidT(ix)>Sselec(ks))
-                            seismofile_left=[seismofile_left,' ',seismofile];
+                            seismofile_left_unix=[seismofile_left_unix,' ',seismofile_unix];
                         elseif ((strcmp(side,'R')==1 || strcmp(side,'B')==1) && XmidT(ix)<Sselec(ks))
-                            seismofile_right=[seismofile_right,' ',seismofile];
+                            seismofile_right_unix=[seismofile_right_unix,' ',seismofile_unix];
                         end
                     end
                     
@@ -638,13 +646,15 @@ while i<length(Xmidselec)
                     % P-Omega transform on shot gather and saving in .dsp file
                     dspfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.dsp']);
+                    dspfile_unix = unix_wsl_path(dspfile,wsl);
                     [dspmat,f,v]=matpomegal(seismofile,1,nray,fmin,fmax,vmin,vmax,...
                         flip,xsca,tsca,0,dspfile,0);
                     % Spectrogram calculation on shot gather and saving in .spec file
                     specfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']);
+                    specfile_unix = unix_wsl_path(specfile,wsl);
                     [specmat,fspec,xspec]=matspecfx(seismofile,xsca,specfile,0,normalize);
-                    specfile_all=[specfile_all,' ',specfile]; % Concat. file names
+                    specfile_all_unix=[specfile_all_unix,' ',specfile_unix]; % Concat. file names
                     % Get example seismogram (shortest offset available, left side in priority)
                     if strcmp(side,'L')==1
                         seismofileOK = seismofile;
@@ -750,14 +760,15 @@ while i<length(Xmidselec)
                     if calc==1 || plotstkdisp==1
                         % Create zeros .dsp file for first iteration stacking
                         if exist(dspfile_sum,'file')~=2
-                            com1=sprintf('suop2 %s %s op=diff > %s',dspfile,dspfile,dspfile_sum);
-                            unix(com1);
+                            com1=sprintf('suop2 %s %s op=diff > %s',dspfile_unix,dspfile_unix,dspfile_sum_unix);
+                            unix_cmd(com1);
                         end
                         
                         % Stack current dispersion image with previous stack file
                         dspfile_sum_inter=[dspfile_sum,'.new'];
-                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_sum,dspfile,dspfile_sum_inter);
-                        unix(com1);
+                        dspfile_sum_inter_unix = unix_wsl_path(dspfile_sum_inter,wsl);
+                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_unix,dspfile_unix,dspfile_sum_inter_unix);
+                        unix_cmd(com1);
                         movefile(dspfile_sum_inter,dspfile_sum);
                         
                         if stack==3
@@ -774,8 +785,9 @@ while i<length(Xmidselec)
                         % Plot and save intermediate stack
                         if  plotstkdisp==1
                             dspfile_sum_stack=[dspfile_sum,'.stack'];
-                            com1=sprintf('suop < %s op=norm > %s',dspfile_sum,dspfile_sum_stack);
-                            unix(com1);
+                            dspfile_sum_stack_unix = unix_wsl_path(dspfile_sum_stack,wsl);
+                            com1=sprintf('suop < %s op=norm > %s',dspfile_sum_unix,dspfile_sum_stack_unix);
+                            unix_cmd(com1);
                             [dspmat,f,v]=dsp2dat(dspfile_sum_stack,flip,0);
                             delete(dspfile_sum_stack);
                             dir_img_xmid_stack=fullfile(dir_img_stkdisp,['Xmid_',num2str(XmidT(ix),xmidformat)]);
@@ -822,39 +834,51 @@ while i<length(Xmidselec)
             end
             
             if sum(nshot(ix,:))>0 % Check if there is enough shots to extract dispersion for current Xmid
-                com1=sprintf('cat %s > %s',specfile_all,specfile_sum);
-                unix(com1); % Concatenate all spectrograms into composite spectrogram
-                com1=sprintf('susort < %s +gx | sustack key=gx > %s',specfile_sum,fullfile(dir_dat_xmid,'sort.spec'));
-                unix(com1); % Sort composite spectrogram by offset and stack common offset traces
+                com1=sprintf('cat %s > %s',specfile_all_unix,specfile_sum_unix);
+                unix_cmd(com1); % Concatenate all spectrograms into composite spectrogram
+                specfile_sum_sort = fullfile(dir_dat_xmid,'sort.spec');
+                specfile_sum_sort_unix = unix_wsl_path(specfile_sum_sort,wsl);
+                com1=sprintf('susort < %s +gx | sustack key=gx > %s',specfile_sum_unix,specfile_sum_sort_unix);
+                unix_cmd(com1); % Sort composite spectrogram by offset and stack common offset traces
                 movefile(fullfile(dir_dat_xmid,'sort.spec'),specfile_sum); % Rename file
                 
                 if stack==2 % Alt. method (xp)
                     % Alternative method consists in concatenating all traces from all selected shots, 
                     % then rearrange them by offset, to finally transform the wavefield of the
                     % composite shot gather
-                    if isempty(seismofile_left)==0
-                        com1=sprintf('cat %s > %s',seismofile_left,fullfile(dir_dat_xmid,'cat_left.su'));
-                        unix(com1); % Concatenate left shots
+
+                    cat_left = fullfile(dir_dat_xmid,'cat_left.su');
+                    cat_left_unix = unix_wsl_path(cat_left,wsl);
+                    cat_right = fullfile(dir_dat_xmid,'cat_right.su');
+                    cat_right_unix = unix_wsl_path(cat_right,wsl);
+                    cat_right_neg = fullfile(dir_dat_xmid,'cat_right_neg.su');
+                    cat_right_neg_unix = unix_wsl_path(cat_right_neg,wsl);
+                    cat = fullfile(dir_dat_xmid,'cat.su');
+                    cat_unix = unix_wsl_path(cat,wsl,wsl);
+
+                    if isempty(seismofile_left_unix)==0
+                        com1=sprintf('cat %s > %s',seismofile_left_unix,cat_left_unix);
+                        unix_cmd(com1); % Concatenate left shots
                     end
-                    if isempty(seismofile_right)==0
-                        com1=sprintf('cat %s > %s',seismofile_right,fullfile(dir_dat_xmid,'cat_right.su'));
-                        unix(com1); % Concatenate right shots
-                        com1=sprintf('suop < %s op=neg > %s',fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
-                        unix(com1); % Reverse polarity
+                    if isempty(seismofile_right_unix)==0
+                        com1=sprintf('cat %s > %s',seismofile_right_unix,cat_right_unix);
+                        unix_cmd(com1); % Concatenate right shots
+                        com1=sprintf('suop < %s op=neg > %s',cat_right_unix,cat_right_neg_unix);
+                        unix_cmd(com1); % Reverse polarity
                     end
-                    if isempty(seismofile_left)==0 && isempty(seismofile_right)==0
-                        com1=sprintf('cat %s %s > %s',fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
-                        unix(com1); % Concatenate all shots
+                    if isempty(seismofile_left_unix)==0 && isempty(seismofile_right_unix)==0
+                        com1=sprintf('cat %s %s > %s',cat_left_unix,cat_right_neg_unix,cat_unix);
+                        unix_cmd(com1); % Concatenate all shots
                         delete(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat_right.su'),fullfile(dir_dat_xmid,'cat_right_neg.su'));
-                    elseif isempty(seismofile_left)==0 && isempty(seismofile_right)==1
+                    elseif isempty(seismofile_left_unix)==0 && isempty(seismofile_right_unix)==1
                         movefile(fullfile(dir_dat_xmid,'cat_left.su'),fullfile(dir_dat_xmid,'cat.su'));
-                    elseif isempty(seismofile_left)==1 && isempty(seismofile_right)==0
+                    elseif isempty(seismofile_left_unix)==1 && isempty(seismofile_right_unix)==0
                         movefile(fullfile(dir_dat_xmid,'cat_right_neg.su'),fullfile(dir_dat_xmid,'cat.su'));
                         delete(fullfile(dir_dat_xmid,'cat_right.su'));
                     end
                     com1=sprintf('susort < %s +offset | sustack key=offset | sushw key=sx,fldr,gelev,selev a=-1,1,0,0 | suchw key1=gx key2=offset > %s',...
-                        fullfile(dir_dat_xmid,'cat.su'),seisfile_sum_new);
-                    unix(com1); % Sort and stack common traces + add headers
+                        cat_unix,seisfile_sum_new_unix);
+                    unix_cmd(com1); % Sort and stack common traces + add headers
                     delete(fullfile(dir_dat_xmid,'cat.su'));
                     
                     % P-Omega transform on composite shot gather and saving in .dsp file
@@ -1019,7 +1043,7 @@ while i<length(Xmidselec)
         end
         
         if stack==2 % Alt. method (xp)
-            [~,offsets]=unix(sprintf('sugethw < %s key=offset output=geom',seisfile_sum_new));
+            [~,offsets]=unix_cmd(sprintf('sugethw < %s key=offset output=geom',seisfile_sum_new_unix));
             offsets=str2num(offsets)/xsca;
             noffsets=length(offsets);
             nWmin=noffsets; nWmax=noffsets;
@@ -1072,14 +1096,14 @@ while i<length(Xmidselec)
                 fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
                     freqtitle_long,'Phase velocity (m/s)',...
                     'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
-                    [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 10],[]);
+                    [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             else
                 dspmatinv=1./(1-dspmat);
                 dspmatinv(isinf(dspmatinv))=max(max(dspmatinv(isinf(dspmatinv)==0)));
                 fig1=plot_img_log(showplot,f,v,dspmatinv',flipud(map0),axetop,axerev,cb_disp,fs,...
                     freqtitle_long,'Phase velocity (m/s)',...
                     '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
-                    [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 12],[]);
+                    [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             end
             hold on; cm_saturation(map0sat);
             if Flogscale==1
@@ -1695,13 +1719,13 @@ while i<length(Xmidselec)
                                     deltaresamp{modes(ip)+1},'.-',ccurve(ix,:),[],axetop,axerev,...
                                     cbpos,fs,freqtitle_long,'Phase velocity (m/s)',...
                                     'X (m)',[fMIN fMAX],[VphMIN VphMAX],[min(XmidT) max(XmidT)],...
-                                    fticks,Vphticks,[],[],[],[30 1 24 18],[],[],Flogscale);
+                                    fticks,Vphticks,[],[],[],[0 0 24 18],[],[],Flogscale);
                                 colormap(ccurve);
                             else
                                 plot_curv(modes(ip)+5,freqresamp{modes(ip)+1},vresamp{modes(ip)+1},[],'.-',ccurve(ix,:),[],axetop,axerev,...
                                     cbpos,fs,freqtitle_long,'Phase velocity (m/s)',...
                                     'X (m)',[fMIN fMAX],[VphMIN VphMAX],[min(XmidT) max(XmidT)],...
-                                    fticks,Vphticks,[],[],[],[30 1 24 18],[],[],Flogscale);
+                                    fticks,Vphticks,[],[],[],[0 0 24 18],[],[],Flogscale);
                                 colormap(ccurve);
                             end
                             hold on

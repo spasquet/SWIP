@@ -1,6 +1,6 @@
 function matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
-%%% S. Pasquet - V17.04.14
+%%% S. Pasquet - V22.05.04
 % Read dinver report files
 % matgpdcreport(dir_in,exportopt,nrun,nmode,nmaxmod,wave,nf,fmin,fmax)
 
@@ -26,8 +26,7 @@ for j=1:nrun
                     num2str(nf),' -min ',num2str(fmin),' -max ',num2str(fmax),...
                     ' > ',fullfile(dir_in,['best',num2str(j),'.M',num2str(k-1),'.txt'])];
                 unix(com1);
-                com1=['rm -rf ',fullfile(dir_in,'best_old.txt')];
-                unix(com1);
+                delete(fullfile(dir_in,'best_old.txt'));
             end
         end
     end

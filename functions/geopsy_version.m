@@ -1,5 +1,5 @@
 function version = geopsy_version()
-%%% S. Pasquet - V20.04.02
+%%% S. Pasquet - V22.05.04
 
 [~,test] = unix('geopsy -app-version');
 

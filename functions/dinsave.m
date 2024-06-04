@@ -1,10 +1,14 @@
 function dinsave(filename,thk,vp,vs,rho)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V22.05.04
 % Save velocity model in dinver format for forward calculation
 % dinsave(filename,thk,vp,vs,rho)
 
-unix(['rm -rf -- ',filename]);
+wsl = ispc_wsl;
+
+filename_unix = unix_wsl_path(filename,wsl);
+
+unix_cmd(['rm -rf -- ',filename_unix],wsl);
 nl=length(thk);
 if length(vp)==1
     vp=repmat(vp,size(thk));

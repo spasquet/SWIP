@@ -1,6 +1,6 @@
 function [freq,vel,deltac,modes,tst]=targ2pvc(nametarg)
 
-%%% S. Pasquet - V20.03.23
+%%% S. Pasquet - V22.05.04
 % Read .target dinver file
 % [freq,vel,deltac,modes]=targ2pvc(nametarg)
 % Handles dinver > 2
@@ -17,14 +17,29 @@ dir_inv=fileparts(nametarg);
 if strcmp(dir_inv,'')==1
     dir_inv=pwd;
 end
-copyfile(nametarg,nametarg(1:end-3));
-if isunix==1
-    [~,~]=unix(['tar -xf ',nametarg(1:end-3),' -C ',dir_inv]);
+nametar = nametarg(1:end-3);
+copyfile(nametarg,nametar);
+
+if ismac == 1
+    unix(['gtar xf ',nametar,' contents.xml']);
+elseif ispc == 1
+    if ispc_wsl == 0
+        [~,~]=unix(['tar -xf ',nametar,' --force-local']);
+        [~,~]=unix(['mv contents.xml ',dir_inv]);
+    else
+        [~,~]=unix(['tar -xf ',nametar,' -C ',dir_inv]);
+    end
 else
-    [~,~]=unix(['tar -xf ',nametarg(1:end-3),' --force-local']);
-    [~,~]=unix(['mv contents.xml ',dir_inv]);
+    [~,~]=unix(['tar -xf ',nametar,' -C ',dir_inv]);
 end
-delete(nametarg(1:end-3));
+delete(nametar);
+
+% if isunix==1 || wsl==1
+%     [~,~]=unix_cmd(['tar -xf ',nametar_unix,' -C ',dir_inv_unix],wsl);
+% else
+%     [~,~]=unix(['tar -xf ',nametar,' --force-local']);
+%     [~,~]=unix(['mv contents.xml ',dir_inv]);
+% end
 
 fid0=fopen(fullfile(dir_inv,'contents.xml'),'r');
 for i=1:9

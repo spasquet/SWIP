@@ -1,6 +1,6 @@
 function acquiparam=get_acquiparam(sufile,xsca,istomo)
 
-%%% S. Pasquet - V19.01.28
+%%% S. Pasquet - V22.05.04
 % get_acquiparam.m retrieves .SU file acquisition parameters
 %
 % acquiparam=get_acquiparam(sufile,xsca,istomo)
@@ -23,8 +23,10 @@ function acquiparam=get_acquiparam(sufile,xsca,istomo)
 % acquiparam.fldr => Source shot number
 % acquiparam.topo => Profile topography (X,Z)
 
+wsl = ispc_wsl;
+
 if exist('xsca','var')==0 || isempty(xsca)==1
-    [~,xsca]=unix(['sugethw < ',sufile,' scalco output=geom | uniq']);
+    [~,xsca]=unix_cmd(['sugethw < ',sufile,' scalco output=geom | uniq'],wsl);
     xsca=abs(str2double(xsca));
     if xsca==0
        answer1=inputdlg({'Scaling factor'},'',1);
@@ -41,10 +43,10 @@ if nargin<3
 end
 
 % Sampling interval (in second)
-[~,dt]=unix(['sugethw < ',sufile,' dt output=geom | uniq']);
+[~,dt]=unix_cmd(['sugethw < ',sufile,' dt output=geom | uniq'],wsl);
 dt=str2double(dt)/1000000;
 % Mean inter-geophone spacing
-[~,dx]=unix(['sugethw < ',sufile,' gdel output=geom | uniq']);
+[~,dx]=unix_cmd(['sugethw < ',sufile,' gdel output=geom | uniq'],wsl);
 dx=str2double(dx)/xsca;
 if dx==0 && istomo==0
     answer1=inputdlg({'Mean geophone spacing'},'',1);
@@ -55,19 +57,19 @@ if dx==0 && istomo==0
     end
 end
 % Geophones positions
-[~,Gx]=unix(['sugethw < ',sufile,' key=gx output=geom']);
+[~,Gx]=unix_cmd(['sugethw < ',sufile,' key=gx output=geom'],wsl);
 Gx=str2num(Gx)/xsca;
 % Sources positions
-[~,Sx]=unix(['sugethw < ',sufile,' key=sx output=geom']);
+[~,Sx]=unix_cmd(['sugethw < ',sufile,' key=sx output=geom'],wsl);
 Sx=str2num(Sx)/xsca;
 % Geophones elevations
-[~,Gz]=unix(['sugethw < ',sufile,' key=gelev output=geom']);
+[~,Gz]=unix_cmd(['sugethw < ',sufile,' key=gelev output=geom'],wsl);
 Gz=str2num(Gz)/xsca;
 % Sources elevations
-[~,Sz]=unix(['sugethw < ',sufile,' key=selev output=geom']);
+[~,Sz]=unix_cmd(['sugethw < ',sufile,' key=selev output=geom'],wsl);
 Sz=str2num(Sz)/xsca;
 % Sources number
-[~,fldr]=unix(['sugethw < ',sufile,' key=fldr output=geom']);
+[~,fldr]=unix_cmd(['sugethw < ',sufile,' key=fldr output=geom'],wsl);
 [fldr,I]=unique(str2num(fldr),'first');
 % Sort source numbers with shot positions
 [~,J]=sort(Sx(I));

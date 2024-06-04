@@ -1,6 +1,6 @@
 function save_fig(h,filename,format,res,crop,verbose,autosize,transparent)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V22.05.04
 % Save figure in various format
 % save_fig(h,filename,format,res,crop,verbose,autosize)
 
@@ -56,16 +56,18 @@ else
     end
 end
 
+filename_unix = unix_wsl_path(filename);
+
 if crop==1 && strcmpi(format,'fig')~=1
     if strcmpi(format,'pdf')==1
-        [test,~]=unix(['pdfcrop -margins 10 ',filename,' ',filename]);
+        [test,~]=unix_cmd(['pdfcrop -margins 10 ',filename_unix,' ',filename_unix]);
     else
-        if isunix==1
-            [test,~]=unix(['convert ',filename,' -trim ',filename]);
-            [~,~]=unix(['convert ',filename,' -bordercolor White -border 50 ',filename]);
+        if isunix == 1 || ispc_wsl == 1
+            [test,~]=unix_cmd(['convert ',filename_unix,' -trim ',filename_unix]);
+            [~,~]=unix_cmd(['convert ',filename_unix,' -bordercolor White -border 50 ',filename_unix]);
         else
-            [test,~]=unix(['img_convert ',filename,' -trim ',filename]);
-            [~,~]=unix(['img_convert ',filename,' -bordercolor White -border 50 ',filename]);
+            [test,~]=unix_cmd(['img_convert ',filename_unix,' -trim ',filename_unix]);
+            [~,~]=unix_cmd(['img_convert ',filename_unix,' -bordercolor White -border 50 ',filename_unix]);
         end
     end
 end

@@ -1,9 +1,11 @@
 function cat_img(infiles,imgformat,columns,align,outfile,verbose)
 
-%%% S. Pasquet - V16.11.18
+%%% S. Pasquet - V22.05.04
 % Concatenate images files in various format
 %
 % cat_img(infiles,imgformat,columns,align,outfile,verbose)
+
+wsl = ispc_wsl;
 
 if exist('infiles','var')==0 || isempty(infiles)==1
     infiles=[];
@@ -59,16 +61,16 @@ if strcmp(imgformat,'png')==1 || strcmp(imgformat,'jpg')==1 ||...
         strcmp(imgformat,'jpeg')==1 || strcmp(imgformat,'tiff')==1
     x=['-tile ',num2str(columns),'x'];
     com1=sprintf('montage %s -gravity %s -mode concatenate %s %s',infiles,align,x,outfile);
-    if isunix==0
+    if isunix==0 && ispc_wsl==0
         com1=strrep(com1,'\','/');
     end
-    unix(com1);
+    unix_cmd(com1,wsl);
 elseif strcmp(imgformat,'pdf')==1
     x=[num2str(columns),'x',num2str(nfiles-columns+1)];
     %     com1=sprintf('pdfjam -q --noautoscale true --papersize ''{%dcm,%dcm}'' --nup  %s %s -o %s',200,200,x,infiles,outfile);
     com1=sprintf('pdfjam -q --noautoscale true --a0paper --fitpaper true --nup  %s %s -o %s',x,infiles,outfile);
-    [~,~]=unix(com1);
-    [~,~]=unix(['pdfcrop -margins 10 ',outfile,' ',outfile]);
+    [~,~]=unix_cmd(com1,wsl);
+    [~,~]=unix_cmd(['pdfcrop -margins 10 ',outfile,' ',outfile],wsl);
 end
 if verbose==1
     outfile=strrep(outfile,'\','\\');
