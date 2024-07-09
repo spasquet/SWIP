@@ -10,22 +10,22 @@ if strcmp(dir_param,'')==1
 end
 nameparamnew=[nameparam(1:end-5),'tar'];
 
-movefile(nameparam,nameparamnew,"f");
+movefile(nameparam,nameparamnew,'f');
 % [~,~]=unix_cmd(['mv -f ',nameparam_unix,' ',nameparamnew_unix]);
 
 if ismac == 1
-    unix(['gtar xf ',paramname,' contents.xml']);
+    unix_cmd(['gtar xf ',paramname,' contents.xml']);
 elseif ispc == 1
     if ispc_wsl == 0
-        [~,~]=unix(['tar -xf ',nameparamnew,' --force-local']);
-        [~,~]=unix(['mv contents.xml ',dir_param]);
+        [~,~]=unix_cmd(['tar -xf ',nameparamnew,' --force-local']);
+        [~,~]=unix_cmd(['mv contents.xml ',dir_param]);
     else
-        [~,~]=unix(['tar -xf ',nameparamnew,' -C ',dir_param]);
+        [~,~]=unix_cmd(['tar -xf ',nameparamnew,' -C ',dir_param]);
     end
 else
-    [~,~]=unix(['tar -xf ',nameparamnew,' -C ',dir_param]);
+    [~,~]=unix_cmd(['tar -xf ',nameparamnew,' -C ',dir_param]);
 end
-movefile(nameparamnew,nameparam,"f");
+movefile(nameparamnew,nameparam,'f');
 % [~,~]=unix_cmd(['mv -f ',nameparamnew_unix,' ',nameparam_unix]);
 
 fid0=fopen(fullfile(dir_param,'contents.xml'),'r');

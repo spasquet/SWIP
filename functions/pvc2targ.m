@@ -208,15 +208,15 @@ fclose(fid0);
 
 % Conversion in param
 if ismac == 1
-    unix(['gtar czf ',nametarg,' contents.xml']);
+    unix_cmd(['gtar czf ',nametarg,' contents.xml']);
 elseif ispc == 1
     if ispc_wsl == 0
-        unix(['tar czf ',nametarg,' contents.xml --force-local']);
+        unix_cmd(['tar czf ',nametarg,' contents.xml --force-local']);
     else
-        unix(['tar -czf ',nametarg,' "contents.xml"']);
+        unix_cmd(['tar -czf ',nametarg,' "contents.xml"']);
     end
 else
-    unix(['tar czf ',nametarg,' contents.xml']);
+    unix_cmd(['tar czf ',nametarg,' contents.xml']);
 end
 delete('contents.xml');
 

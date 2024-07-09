@@ -8,7 +8,6 @@ specmat_all = [];
 
 for ip=1:length(specstruct)
     specfile=specstruct(ip).name;
-    keyboard
     specmat=dsp2dat(fullfile(dir_dat_xmid,[specfile(1:end-4),'spec']),0,0);
     fspecmax=1/dt;
     nfspec=size(specmat,2);

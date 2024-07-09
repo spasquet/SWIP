@@ -21,16 +21,16 @@ nametar = nametarg(1:end-3);
 copyfile(nametarg,nametar);
 
 if ismac == 1
-    unix(['gtar xf ',nametar,' contents.xml']);
+    unix_cmd(['gtar xf ',nametar,' contents.xml']);
 elseif ispc == 1
     if ispc_wsl == 0
-        [~,~]=unix(['tar -xf ',nametar,' --force-local']);
-        [~,~]=unix(['mv contents.xml ',dir_inv]);
+        [~,~]=unix_cmd(['tar -xf ',nametar,' --force-local']);
+        [~,~]=unix_cmd(['mv contents.xml ',dir_inv]);
     else
-        [~,~]=unix(['tar -xf ',nametar,' -C ',dir_inv]);
+        [~,~]=unix_cmd(['tar -xf ',nametar,' -C ',dir_inv]);
     end
 else
-    [~,~]=unix(['tar -xf ',nametar,' -C ',dir_inv]);
+    [~,~]=unix_cmd(['tar -xf ',nametar,' -C ',dir_inv]);
 end
 delete(nametar);
 

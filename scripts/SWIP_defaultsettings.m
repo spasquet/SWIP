@@ -3,6 +3,7 @@
 %%% S. Pasquet - V18.11.26
 
 matrelease=version('-release'); % Get matlab release
+wsl = ispc_wsl; % Check WSL
 
 %% A_SWIPdisp settings
 % Main settings

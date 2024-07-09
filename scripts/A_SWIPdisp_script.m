@@ -1344,16 +1344,16 @@ while i<length(Xmidselec)
 %                 ax(1).Position = pos1;
                 if mappicklog==0
                     [fig1,h1,~,h0]=plot_img(1,f,v2,-dspmat2',mappick,axetop,axerev,0,16,...
-                        [],'Phase velocity (m/s)',...
+                        freqtitle_long,'Phase velocity (m/s)',...
                         'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
-                        [],[],Vphticks,[],[],flimsing,[],[],[],[],0);
+                        [],fticks,Vphticks,[],[],flimsing,[],[],[],[],0);
                 else
                     dspmatinv2=1./(1-dspmat2);
                     dspmatinv2(isinf(dspmatinv2))=max(max(dspmatinv2(isinf(dspmatinv2)==0)));
                     [fig1,h1,~,h0]=plot_img_log(1,f,v2,-dspmatinv2',flipud(mappick),axetop,axerev,0,16,...
                         [],'Phase velocity (m/s)',...
                         '1/(1-Norm. ampli.)',[fMIN fMAX],[VphMIN VphMAX],...
-                        [1 length(mappick)],[],Vphticks,[],[],flimsing,[],[],[],[],0);
+                        [1 length(mappick)],fticks,Vphticks,[],[],flimsing,[],[],[],[],0);
                 end
                 hold on; cm_saturation(mappicksat);
                 if sampling==1
@@ -1386,7 +1386,7 @@ while i<length(Xmidselec)
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
-                set(gca,'xticklabel',[])
+%                 set(gca,'xticklabel',[])
                 pvcstruct=dir(fullfile(dir_pick,[num2str(XmidT(ix),xmidformat),'.*.pvc']));
                 % Plot current dispersion curves if existing
                 for ip=1:length(pvcstruct)
