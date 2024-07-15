@@ -8,7 +8,7 @@ clear all; clc; close all;
 % START OF INITIALIZATION
 
 profilename = 'swip_profile'; % Name of the profile
-% newrectime  = 0.8;           % New recording length (add zeros at the end of each trace)
+newrectime  = 1;           % New recording length (add zeros at the end of each trace)
 colx        = 1;              % Column for X position (in topofile) -- Leave empty or comment for default
 colz        = 4;              % Column for Z position (in topofile) -- Leave empty or comment for default
 % trace_selec = [1 48];        % Traces to select in file Leave empty or comment for default

@@ -1,10 +1,15 @@
 function array  = check_depth_array(Gx,Gz,Sx,Sz)
 
+
 G_sing = unique([Gx Gz],'rows');
 S_sing = unique([Sx Sz],'rows');
 
-nG = hist(G_sing(:,1),unique(G_sing(:,1)));
-nS = hist(S_sing(:,1),unique(S_sing(:,1)));
+try
+    nG = hist(G_sing(:,1),unique(G_sing(:,1)));
+    nS = hist(S_sing(:,1),unique(S_sing(:,1)));
+catch
+   keyboard
+end
 
 G_sing_X = unique(G_sing(:,1));
 S_sing_X = unique(S_sing(:,1));
@@ -40,7 +45,7 @@ else
     %     IG_surf = ismember([Gx Gz],G_sing_surf,'rows');
 end
 
-if any(nG>1)
+if any(nS>1)
     ind_nS = find(nS>1);
     S_sing_depth = []; S_sing_surf = [];
     for i = 1:length(ind_nS)
