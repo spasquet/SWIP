@@ -1,6 +1,6 @@
 function array  = check_depth_array(Gx,Gz,Sx,Sz)
 
-
+    
 G_sing = unique([Gx Gz],'rows');
 S_sing = unique([Sx Sz],'rows');
 

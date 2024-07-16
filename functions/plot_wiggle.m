@@ -59,9 +59,9 @@ seismomat=bsxfun(@rdivide,seismomat*dx/2,amx);
 % seismomat=bsxfun(@rdivide,seismomat,amx);
 
 
-npts=round(size(seismomat,1)*size(seismomat,2)*perc/100);
-allpts=sort(abs(reshape(seismomat,1,size(seismomat,1)*size(seismomat,2))));
-p=allpts(npts);
+% npts=round(size(seismomat,1)*size(seismomat,2)*perc/100);
+% allpts=sort(abs(reshape(seismomat,1,size(seismomat,1)*size(seismomat,2))));
+% p=allpts(npts);
 
 % seismomat=seismomat/p;
 % seismomat = seismomat*dx;

@@ -1,5 +1,9 @@
+%%% Seismic Refraction Tomography first break picking
+%%% Default settings
+%%% S. Pasquet - V24.07.16
 
-%%% S. Pasquet - V18.10.15
+matrelease=version('-release'); % Get matlab release
+wsl = ispc_wsl; % Check WSL
 
 %% A_TOMOpickfb settings
 % Main settings

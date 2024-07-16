@@ -1,24 +1,23 @@
-%%% TRAVELTIME TOMOGRAPHY PROCESSING
-%%% MODULE A : TOMOpickfb.m
-%%% S. Pasquet - V18.10.17
-%%% TOMOpickfb.m allows to pick first breaks and plot seismograms
+%%% Seismic Refraction Tomography first break picking
+%%% S. Pasquet - V24.07.16
+%%% Main script
+%%% SRT_pick.m allows to pick first breaks and plot seismograms
 
-run('tomo_defaultsettings');
+run('SRT_pick_defaultsettings');
 
 % Folder initialization
 dir_start=pwd;
+
 dir_img=fullfile(dir_start,'file.img');
 if exist(dir_img,'dir')~=7
     mkdir(dir_img);
 end
+
 dir_img_seismo=fullfile(dir_img,'seismo');
 if exist(dir_img_seismo,'dir')~=7
     mkdir(dir_img_seismo);
 end
-dir_xzv=fullfile(dir_start,'file.xzv');
-if exist(dir_xzv,'dir')~=7
-    mkdir(dir_xzv);
-end
+
 dir_mat=fullfile(dir_start,'file.mat');
 if exist(dir_mat,'dir')~=7
     mkdir(dir_mat);
@@ -69,9 +68,10 @@ end
 % Bandpass filter
 if filt==1
     sufilefilt=[sufile,'.filt'];
-    com1=sprintf('sufilter < %s f=%d,%d,%d,%d amps=1,1,0,0 > %s',...
-        sufile,fcutlow,fcuthigh-taper,fcuthigh,fcuthigh+taper,sufilefilt);
-    unix(com1);
+    sufilefilt_unix = unix_wsl_path(sufilefilt,wsl);
+    com1=sprintf('sufilter < %s f=%d,%d,%d,%d amps=0,1,1,0 > %s',...
+        sufile_unix,fcutlow,fcutlow+taper,fcuthigh-taper,fcuthigh,sufilefilt_unix);
+    unix_cmd(com1);
     sufileOK=sufilefilt;
 else
     sufileOK=sufile;
@@ -102,6 +102,7 @@ if save_src_off==1 && plot_pos==1 && (pick==1 || pick==2) && showplot==1
         [xMIN xMAX],[offMIN offMAX],[tMIN tMAX],xticks,offticks,tticks,[],[],[1 1 24 12],[],horex);
 end
 
+% Load existing picks
 pfbmatfile=fullfile(dir_mat,[lineName '.pfb.mat']); % Name of file to open %
 pfb_all = cell(NSx,1);
 if exist(pfbmatfile,'file')==2
@@ -109,24 +110,6 @@ if exist(pfbmatfile,'file')==2
     if length(pfb_all) ~= NSx
         pfb_all = [pfb_all;cell(NSx-length(pfb_all),1)];
     end
-else
-    for ix=1:NSx
-        pfbfile=fullfile(dir_pfb,[num2str(ix,shotnumformat),'.pfb.dat']); % Name of file to open %
-        if exist(pfbfile,'file')==2
-            aa=load(pfbfile);
-            pfb_all{ix}.sx = aa(1,2);
-            pfb_all{ix}.sz = aa(1,3);
-            pfb_all{ix}.ix = aa(1,4);
-            pfb_all{ix}.xpick = aa(2:end,2);
-            pfb_all{ix}.zpick = aa(2:end,3);
-            pfb_all{ix}.tpick = aa(2:end,4)*1000;
-            pfb_all{ix}.tshift = 0;
-        end
-    end
-    if exist(dir_pfb,'dir')==7
-        rmdir(dir_pfb,'s');
-    end
-    save(pfbmatfile,'pfb_all');
 end
 
 if (pick==1 || pick==2) && showplot==1
@@ -150,12 +133,6 @@ while i<length(Sxselec)
             fprintf(['\n  Picking shot located at ',num2str(sx),' m\n']);
         end
         
-        %         cor_fac = repmat(abs(xseis-sx),1,length(tseis));
-        %         cor_fac(cor_fac==0) = 0.25;
-        %         seismomat = (seismomat .* cor_fac);
-        %         seismomat = seismomat./repmat(max(seismomat,[],2),1,length(tseis));
-        %         seismomat = seismomat - repmat(mean(seismomat,2),1,length(tseis));
-        
         if ~exist('tMAX_pick','var') || isempty(tMAX_pick)
             tMAX_seis_tmp = max(tseis);
             tMAX_pick = max(tseis);
@@ -169,21 +146,13 @@ while i<length(Sxselec)
         else
             tMIN_seis_tmp = tMIN_pick;
         end
+        
         if isempty(pfb_all{ix})==0
-            tshift =  pfb_all{ix}.tshift;
-            
-            %             pfb_all{ix}.sx = sx;
-            %             pfb_all{ix}.sz = sz;
-            %             if length(pfb_all{ix}.xpick) == 96
-            %                 pfb_all{ix}.xpick = xseis;
-            %                 pfb_all{ix}.zpick = zseis;
-            %             else
-            %                 return
-            %             end
-            
+            tshift =  pfb_all{ix}.tshift;  
         else
             tshift = 0;
         end
+        
         if pick>=1
             ind_tseis=find(abs(tseis-tMAX_seis_tmp)==min(abs(tseis-tMAX_seis_tmp))); % Get index of tMAX_seis
             seismomat2=seismomat(:,1:ind_tseis);
@@ -193,6 +162,7 @@ while i<length(Sxselec)
                 seismomat2=seismomat2(:,1:2:end);
             end
         end
+        
         % Get shot acquisition setup param.
         dx1 = abs(diff(xseis));
         dx = median(dx1);
@@ -389,10 +359,7 @@ while i<length(Sxselec)
         fig1=plot_wiggle(0,polarity*seismomat2',xseis,tseis2,scal,clip,perc,fs,'Distance (m)','Time (ms)',...
             [xMIN xMAX],[tMIN_seis tMAX_seis],xticks,tseisticks,[0 0 seismo_size(1) seismo_size(2)],[]);
         file=fullfile(dir_img_seismo,[num2str(ix,shotnumformat),...
-            '_seismo.',imgform]);
-        %         hold on
-        %         plot(Gxpick(Sxpick == 0),Tpick(Sxpick==0),'r.','linewidth',2,'markersize',15);
-        
+            '_seismo.',imgform]);        
         save_fig(fig1,file,imgform,imgres,1);
         close(fig1)
     end
@@ -474,10 +441,33 @@ if exist('fig3','var')==1
     close(fig3);
 end
 
-pickfile = fullfile(dir_start,[sufile(1:end-3),'.dat']);
+save_all = 1;
+if save_all == 1
+    Gxpick = [];
+    Gzpick = [];
+    Sxpick = [];
+    Szpick = [];
+    Offpick = [];
+    Tpick = [];
+    for ix=1:NSx
+        if ~isempty(pfb_all{ix})
+            newGx=pfb_all{ix}.xpick(:);
+            newGz=pfb_all{ix}.zpick(:);
+            newSx=bsxfun(@plus,newGx*0,pfb_all{ix}.sx);
+            newSz=bsxfun(@plus,newGx*0,pfb_all{ix}.sz);
+            Gxpick=[Gxpick;newGx];
+            Gzpick=[Gzpick;newGz];
+            Sxpick=[Sxpick;newSx];
+            Szpick=[Szpick;newSz];
+            Offpick=[Offpick;newGx(:)-newSx];
+            Tpick=[Tpick;pfb_all{ix}.tpick(:)];
+        end
+    end
+end
+
+%%
 if save_picks == 1
-    % Save pick file for tomography code
-    fidb=fopen(pickfile,'wt'); % File opening %
+    input = [];
     ii=0;
     sources = unique([Sxpick,Szpick],'rows');
     nsx = size(sources,1);
@@ -490,7 +480,7 @@ if save_picks == 1
         zpick_tmp = [];
         tpick_tmp = [];
         
-        for ix=Sxselec
+        for ix=1:NSx
             if isempty(pfb_all{ix})==0
                 if ismember([pfb_all{ix}.sx,pfb_all{ix}.sz],[sx_tmp, sz_tmp],'rows')
                     xpick_tmp = [xpick_tmp(:); pfb_all{ix}.xpick(:)];
@@ -511,62 +501,30 @@ if save_picks == 1
         end
         
         ii=ii+1;
-        fprintf(fidb,'%d\t%f\t%f\t%f\t%d\n',0,sx_tmp,sz_tmp,ii,0);
+        input = [input;[0,sx_tmp,sz_tmp,ii,0]];
         nbpicks=length(tpick_single);
         
         for j=1:nbpicks
-            fprintf(fidb,'%f\t%f\t%f\t%f\t%f\n',ii,xpick_single(j),zpick_single(j),tpick_single(j)/1000,0.2*tpick_single(j)/1000);
+            input = [input;[ii,xpick_single(j),zpick_single(j),tpick_single(j)/1000,0.2*tpick_single(j)/1000]];
         end
     end
-    fclose(fidb);
-    save(pfbmatfile,'pfb_all');
 end
 
-% if save_picks == 1
-%     % Save pick file for tomography code
-%     fidb=fopen(pickfile,'wt'); % File opening %
-%     ii=0;
-%     for ix=Sxselec
-%         if isempty(pfb_all{ix})==0
-%             ii=ii+1;
-%             fprintf(fidb,'%d\t%f\t%f\t%f\t%d\n',0,pfb_all{ix}.sx,pfb_all{ix}.sz,ii,0);
-%             nbpicks=length(pfb_all{ix}.tpick);
-% %                         [xpick_tmp,I] = sort(pfb_all{ix}.xpick);
-% %                         zpick_tmp = pfb_all{ix}.zpick(I);
-% %                         tpick_tmp = pfb_all{ix}.tpick(I);
-%             xpick_tmp = pfb_all{ix}.xpick;
-%             zpick_tmp = pfb_all{ix}.zpick;
-%             tpick_tmp = pfb_all{ix}.tpick;
-%             for j=1:nbpicks
-%                 fprintf(fidb,'%f\t%f\t%f\t%f\t%f\n',ii,xpick_tmp(j),zpick_tmp(j),tpick_tmp(j)/1000,0.2*tpick_tmp(j)/1000);
-%             end
-%         end
-%     end
-%     fclose(fidb);
-%     save(pfbmatfile,'pfb_all');
-% end
+%%
+if save_picks == 1
+    pickfile_GIMLI = fullfile(dir_start,[sufile(1:end-3),'.sgt']);
+    save_pygimli(pickfile_GIMLI,Gx,Gz,Sx,Sz,Gxpick,Gzpick,Sxpick,Szpick,Tpick,err_pc,err_val,err_val_min,err_val_max);
+    save(pfbmatfile,'pfb_all');
+end
 
 if pick==0
     fprintf('\n  **********************************************************');
     fprintf('\n  **********************************************************\n');
 end
 
-if exist(pickfile,'file') == 2
-    input = load(pickfile); % Traveltime file
-    if ~isempty(input)
-        [Tpick, Sxpick, Szpick, Gxpick, Gzpick, Offpick] = readpicks(input);
-    end
-end
-
-%%
-pickfile_GIMLI = fullfile(dir_start,[sufile(1:end-3),'.sgt']);
-if save_picks == 1
-    save_pygimli(pickfile_GIMLI,Gx,Gz,Sx,Sz,Gxpick,Gzpick,Sxpick,Szpick,Tpick,err_pc,err_val,err_val_min,err_val_max);
-end
-
 %%
 test_surf = [];
-if save_src_off==1 && ~isempty(input)
+if save_src_off==1 && ~isempty(Gxpick)
     array = check_depth_array(Gx,Gz,Sx,Sz);
     for i = 1:4
         if ~isempty(array{i})
@@ -631,16 +589,8 @@ if save_src_off==1 && ~isempty(Sxpick) && length(unique(Sxpick))>1 && ~isempty(t
     [xx,zz,xzv,nodes,MP,input] = genmesh(input,topo,dx/2,[dx/2 dx],maxdepth,dl,1,10,1,0);
     
     [F2, pseudo_X, pseudo_Z, pseudo_V] = tt2velinit_new(Tpick, Sxpick + xshift, Szpick, Gxpick + xshift, Gzpick, 0, 0.2, 2);
-    
-    %     [F2, pseudo_X, pseudo_Z, pseudo_V] = tt2velinit_slope(array, input, xshift, 0);
     [xzvfinal, xi, zi, vi_filt] = vel2xzvtomo(xx,xzv,F2,[],[],0);
     
-    %         fig3=plot_scat([],pseudo_X,pseudo_Z,pseudo_V,marker,markersize,1,map1,...
-    %         axetop,0,1,fs,'Distance (m)','Altitude (m)',[velocity,' (m/s)'],...
-    %         [xMIN xMAX],[zMIN zMAX],[vMIN vMAX],xticks,zticks,vticks,[],[],[1 1 24 12],[],1);
-    %     hold on
-    %     plot(topo(:,1),topo(:,2),'k-','linewidth',2);hold off;
-    %                         return
     f1=plot_img(showplot,xi-xshift,zi,vi_filt,map2,axetop,0,1,fs,'Distance (m)',...
         'Altitude (m)',[velocity,' (m/s)'],[xMIN xMAX],[zMIN zMAX],...
         [vMIN vMAX],xticks,zticks,vticks,[],[],vISO,[1 20 24 12],[],vertex,blocky);
@@ -654,19 +604,16 @@ if save_src_off==1 && ~isempty(Sxpick) && length(unique(Sxpick))>1 && ~isempty(t
     if showplot >= 1
         showplot = showplot+1;
     end
-    
-    filexzv=fullfile(dir_xzv,[lineName,'_pseudomodel.xzv']);
-    dlmwrite(filexzv,[xi(:)-xshift,zi(:),vi_filt(:)],',');
 end
 %%
-if save_src_off==1 && ~isempty(input)
+% Plot picked traveltimes
+if save_src_off==1 && ~isempty(Gxpick)
     for i = 1:4
         if ~isempty(array{i})
             f4=plot_curv(showplot,[],NaN,NaN,'.-','k',1,0,0,0,fs+4,'Distance (m)','Traveltime (ms)',[],...
                 [xMIN xMAX],[tMIN tMAX],[],xticks,tticks,[],[],[],[1 24 30 10],[]);
-            % Plot picked traveltimes
             hold on;
-            for ix=Sxselec
+            for ix=1:NSx
                 if ~isempty(pfb_all{ix})
                     IGpick = ismember([pfb_all{ix}.xpick(:) pfb_all{ix}.zpick(:)],array{i}.G_sing,'rows');
                     ISpick = ismember([pfb_all{ix}.sx pfb_all{ix}.sz],array{i}.S_sing,'rows');
@@ -679,7 +626,6 @@ if save_src_off==1 && ~isempty(input)
             end
             hold off
             file = fullfile(dir_img,sprintf('%s_traveltimes_obs%i.%s',sufile(1:end-3),i,imgform));
-            %             file=fullfile(dir_img,[sufile(1:end-3),'_traveltimes_obs.',imgform]);
             save_fig(f4,file,imgform,imgres,1);
             if showplot >= 1
                 showplot = showplot+1;
@@ -690,5 +636,5 @@ end
 %%
 % Remove filtered SU file
 if filt==1
-    unix(['rm -f ',sufilefilt]);
+    unix_cmd(['rm -f ',sufilefilt]);
 end
