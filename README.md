@@ -2,6 +2,10 @@
 Surface-Wave dispersion Inversion and Profiling software
 Installation instructions and manual are stored in SWIP/docs/manual
 
+# What's new
+- Works under Windows 10 or higher with the Windows Subsystem for Linux
+- Includes a first arrival picking tool for Seismic Refraction Tomography (saves in .sgt format for [pyGIMLi](https://www.pygimli.org/))
+
 # Installation
 
 1. Install MATLAB
@@ -11,5 +15,5 @@ to your MATLAB path
 4. (Mac OS user only) Install Xcode, Homebrew and gnu-tar
 5. Install Seismic Unix (https://github.com/JohnWStockwellJr/SeisUnix)
 6. Install Geospy (http://www.geopsy.org/download.php)
-7. Install SU extra binaries located in SWIP/src
+7. Install SU extra binaries located in SWIP/src (for Mac users, install seg2segy located in Seismic Unix's third party)
 8. (Optional) Install ImageMagick, PDFjam, and pdfcrop
