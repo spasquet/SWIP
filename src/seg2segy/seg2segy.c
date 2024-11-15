@@ -34,7 +34,7 @@
 	-partial addition of structures to handle the keywords and headers.
 	but I eventually gave up.
 
-	$Id: seg2segy.c,v 1.2 2003/02/06 19:05:45 pm Exp $
+	$Id: seg2segy.c,v 1.7 2022/04/13 17:48:50 john Exp john $
 
 	Changes:
 	Feb 96.  Trace header was not being written out with swap on bytes above
@@ -63,6 +63,15 @@
 	file altogether!
 
 	$Log: seg2segy.c,v $
+	Revision 1.7  2022/04/13 17:48:50  john
+	removed extra comment 
+
+	Revision 1.6  2019/12/10 18:40:34  john
+	changed tmpnam to mkstemp
+
+	Revision 1.5  2019/12/10 17:57:25  john
+	changed long to int and ld to d
+
 	Revision 1.2  2003/02/06 19:05:45  pm
 	fixed sawtooth on 20bit packed data conversion case 3
 	
@@ -110,6 +119,11 @@
 #define MAXKEYWORDS 100
 #define MAXPARMS 10
 
+/* Forward declaration for swab function */
+#ifndef __MSDOS__
+void swab(const void *from, void *to, ssize_t n);
+#endif
+
 /* global data... */
 short int segyreelheader[1800];
 int totalkeys;
@@ -136,10 +150,10 @@ swapshort (short *si)
 }
 
 void
-swaplong (long *li)
+swapint (int *li)
 {
 	short sl, sh;
-	long temp, temp1;
+	int temp, temp1;
 	temp = *li;
 	sl = temp & 0x0000ffff;
 	sh = (temp >> (8 * sizeof (short))) & 0x0000ffff;
@@ -153,15 +167,15 @@ swaplong (long *li)
 }
 
 void
-float_to_ibm(long from[], long to[], long n)
+float_to_ibm(int from[], int to[], int n)
 {
-	register long fconv, fmant, ii, t;
+	register int fconv, fmant, ii, t;
 
 	for (ii=0;ii<n;++ii) {
 	fconv = from[ii];
 	if (fconv) {
 	fmant = (0x007fffff & fconv) | 0x00800000;
-	t = (long) ((0x7f800000 & fconv) >> 23) - 126;
+	t = (int) ((0x7f800000 & fconv) >> 23) - 126;
 	while (t & 0x3) { ++t; fmant >>= 1; }
 	fconv = (0x80000000 & fconv) | (((t>>2) + 64) << 24) | fmant; 
 	} 
@@ -201,7 +215,7 @@ parseSegyKeys(FILE *keyfptr, SegyKeyTable *keywords)
 	while (fgets (input, STRINGWIDTH, keyfptr)) {
 	j = 0;
 	if ( strlen(input) > (size_t)STRINGWIDTH) {
-	fprintf (stderr, "String too long!\n (line:%d)\n", __LINE__);
+	fprintf (stderr, "String too int!\n (line:%d)\n", __LINE__);
 	exit (-12);
 	}
 	/*  
@@ -301,20 +315,45 @@ char *defaults[] = {
 NULL};
 	char **defaultsptr=defaults;
 
+/*
 	char tmpfilename[L_tmpnam];
 	FILE *tmpfileptr;
-
-	tmpnam(tmpfilename);
+#ifdef __MSDOS__
+	* MSDOS doesn't seem to have a tmpnam_s() so continue to use the tmpnam() 
+         * function.  tmpnam_s() is available on WIN32 with possible code:
+         * errno_t err;
+         * err = tmpnam_s(tmpfilename, L_tmpnam);
+         * if (err)
+         * {
+         * printf("Error occurred creating temp file.\n");
+         * exit(1);
+         * }
+        *
+        tmpname(tmpfilename);
+#else
+        mkstemp(tmpfilename);
+#endif
 	tmpfileptr=fopen(tmpfilename, "w");
+*/
+
+	FILE *tmpfileptr;
+	char template_name[]="/tmp/cmguiXXXXXX";
+	int temp_fd;
+
+	temp_fd=mkstemp(template_name);
+	tmpfileptr=fdopen(temp_fd,"w");
+
 	/*fwrite(defaults, sizeof(char), strlen(defaults), tmpfileptr); */
 
 	while(*defaultsptr) fprintf(tmpfileptr,"%s\n", *defaultsptr++);
 
-	tmpfileptr=freopen(tmpfilename,"r",tmpfileptr);
+/*	 tmpfileptr=freopen(tmpfilename,"r",tmpfileptr); */
+
+	tmpfileptr=freopen(template_name,"r",tmpfileptr);
 
 	parseSegyKeys(tmpfileptr, keywords);
 	fclose(tmpfileptr);
-	remove(tmpfilename);
+/*	remove(tmpfilename); */
 	
 }        /* end loadSegyKeyTableDefaults() */
 
@@ -491,7 +530,7 @@ keycheck (SegyKeyTable *keywords)
 	/* this case calls for the input data to be inserted into the 
 	 * sepcified header location of parms 2-10. The normal 
 	 * 'header' location indicates the type of data, 0=int, 
-	 * 1=long int, 2=floating point. Parm 1 is the multiplier. */
+	 * 1=int int, 2=floating point. Parm 1 is the multiplier. */
 	token = strtok (string1, " ");
 	/* do the integer case first */
 	if (keywords[i].segyheader == 0) {
@@ -505,20 +544,20 @@ keycheck (SegyKeyTable *keywords)
 		token = strtok (NULL, " ");  /* token points next input char. */
 		}
 	}
-		/* do the long integer case next */
+		/* do the int integer case next */
 	else if (keywords[i].segyheader == 1) {
 		int paramcount = 1;
 		int headindex;
-		long *outpoint;
+		int *outpoint;
 		token = strtok (NULL, " ");    /* token points to input char. */
 		while (token != NULL && paramcount < 10) {
 		/* set outpoint to beginning of WORD of interest */
 		/* need to subtract 2 from the location value. */
 		headindex = keywords[i].segyparms[paramcount] - 2;
-		outpoint = (long *) &outhead[headindex];
+		outpoint = (int *) &outhead[headindex];
 		/* outpoint now points to the area of interest and is 
 		 * typed correctly. Compute the value, cast it and send it in. */
-		outpoint[0] = (long) (atof (token) * keywords[i].segyparms[0]);
+		outpoint[0] = (int) (atof (token) * keywords[i].segyparms[0]);
 		paramcount++;
 		token = strtok (NULL, " ");  /* token points next input char. */
 		}
@@ -608,22 +647,22 @@ main (int argc, char *argv[])
 	short int first = 1;
 	size_t l,ln;
 	unsigned short int blockleng;
-	long tracepointers[MAXTRACES];
-	long outbuf[MAXSAMP];
-	long *outheadl=NULL;
-	unsigned long numsamples, datalength;
+	int tracepointers[MAXTRACES];
+	int outbuf[MAXSAMP];
+	int *outheadl=NULL;
+	unsigned int numsamples, datalength;
 	FILE *f1=NULL, *f2=NULL;
 	SegyKeyTable keywords[MAXKEYWORDS];
 
 	double dinbuf[MAXSAMP];
 	float *finbuf = (float *)dinbuf;
-	long *linbuf = (long *)dinbuf;
+	int *linbuf = (int *)dinbuf;
 	short int *iinbuf = (short int *)dinbuf;
 	unsigned char *cinbuf = (unsigned char *)dinbuf;
 
 	float scale=1;
 
-	outheadl = (long *) &outhead[0];
+	outheadl = (int *) &outhead[0];
 	for (i = 0; i < 1800; i++) segyreelheader[i] = 0;
 
 	if (argc < 3 || argc > 4) { 
@@ -709,7 +748,7 @@ main (int argc, char *argv[])
 	fread (tracepointers, 4, numtrace, f1);
 	if (reversed) {
 	for (i = 0; i < numtrace; i++)
-	swaplong (&tracepointers[i]);
+	swapint (&tracepointers[i]);
 	}
 
 	/* now read file descriptor block.  */
@@ -745,18 +784,16 @@ main (int argc, char *argv[])
 	    swapshort ((short *) &blockleng);
 	  fread (&datalength, 4, 1, f1);
 	  if (reversed)
-	    swaplong ((long *) &datalength);
+	    swapint ((int *) &datalength);
 	  fread (&numsamples, 4, 1, f1);
 	  if (reversed)
-	   swaplong ((long *) &numsamples);
+	   swapint ((int *) &numsamples);
 	if (numsamples >= MAXSAMP){ 
 	fprintf(stderr, "Your data contains more samples than I can handle\n");
 	exit(-8);
 	}
 	  fread (&datatype, 1, 1, f1);
-/*Commented by SP - 01/18/16*/
-/*	  fprintf(stderr,"Data type = %d \n", (int) datatype);*/
-/*Commented by SP - 01/18/16*/
+	  fprintf(stderr,"Data type = %d \n", (int) datatype);
 	  if (datatype > 5 || datatype < 1) {
 	    fprintf (stderr,"Data type %d not available/valid\n", (int) datatype);
 	    break;
@@ -790,16 +827,16 @@ main (int argc, char *argv[])
 		fread (linbuf, 4, (int) numsamples, f1);
 		if (reversed) {
 		for (i = 0; i < (int) numsamples; i++)
-		swaplong (&linbuf[i]);
+		swapint (&linbuf[i]);
 		}
 		for (k = 0; k < numsamples; k++)
 		  outbuf[k] = linbuf[k];
 		break;
 	case 3:
 	{
-		unsigned long totalbytes, subpointer;
+		unsigned int totalbytes, subpointer;
 		unsigned int expo;
-		long longdat;
+		int intdat;
 		short int sdata; /*modified version by PM */
 		totalbytes = (numsamples * 5) / 2;
 		fread (cinbuf, 1, (size_t) totalbytes, f1);
@@ -809,12 +846,12 @@ main (int argc, char *argv[])
 		expo = (unsigned) iinbuf[subpointer++];
 		for (i = 0; i < 4; i++) {
 		if (0x8000 & iinbuf[subpointer]) 
-		longdat = 0xffff8000;
+		intdat = 0xffff8000;
 		else 
-		longdat = 0;
-		longdat = longdat | ((long) iinbuf[subpointer++] << (0x000f & expo));
+		intdat = 0;
+		intdat = intdat | ((int) iinbuf[subpointer++] << (0x000f & expo));
 		expo >>= 4;
-		outbuf[k++] = longdat;
+		outbuf[k++] = intdat;
 		}
 		}
 		*/
@@ -827,53 +864,50 @@ main (int argc, char *argv[])
 	                sdata=iinbuf[subpointer++];
                      		 if (sdata>0) 
                          	  	{       
-                                	longdat=(long) sdata;
-                                	longdat=longdat << (0x000f & expo);
+                                	intdat=(int) sdata;
+                                	intdat=intdat << (0x000f & expo);
                         	   	}       
                 	        	else    
                          	{       
-                               	 	longdat=(long) -sdata; 
-                                	longdat=longdat <<  (0x000f & expo);
-                              	  	longdat = -longdat; 
+                               	 	intdat=(int) -sdata; 
+                                	intdat=intdat <<  (0x000f & expo);
+                              	  	intdat = -intdat; 
                          	 	} /* endif */ 
                 		expo >>= 4;
-		outbuf[k++] = longdat;
+		outbuf[k++] = intdat;
                 	} /* next i */
         	} /* next k */
 		/* end of modifications */
 		if (reversed) {
 		for (i = 0; i < numsamples; i++)
-		swaplong (&outbuf[i]);
+		swapint (&outbuf[i]);
 		}
 	}
 	break;
 	case 4:
-/*Commented by SP - 01/18/16*/
-/*	fprintf(stderr,"Reading type 4/n");*/
-/*Commented by SP - 01/18/16*/
+	fprintf(stderr,"Reading type 4/n");
 	fread (finbuf, 4, (int) numsamples, f1);
 		if (reversed) {
-		long *buf = (long *) dinbuf;
+		int *buf = (int *) dinbuf;
 		for (i = 0; i < numsamples; i++)
-		swaplong (&buf[i]);
+		swapint (&buf[i]);
 		}
 
 		/* scale values */
 		for (k = 0; k < numsamples; k++) 
 		outbuf[k] = finbuf[k]/scale;
 
-/*Commented by SP - 01/18/16*/
-/*		for (k = 0; k < numsamples; k++) */
-/*		fprintf(stderr,"dataval = %ld \n", outbuf[k]); */
-/*		fprintf(stderr," if dataval = 0 then increase the value of scale, recompile\n");*/
-/*Commented by SP - 01/18/16*/
+		for (k = 0; k < numsamples; k++) 
+		fprintf(stderr,"dataval = %d \n", outbuf[k]); 
+
+		fprintf(stderr," if dataval = 0 then increase the value of scale, recompile\n");
 		break;
 	case 5:
 	fread (dinbuf, 8, (int) numsamples, f1);
 		if (reversed) {
-		long *buf = (long *) dinbuf;
+		int *buf = (int *) dinbuf;
 		for (i = 0; i < numsamples * 2; i++)
-		swaplong (&buf[i]);
+		swapint (&buf[i]);
 		}
 		for (k = 0; k < numsamples; k++)
 		outbuf[k] = dinbuf[k];
@@ -889,7 +923,7 @@ main (int argc, char *argv[])
 			outbuf[i]*=gain/outhead[15];
 	*/
 		/* assign the original field record number as the current file number */
-		if (outheadl[2] == 0) outheadl[2] = (long) curf;
+		if (outheadl[2] == 0) outheadl[2] = (int) curf;
 		/* set trace type  as  sesmic data */
 		if (outhead[14] == 0) outhead[14] = 1;
 
@@ -901,10 +935,10 @@ main (int argc, char *argv[])
 
 		/* from rec-station-number and source-station-number (93 and 94) */
 		/* distance from source to receiver */
-		/* outheadl[9]=(long)(abs(outhead[93]-outhead[92])); */
+		/* outheadl[9]=(int)(abs(outhead[93]-outhead[92])); */
 		/* set group for trace one and roll switch position  */
 		outhead[85] = outhead[86] = 
-		(int) (1 + labs ((long) outhead[92] - outheadl[3]));
+		(int) (1 + labs ((int) outhead[92] - outheadl[3]));
 
 		/* special case, execute on first pass only... */
 		if (first == 1) {
@@ -919,7 +953,7 @@ main (int argc, char *argv[])
 		if (!reversed) /* swap only if we are on a little endian  machine */
 		{  
 			for (k = 1600; k < 1606; k += 2)
-			swaplong ((long *)&segyreelheader[k]);
+			swapint ((int *)&segyreelheader[k]);
 		  for (k = 1606; k < 1630; k++)
 		    swapshort((short *)&segyreelheader[k]);
 		}
@@ -927,13 +961,13 @@ main (int argc, char *argv[])
 		}
 
 		if (!reversed) { /* swap only if we are on a little endian  machine */
-		/* first swap longs */
+		/* first swap ints */
 		for (k = 0; k < 7; k++)
-			swaplong((long *)&outheadl[k]);
+			swapint((int *)&outheadl[k]);
 		for (k = 9; k < 17; k++)
-		  swaplong((long *)&outheadl[k]);
+		  swapint((int *)&outheadl[k]);
 		for (k = 18; k < 22; k++)
-		  swaplong((long *)&outheadl[k]);
+		  swapint((int *)&outheadl[k]);
 		/* now swap the shorts */ 
 		for (k = 14; k < 18; k++)
 		  swapshort((short *)&outhead[k]);
@@ -949,7 +983,7 @@ main (int argc, char *argv[])
 		}
 		if (!reversed) {
 	for (k = 0; k < numsamples; k++)
-		swaplong ((long *)&outbuf[k]);
+		swapint ((int *)&outbuf[k]);
 	}
 	
 	if ((int) numsamples != (k = fwrite (outbuf, 4, (int) numsamples, f2))) {

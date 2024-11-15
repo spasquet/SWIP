@@ -5,25 +5,15 @@ i=$1
 cd supomegal
 make remake
 
-# It seems that the following doesn't work on Ubuntu > 18.04
-# Use seg2segy in SU repository instead (in $CWPROOT/src/Third_Party/seg2segy)
+# I tried compiling seg2segy from SU repository (in $CWPROOT/src/Third_Party/seg2segy)
+# As it didn't work right away in Ubuntu 24.04, I added the following code to seg2segy.c at line 122, and include the modified code in SWIP
 
-# cd ../seg2segy
-# if [ $i == 32 ]
-# then
-# mv makefile.32 makefile
-# make remake
-# mv makefile makefile.32
-# elif [ $i == 64 ]
-# then
-# mv makefile.64 makefile
-# make remake
-# mv makefile makefile.64 
-# else
-# echo "Using 64 bits per default"
-# mv makefile.64 makefile
-# make remake
-# mv makefile makefile.64 
-# fi
+# /* Forward declaration for swab function */
+# #ifndef __MSDOS__
+# void swab(const void *from, void *to, ssize_t n);
+# #endif
+
+cd ../seg2segy
+make remake
 
 cd ..
