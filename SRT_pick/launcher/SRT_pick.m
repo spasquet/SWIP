@@ -67,4 +67,4 @@ vMAX          = [];        % Max. pseudo-velocity (m/s)
 %%% END OF INITIALIZATION %%%
 %%%-----------------------%%%
 
-run('A_TOMOpickfb_script');
+run('SRT_pick_script');

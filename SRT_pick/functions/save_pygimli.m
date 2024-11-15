@@ -19,6 +19,20 @@ if ~exist('err_val_max','var') || isempty(err_val_max)
     err_val_max = 1e6;
 end
 
+% Convert arrays to table
+T = table(Sx, Gx, Sz, Gz);
+Tpick = table(Sxpick, Gxpick, Szpick, Gzpick, Tpick);
+
+% Sort by Sx and then by Gx
+T = sortrows(T, {'Sx', 'Gx'});
+
+% Sort by Sxpick and then by Gxpick
+Tpick = sortrows(Tpick, {'Sxpick', 'Gxpick'});
+
+% Convert back to arrays
+Sx = T.Sx; Gx = T.Gx; Sz = T.Sz; Gz = T.Gz;
+Sxpick = Tpick.Sxpick; Gxpick = Tpick.Gxpick; Szpick = Tpick.Szpick; Gzpick = Tpick.Gzpick; Tpick = Tpick.Tpick;
+
 % Save pick file for pyGIMLI
 fidb=fopen(pickfile_GIMLI,'wt'); % File opening %
 array = check_depth_array(Gx,Gz,Sx,Sz);
