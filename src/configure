@@ -4,22 +4,26 @@ i=$1
 
 cd supomegal
 make remake
-cd ../seg2segy
-if [ $i == 32 ]
-then
-mv makefile.32 makefile
-make remake
-mv makefile makefile.32
-elif [ $i == 64 ]
-then
-mv makefile.64 makefile
-make remake
-mv makefile makefile.64 
-else
-echo "Using 64 bits per default"
-mv makefile.64 makefile
-make remake
-mv makefile makefile.64 
-fi
+
+# It seems that the following doesn't work on Ubuntu > 18.04
+# Use seg2segy in SU repository instead (in $CWPROOT/src/Third_Party/seg2segy)
+
+# cd ../seg2segy
+# if [ $i == 32 ]
+# then
+# mv makefile.32 makefile
+# make remake
+# mv makefile makefile.32
+# elif [ $i == 64 ]
+# then
+# mv makefile.64 makefile
+# make remake
+# mv makefile makefile.64 
+# else
+# echo "Using 64 bits per default"
+# mv makefile.64 makefile
+# make remake
+# mv makefile makefile.64 
+# fi
 
 cd ..
