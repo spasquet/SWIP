@@ -245,18 +245,18 @@ else % Semi-automatic parameterization
                     [freqresamp,vresamp,deltaresamp,modes]=targ2pvc(nametarg);
                     npvc=length(modes);
                     lmaxpicktmp=zeros(npvc,1);
-                    for ip=1%:npvc
+                    iip = 0;
+                    for ip=modes
+                        iip = iip + 1;
                         % Resample in lambda or frequency
-                        [freqresamp{modes(ip)+1},vresamp{modes(ip)+1},deltaresamp{modes(ip)+1}]=...
-                            resampvel(freqresamp{modes(ip)+1},vresamp{modes(ip)+1},...
-                            deltaresamp{modes(ip)+1},resampvec,sampling,1);
-                        lmaxpicktmp(ip)=max(vresamp{modes(ip)+1}./freqresamp{modes(ip)+1});
-                        if ip == 1
-                            meanveresamp = vresamp{ip};
-                            meandeltaresamp = deltaresamp{ip};
-                        else
-                            meanveresamp = nanmin([meanveresamp;vresamp{ip}]);
-                            meandeltaresamp = nanmean([meandeltaresamp;deltaresamp{ip}]);
+                        [freqresamp{ip+1},vresamp{ip+1},deltaresamp{ip+1}]=...
+                            resampvel(freqresamp{ip+1},vresamp{ip+1},...
+                            deltaresamp{ip+1},resampvec,sampling,1);
+                        lmaxpicktmp(iip)=max(vresamp{ip+1}./freqresamp{ip+1});
+                        if ~isempty(vresamp{ip+1})
+                            meanveresamp = vresamp{ip+1};
+                            meandeltaresamp = deltaresamp{ip+1};
+                            break
                         end
                     end
                     lmaxpick(ix)=max(lmaxpicktmp);

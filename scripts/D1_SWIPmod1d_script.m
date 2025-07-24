@@ -282,7 +282,6 @@ if usevptomo==1 || tomo==1
         fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
-            pois_test = 0.4;
             VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1));
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   No Vs model file selected - Use Poisson''s ratio of %1.2f',pois_test);
@@ -680,7 +679,7 @@ for ix=Xmidselec
             end
             if isempty(rhoMIN)==1
                 flagrho=1;
-                rhoMIN=1800; rhoMAX=1800;
+                rhoMIN=Rhomin; rhoMAX=Rhomax;
             end
             dinsave(filevel,ztomo,vptomo,vstomo,mean([rhoMIN,rhoMAX]));
             if flagrho==1

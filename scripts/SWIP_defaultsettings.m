@@ -1034,4 +1034,7 @@ end
 if exist('auxtitle','var')==0 || isempty(auxtitle)==1
     auxtitle=' ';
 end
-
+% Test Poisson's ratio
+if exist('pois_test','var')==0 || isempty(pois_test)==1
+    pois_test=0.45;
+end

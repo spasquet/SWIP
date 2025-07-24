@@ -286,7 +286,6 @@ if ((input_vel==1 && usevptomo==1) || input_vel==2) && (plot2dcal==1 || plothist
         fprintf('\n  Select Vs model file (cancel to skip Vs)\n');
         [filevel,pathvel]=uigetfile({'*.model;*.dat;*.xzv;*.txt'},'Select Vs model (cancel if no Vs model available)');
         if pathvel==0
-            pois_test = 0.4;
             VsItomo=sqrt(VpItomo.^2/((1/(1-2*pois_test))+1));
             fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             fprintf('\n   No Vs model file selected - Use Poisson''s ratio of %1.2f',pois_test);
@@ -666,7 +665,7 @@ for ix=Xmidselec
             elseif input_vel==2 && isempty(vptomo)~=1 && isempty(vstomo)~=1
                 if isempty(rhoMIN)==1
                     flagrho=1;
-                    rhoMIN=1800; rhoMAX=1800;
+                    rhoMIN=Rhomin; rhoMAX=Rhomax;
                 else
                     flagrho=0;
                 end
