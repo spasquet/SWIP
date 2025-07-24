@@ -1567,6 +1567,7 @@ if sum(modexist)>0
                     unix_cmd(sprintf('composite %s %s -gravity NorthWest %s',filevsmask_unix,filevs_unix,filevs_unix));
                 end
             delete(filevsmask);
+            end
         end
         fprintf(['\n      Saved as ',filevs_unix,'\n']);
         

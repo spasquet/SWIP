@@ -532,16 +532,19 @@ for ix=Xmidselec
             % Read velocity file
             modvel=dlmread(filevel,'',1,0);
             moddepth=[0;cumsum(modvel(:,1))];
-            if exist(filemin,'file')==2 && exist(filemax,'file')==2
-                modmin = dlmread(filemin,'',1,0);
-                modmax = dlmread(filemax,'',1,0);
-                modstd = modmax;
-                %%% A checker !
-                %                 modstd(:,3) = max([abs(modmax(:,3)-modvel(:,3)),abs(modmin(:,3)-modvel(:,3))],[],2);
-                modstd(:,2) = (modmax(:,2)-modmin(:,2));  
-                modstd(:,3) = (modmax(:,3)-modmin(:,3));
-            elseif exist(filestd,'file')==2
+%             if exist(filemin,'file')==2 && exist(filemax,'file')==2
+%                 modmin = dlmread(filemin,'',1,0);
+%                 modmax = dlmread(filemax,'',1,0);
+%                 modstd = modmax;
+%                 %%% A checker !
+%                 %                 modstd(:,3) = max([abs(modmax(:,3)-modvel(:,3)),abs(modmin(:,3)-modvel(:,3))],[],2);
+%                 modstd(:,2) = (modmax(:,2)-modmin(:,2));  
+%                 modstd(:,3) = (modmax(:,3)-modmin(:,3));
+%             else
+            if exist(filestd,'file')==2
                 modstd=dlmread(filestd,'',1,0);
+                modmin = modvel-modstd;
+                modmax = modvel+modstd;
             else
                 modstd = modvel;
                 modstd(:,2:4) = modstd(:,2:4).*0.2;

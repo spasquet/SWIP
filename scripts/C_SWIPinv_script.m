@@ -65,16 +65,27 @@ nshot=xmidparam.nshot;
 
 if inversion==1 % Get parameterization file and create folders to store inversion results
     if paramtype==0
-        % Select user-defined parameterization file
-        fprintf('\n  Select parameterization file\n');
-        [paramfile,parampath]=uigetfile(fullfile(dir_param,'*.param'),...
-            'Select parameterization file');
-        if paramfile==0
-            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-            fprintf('\n   Please select a parameterization file');
-            fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
-            return
+        % Get a list of all .param files in the specified directory
+        paramFiles = dir(fullfile(dir_param, '*.param'));
+        
+        if length(paramFiles) == 1
+            paramfile = paramFiles(1).name;    % Get the name of the unique file
+            parampath = dir_param;             % The path is the directory we searched
+            fprintf('  Auto selection: %s\n', paramfile);
+        else
+        
+            % Select user-defined parameterization file
+            fprintf('\n  Select parameterization file\n');
+            [paramfile,parampath]=uigetfile(fullfile(dir_param,'*.param'),...
+                'Select parameterization file');
+            if paramfile==0
+                fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                fprintf('\n   Please select a parameterization file');
+                fprintf('\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n');
+                return
+            end
         end
+        
         paramname=fullfile(parampath,paramfile);
         % Inversion folder named after parameterization file
         dir_rep_inv=fullfile(dir_inv,paramfile(1:end-6));
