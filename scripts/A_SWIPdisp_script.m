@@ -767,7 +767,7 @@ while i<length(Xmidselec)
                         % Stack current dispersion image with previous stack file
                         dspfile_sum_inter=[dspfile_sum,'.new'];
                         dspfile_sum_inter_unix = unix_wsl_path(dspfile_sum_inter,wsl);
-                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_unix,dspfile_unix,dspfile_sum_inter_unix);
+                        com1=sprintf('suop2 %s %s op=sum > %s',dspfile_sum_unix,dspfile_unix,dspfile_sum_inter_unix);
                         unix_cmd(com1);
                         movefile(dspfile_sum_inter,dspfile_sum);
                         
