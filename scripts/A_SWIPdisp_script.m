@@ -660,7 +660,7 @@ while i<length(Xmidselec)
                         [F_grid, V_grid] = meshgrid(f, v);
                         v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
                         alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
-                        dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                        dspmat(alias_mask') = NaN;  % Apply mask (transpose because dspmat is f x v)
                         
                         if normalize > 0
                             % Normalize the masked matrix at each frequency
@@ -832,7 +832,7 @@ while i<length(Xmidselec)
                                 [F_grid, V_grid] = meshgrid(f, v);
                                 v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
                                 alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
-                                dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                                dspmat(alias_mask') = NaN;  % Apply mask (transpose because dspmat is f x v)
                                 
                                 if normalize > 0
                                     % Normalize the masked matrix at each frequency
@@ -978,7 +978,7 @@ while i<length(Xmidselec)
                 [F_grid, V_grid] = meshgrid(f, v);
                 v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
                 alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
-                dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                dspmat(alias_mask') = NaN;  % Apply mask (transpose because dspmat is f x v)
                 
                 if normalize > 0
                     % Normalize the masked matrix at each frequency
@@ -1146,7 +1146,7 @@ while i<length(Xmidselec)
                     [F_grid, V_grid] = meshgrid(f, v);
                     v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
                     alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
-                    dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                    dspmat(alias_mask') = NaN;  % Apply mask (transpose because dspmat is f x v)
                     
                     if normalize > 0
                         % Normalize the masked matrix at each frequency
@@ -1493,6 +1493,14 @@ while i<length(Xmidselec)
                         [1 length(mappick)],fticks,Vphticks,[],[],flimsing,[],[],[],[],0);
                 end
                 hold on; cm_saturation(mappicksat);
+                
+                % Add aliasing boundary line
+                if plot_alias==1
+                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [0 0 0], 'linewidth', 2);
+                end
+                
                 if sampling==1
                     if auto_resamp == 1
                         max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -1520,13 +1528,7 @@ while i<length(Xmidselec)
                     set(gcf,'units','normalized','outerposition',[0.2 0 1 1]); % First monitor, full screen
                 end
 
-                % Add aliasing boundary line
-                if plot_alias==1
-                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
-                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
-                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
-                end
-                
+
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
