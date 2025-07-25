@@ -1038,3 +1038,15 @@ end
 if exist('pois_test','var')==0 || isempty(pois_test)==1
     pois_test=0.45;
 end
+% Plot aliasing line (=1) or not (=0)
+if exist('plot_alias','var')==0 || isempty(plot_alias)==1
+    plot_alias=1;
+end
+% Mask image under aliasing line (=1) or not (=0)
+if exist('mask_alias','var')==0 || isempty(mask_alias)==1
+    mask_alias=1;
+end
+% Rejected shots
+if exist('rejected_shots','var')==0 || isempty(rejected_shots)==1
+    rejected_shots=[];
+end

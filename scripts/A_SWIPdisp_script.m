@@ -622,6 +622,11 @@ while i<length(Xmidselec)
                 %%%% Loop over all selected shots %%%%
                 
                 for ks=1:nshot(ix,jw)
+                    if ismember(ks, rejected_shots)
+                        fprintf('\n  Rejected shot - Go to next shot\n');
+                        nshot(ix,jw)=nshot(ix,jw)-1;
+                        continue
+                    end
                     % Windowing, muting with SU and saving shot gather in .su file
                     seismofile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.su']);                    
@@ -649,6 +654,23 @@ while i<length(Xmidselec)
                     dspfile_unix = unix_wsl_path(dspfile,wsl);
                     [dspmat,f,v]=matpomegal(seismofile,1,nray,fmin,fmax,vmin,vmax,...
                         flip,xsca,tsca,0,dspfile,0);
+                    if mask_alias==1
+                        % Mask dspmat below aliasing boundary
+                        % Create aliasing boundary for each frequency-velocity pair
+                        [F_grid, V_grid] = meshgrid(f, v);
+                        v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                        alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
+                        dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                        
+                        if normalize > 0
+                            % Normalize the masked matrix at each frequency
+                            for ff = 1:length(f)
+                                if any(dspmat(ff,:)) % Check if there are non-zero values
+                                    dspmat(ff,:) = dspmat(ff,:) / max(dspmat(ff,:));
+                                end
+                            end
+                        end
+                    end
                     % Spectrogram calculation on shot gather and saving in .spec file
                     specfile=fullfile(dir_dat_xmid,[num2str(XmidT(ix),xmidformat),'.',...
                         num2str(winsize(jw)),'.',num2str(Sselec(ks)),'.spec']);
@@ -688,10 +710,10 @@ while i<length(Xmidselec)
                         end
                         % Plot single dispersion image
                         if plotdisp==1
-                            if Dlogscale==0
+                            if Dlogscale==0 || normalize == 0
                                 fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
                                     freqtitle_long,'Phase velocity (m/s)',...
-                                    'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                                    'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                                     [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                             else
                                 dspmatinv=1./(1-dspmat);
@@ -702,6 +724,13 @@ while i<length(Xmidselec)
                                     [],[],flimsing,[],[0 0 24 18],[]);
                             end
                             hold on; cm_saturation(map0sat);
+
+                            % Add aliasing boundary line
+                            if plot_alias==1
+                                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                            end
                             if Flogscale==1
                                 set(gca,'xscale','log');
                             end
@@ -718,7 +747,7 @@ while i<length(Xmidselec)
                         % Plot single spectrogram image
                         if plotspec==1
                             fig2=plot_img(showplot,fspec,xspec,specmat,flipud(map0),axetop,axerev,cb_disp,fs,...
-                                freqtitle_long,'Gx (m)','Norm. ampli.',[fMIN fMAX],[min(xspec) max(xspec)],...
+                                freqtitle_long,'Gx (m)','Amplitude',[fMIN fMAX],[min(xspec) max(xspec)],...
                                 [],[],[],[],[],[],[],[0 0 24 18],[],[],0);
                             hold on
                             if Flogscale==1
@@ -786,9 +815,34 @@ while i<length(Xmidselec)
                         if  plotstkdisp==1
                             dspfile_sum_stack=[dspfile_sum,'.stack'];
                             dspfile_sum_stack_unix = unix_wsl_path(dspfile_sum_stack,wsl);
-                            com1=sprintf('suop < %s op=norm > %s',dspfile_sum_unix,dspfile_sum_stack_unix);
-                            unix_cmd(com1);
+                            copyfile(dspfile_sum_unix,dspfile_sum_stack_unix);
+                            
+                            if normalize > 0
+                                matop(dspfile_sum_unix,'norm',flip,dspfile_sum_stack_unix); % Normalize stack
+                            end
+
+                            % com1=sprintf('suop < %s op=norm > %s',dspfile_sum_unix,dspfile_sum_stack_unix);
+                            % unix_cmd(com1);
+
                             [dspmat,f,v]=dsp2dat(dspfile_sum_stack,flip,0);
+
+                            if mask_alias==1
+                                % Mask dspmat below aliasing boundary
+                                % Create aliasing boundary for each frequency-velocity pair
+                                [F_grid, V_grid] = meshgrid(f, v);
+                                v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                                alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
+                                dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                                
+                                if normalize > 0
+                                    % Normalize the masked matrix at each frequency
+                                    for ff = 1:length(f)
+                                        if any(dspmat(ff,:)) % Check if there are non-zero values
+                                            dspmat(ff,:) = dspmat(ff,:) / max(dspmat(ff,:));
+                                        end
+                                    end
+                                end
+                            end
                             delete(dspfile_sum_stack);
                             dir_img_xmid_stack=fullfile(dir_img_stkdisp,['Xmid_',num2str(XmidT(ix),xmidformat)]);
                             if exist(dir_img_xmid_stack,'dir')~=7
@@ -803,10 +857,10 @@ while i<length(Xmidselec)
                                 flimsing=[];
                             end
                             fprintf(['\n  Plot and save intermediate stack ',num2str(j),'\n']);
-                            if Dlogscale==0
+                            if Dlogscale==0 || normalize == 0
                                 fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
                                     freqtitle_long,'Phase velocity (m/s)',...
-                                    'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                                    'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                                     [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                             else
                                 dspmatinv=1./(1-dspmat);
@@ -817,6 +871,14 @@ while i<length(Xmidselec)
                                     [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                             end
                             hold on; cm_saturation(map0sat);
+
+                            % Add aliasing boundary line
+                            if plot_alias==1
+                                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                            end
+
                             if Flogscale==1
                                 set(gca,'xscale','log');
                             end
@@ -909,6 +971,24 @@ while i<length(Xmidselec)
             [dspmat,f,v]=dsp2dat(dspfile_sum,flip,0);
             %         [flim(ix),~,specmat_all]=fmin_search(freqlim,specstruct,dir_dat,dt,specampmin,fminpick);
             [flim(ix),specmat_all]=fmin_search_disp(dispstruct,dir_dat,f,fminpick);
+
+            if mask_alias==1
+                % Mask dspmat below aliasing boundary
+                % Create aliasing boundary for each frequency-velocity pair
+                [F_grid, V_grid] = meshgrid(f, v);
+                v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
+                dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                
+                if normalize > 0
+                    % Normalize the masked matrix at each frequency
+                    for ff = 1:length(f)
+                        if any(dspmat(ff,:)) % Check if there are non-zero values
+                            dspmat(ff,:) = dspmat(ff,:) / max(dspmat(ff,:));
+                        end
+                    end
+                end
+            end
             
             specamp_mean = nanmean(specmat_all,2);
             specamp_std = nanstd(specmat_all,2);
@@ -963,10 +1043,10 @@ while i<length(Xmidselec)
 %                 for i = 1:length(nWvec_ok)
 %                      dspmat_test = dspmat_weight_win_gaussed(:,:,i);
 %                      fprintf('\n  Plot and save stacked dispersion image\n');
-%                      if Dlogscale==0
+%                      if Dlogscale==0 || normalize == 0
 %                          fig1=plot_img([],f,v,dspmat_test',mappick,axetop,axerev,cb_disp,fs,...
 %                              freqtitle_long,'Phase velocity (m/s)',...
-%                              'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+%                              'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
 %                              [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
 %                      else
 %                          dspmatinv=1./(1-dspmat_test);
@@ -988,10 +1068,10 @@ while i<length(Xmidselec)
 %                 
 %                 dspmat_test = dspmat_weight_norm;
 %                 fprintf('\n  Plot and save stacked dispersion image\n');
-%                 if Dlogscale==0
+%                 if Dlogscale==0 || normalize == 0
 %                     fig1=plot_img([],f,v,dspmat_test',mappick,axetop,axerev,cb_disp,fs,...
 %                         freqtitle_long,'Phase velocity (m/s)',...
-%                         'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+%                         'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
 %                         [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
 %                 else
 %                     dspmatinv=1./(1-dspmat_test);
@@ -1012,10 +1092,10 @@ while i<length(Xmidselec)
 %                 
 %                 dspmat_test = dspmat_weight_old;
 %                 fprintf('\n  Plot and save stacked dispersion image\n');
-%                 if Dlogscale==0
+%                 if Dlogscale==0 || normalize == 0
 %                     fig1=plot_img([],f,v,dspmat_test',mappick,axetop,axerev,cb_disp,fs,...
 %                         freqtitle_long,'Phase velocity (m/s)',...
-%                         'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+%                         'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
 %                         [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
 %                 else
 %                     dspmatinv=1./(1-dspmat_test);
@@ -1060,6 +1140,23 @@ while i<length(Xmidselec)
                 while isempty(dspmat)==1 || isempty(f)==1 || isempty(v)==1 || length(dspmat)==1 || length(f)==1 || length(v)==1
                     [dspmat,f,v]=dsp2dat(dspfile_sum,flip,0);
                 end
+                if mask_alias==1
+                    % Mask dspmat below aliasing boundary
+                    % Create aliasing boundary for each frequency-velocity pair
+                    [F_grid, V_grid] = meshgrid(f, v);
+                    v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
+                    dspmat(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                    
+                    if normalize > 0
+                        % Normalize the masked matrix at each frequency
+                        for ff = 1:length(f)
+                            if any(dspmat(ff,:)) % Check if there are non-zero values
+                                dspmat(ff,:) = dspmat(ff,:) / max(dspmat(ff,:));
+                            end
+                        end
+                    end
+                end
                 if pick==1 || pick==2
                     % Downsample dispersion image to dvmin m/s in velocity to speed up display when picking
                     % (also decrease min. resolution in velocity of dispersion curve)
@@ -1075,6 +1172,23 @@ while i<length(Xmidselec)
                     dspmat_new=[]; f_new=[]; v_new=[];
                     while isempty(dspmat_new)==1 || isempty(f_new)==1 || isempty(v_new)==1 || length(dspmat_new)==1 || length(f_new)==1 || length(v_new)==1
                         [dspmat_new,f_new,v_new]=dsp2dat(dspfile_sum_new,flip,0);
+                    end
+                    if mask_alias==1
+                        % Mask dspmat below aliasing boundary
+                        % Create aliasing boundary for each frequency-velocity pair
+                        [F_grid, V_grid] = meshgrid(f, v);
+                        v_alias_grid = F_grid * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                        alias_mask = V_grid < v_alias_grid;  % Remove the transpose here
+                        dspmat_new(alias_mask') = 0;  % Apply mask (transpose because dspmat is f x v)
+                        
+                        if normalize > 0
+                            % Normalize the masked matrix at each frequency
+                            for ff = 1:length(f)
+                                if any(dspmat_new(ff,:)) % Check if there are non-zero values
+                                    dspmat_new(ff,:) = dspmat_new(ff,:) / max(dspmat_new(ff,:));
+                                end
+                            end
+                        end
                     end
                     if pick==1 || pick==2
                         % Downsample dispersion image to dvmin m/s in velocity to speed up display when picking
@@ -1092,10 +1206,10 @@ while i<length(Xmidselec)
         % Plot and save stacked dispersion image
         if  plotdisp==1
             fprintf('\n  Plot and save stacked dispersion image\n');
-            if Dlogscale==0
+            if Dlogscale==0 || normalize == 0
                 fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
                     freqtitle_long,'Phase velocity (m/s)',...
-                    'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                    'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                     [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             else
                 dspmatinv=1./(1-dspmat);
@@ -1106,6 +1220,14 @@ while i<length(Xmidselec)
                     [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             end
             hold on; cm_saturation(map0sat);
+
+            % Add aliasing boundary line
+            if plot_alias==1
+                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+            end
+
             if Flogscale==1
                 set(gca,'xscale','log');
             end
@@ -1118,10 +1240,10 @@ while i<length(Xmidselec)
             close(fig1)
             
             if stack==2 || stack==3 % Alt. method (xp)
-                if Dlogscale==0
+                if Dlogscale==0 || normalize == 0
                     fig1=plot_img(showplot,f_new,v_new,dspmat_new',flipud(map0),axetop,axerev,cb_disp,fs,...
                         freqtitle_long,'Phase velocity (m/s)',...
-                        'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                        'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                         [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                 else
                     dspmatinv_new=1./(1-dspmat_new);
@@ -1132,6 +1254,14 @@ while i<length(Xmidselec)
                         [1 length(map0)],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                 end
                 hold on; cm_saturation(map0sat);
+
+                % Add aliasing boundary line
+                if plot_alias==1
+                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                end
+
                 if Flogscale==1
                     set(gca,'xscale','log');
                 end
@@ -1152,21 +1282,21 @@ while i<length(Xmidselec)
             fprintf('\n  Plot and save final spectrogram image\n');
             [specmat,fspec,xspec]=spec2dat(specfile_sum,0);
             xspec=xspec/xsca;
-            if Dlogscale==0
+            if Dlogscale==0 || normalize == 0
                 fig2=plot_img(showplot,fspec,xspec,specmat,flipud(map0),axetop,axerev,cb_disp,fs,...
-                    freqtitle_long,'Gx (m)','Norm. ampli.',...
+                    freqtitle_long,'Gx (m)','Amplitude',...
                     [fMIN fMAX],[min(xspec) max(xspec)],[],[],[],...
                     [],[],[],[],[0 0 24 18],[],[],0);
                 
 %                 fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
 %                     freqtitle_long,'Phase velocity (m/s)',...
-%                     'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+%                     'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
 %                     [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
             else
 %                 specmatinv=1./(1-specmat);
 %                 specmatinv(isinf(specmatinv))=max(max(specmatinv(isinf(specmatinv)==0)));
                 fig2=plot_img_log(showplot,fspec,xspec,specmat,flipud(map0),axetop,axerev,cb_disp,fs,...
-                    freqtitle_long,'Gx (m)','Norm. ampli.',...
+                    freqtitle_long,'Gx (m)','Amplitude',...
                     [fMIN fMAX],[min(xspec) max(xspec)],[specampmin 1],[],[],...
                     [],[],[],[],[0 0 24 18],[],[],0);
                 
@@ -1200,7 +1330,7 @@ while i<length(Xmidselec)
                 [specmat_new,fspec_new,xspec_new]=spec2dat(specfile_sum_new,0);
                 xspec_new=xspec_new/xsca;
                 fig2=plot_img(showplot,fspec_new,xspec_new,specmat_new,flipud(map0),axetop,axerev,cb_disp,fs,...
-                    freqtitle_long,'Offset (m)','Norm. ampli.',[fMIN fMAX],[min(xspec_new) max(xspec_new)],[],[],[],...
+                    freqtitle_long,'Offset (m)','Amplitude',[fMIN fMAX],[min(xspec_new) max(xspec_new)],[],[],[],...
                     [],[],[],[],[0 0 24 18],[],[],0);
                 hold on; cm_saturation(map0sat);
                 if Flogscale==1
@@ -1275,7 +1405,7 @@ while i<length(Xmidselec)
                 if mappicklog==0
                     fig2=plot_img(2,f,v2,-dspmatprev',mappick,axetop,axerev,0,16,...
                         freqtitle_long,'Phase velocity (m/s)',...
-                        'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                        'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                         [],fticks,Vphticks,[],[],[],[],[],[],[],0);
                 else
                     dspmatinvprev=1./(1-dspmatprev);
@@ -1302,6 +1432,13 @@ while i<length(Xmidselec)
                     set(gcf,'units','normalized','outerposition',[0.75 0.75 0.25 0.25]); % 1/4 screen top left
                 else
                     set(gcf,'units','normalized','outerposition',[1 0.5 0.5 0.5]); % second monitor, 1/4 screen top right
+                end
+
+                % Add aliasing boundary line
+                if plot_alias==1
+                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
                 end
                 
                 if Flogscale==1
@@ -1345,7 +1482,7 @@ while i<length(Xmidselec)
                 if mappicklog==0
                     [fig1,h1,~,h0]=plot_img(1,f,v2,-dspmat2',mappick,axetop,axerev,0,16,...
                         freqtitle_long,'Phase velocity (m/s)',...
-                        'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                        'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                         [],fticks,Vphticks,[],[],flimsing,[],[],[],[],0);
                 else
                     dspmatinv2=1./(1-dspmat2);
@@ -1381,6 +1518,13 @@ while i<length(Xmidselec)
                     set(gcf,'units','normalized','outerposition',[0 0 0.75 0.75]); % 3/4 screen bottom left
                 else
                     set(gcf,'units','normalized','outerposition',[0.2 0 1 1]); % First monitor, full screen
+                end
+
+                % Add aliasing boundary line
+                if plot_alias==1
+                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
                 end
                 
                 if Flogscale==1
@@ -1478,7 +1622,7 @@ while i<length(Xmidselec)
 %                 %%
 %                 close all;
 %                 [fig1,h1,~,h0]=plot_img(1,f,v2,-dspmat2',mappick,axetop,axerev,0,16,...
-%                     freqtitle_long,'Phase velocity (m/s)','Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+%                     freqtitle_long,'Phase velocity (m/s)','Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
 %                     [],fticks,Vphticks,[],[],[],[],[0 0 50 30],[],[],0);
 %                 hold on; cm_saturation(mappicksat);
 %                 if sampling==1
@@ -1637,6 +1781,13 @@ while i<length(Xmidselec)
                                 [],[],[1 1 24 18],[],[],Flogscale);
                         end
                         hold on
+                        % Add aliasing boundary line
+                        if plot_alias==1
+                            v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                            v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                            dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                        end
+
                         if plotlamlim==1 && sampling==1
                             if auto_resamp == 1
                                 max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -1662,6 +1813,14 @@ while i<length(Xmidselec)
                                 colormap(ccurve);
                             end
                             hold on
+
+                            % Add aliasing boundary line
+                            if plot_alias==1
+                                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                            end
+
                             if plotlamlim==1 && sampling==1
                                 if auto_resamp == 1
                                     max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -1704,6 +1863,14 @@ while i<length(Xmidselec)
                                 [],[],[30 1 24 18],[],[],Flogscale);
                         end
                         hold on
+
+                        % Add aliasing boundary line
+                        if plot_alias==1
+                            v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                            v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                            dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                        end
+
                         if plotlamlim==1 && sampling==1
                             if auto_resamp == 1
                                 max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -1729,6 +1896,14 @@ while i<length(Xmidselec)
                                 colormap(ccurve);
                             end
                             hold on
+
+                            % Add aliasing boundary line
+                            if plot_alias==1
+                                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                            end
+
                             if plotlamlim==1 && sampling==1
                                 if auto_resamp == 1
                                     max_resamp_xmid = ceil(max(max_resamp_win(nshot(ix,:)>0)));
@@ -1814,10 +1989,10 @@ while i<length(Xmidselec)
         if  plotpckdisp==1 && npvc>0
             fprintf('\n  Plot and save stacked dispersion image with picked dispersion\n');
             if exist(dspfile_sum,'file')==2
-                if Dlogscale==0
+                if Dlogscale==0 || normalize == 0
                     fig1=plot_img(showplot,f,v,dspmat',flipud(map0),axetop,axerev,cb_disp,fs,...
                         freqtitle_long,'Phase velocity (m/s)',...
-                        'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                        'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                         [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                 else
                     dspmatinv=1./(1-dspmat);
@@ -1834,6 +2009,14 @@ while i<length(Xmidselec)
                     [],[],[0 0 24 18],[]);
             end
             hold on; cm_saturation(map0sat);
+
+            % Add aliasing boundary line
+            if plot_alias==1
+                v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+            end
+
             hh=dashline(f,f,3,3,3,3,'color',[0 0 1],'linewidth',3);
             set(hh,'visible','off');
             if plotlamlim==1 && sampling==1
@@ -1876,10 +2059,10 @@ while i<length(Xmidselec)
             
             if stack==2 || stack==3 % Alt. method (xp)
                 if exist(dspfile_sum_new,'file')==2
-                   if Dlogscale==0
+                   if Dlogscale==0 || normalize == 0
                        fig1=plot_img(showplot,f_new,v_new,dspmat_new',flipud(map0),axetop,axerev,cb_disp,fs,...
                            freqtitle_long,'Phase velocity (m/s)',...
-                           'Norm. ampli.',[fMIN fMAX],[VphMIN VphMAX],...
+                           'Amplitude',[fMIN fMAX],[VphMIN VphMAX],...
                            [],fticks,Vphticks,[],[],flimsing,[],[0 0 24 18],[]);
                    else
                        dspmatinv=1./(1-dspmat_new);
@@ -1896,6 +2079,14 @@ while i<length(Xmidselec)
                        [],[],[0 0 24 18],[]);
                end
                hold on; cm_saturation(map0sat);
+
+               % Add aliasing boundary line
+                if plot_alias==1
+                    v_alias = f * (2 * dx);  % Aliasing boundary: v = f * 2 * dx
+                    v_alias_plot = min(v_alias, max(v));  % Limit to plot range
+                    dashline(f, v_alias_plot, 2, 2, 2, 2, 'color', [1 0.5 0], 'linewidth', 2);
+                end
+                
                hh=dashline(f_new,f_new,3,3,3,3,'color',[0 0 1],'linewidth',3);
                set(hh,'visible','off');
                if plotlamlim==1 && sampling==1
